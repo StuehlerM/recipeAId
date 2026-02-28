@@ -1,0 +1,120 @@
+# ======================
+# .NET / C#
+# ======================
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+*.nupkg
+**/packages/*
+!**/packages/repositories.config
+*.log
+*.DS_Store
+TestResults/
+[Tt]est[Rr]esult*/
+*.trx
+*.coverage
+*.coveragexml
+
+# EF Core migrations SQLite DB files
+*.db
+*.db-shm
+*.db-wal
+
+# User secrets
+**/secrets.json
+**/appsettings.Development.json
+
+# ======================
+# Flutter / Dart
+# ======================
+# Files and directories created by pub
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+
+# Android specific
+**/android/**/gradle-wrapper.jar
+**/android/.gradle
+**/android/captures/
+**/android/gradlew
+**/android/gradlew.bat
+**/android/local.properties
+**/android/**/GeneratedPluginRegistrant.java
+**/android/key.properties
+**/*.keystore
+**/*.jks
+
+# iOS/macOS specific
+**/ios/**/*.mode1v3
+**/ios/**/*.mode2v3
+**/ios/**/*.perspectivev3
+**/ios/**/*.xcworkspace
+**/ios/**/*.xcuserstate
+**/ios/**/*.xccheckout
+**/ios/**/*.moved-aside
+**/ios/Flutter/App.framework
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/app.flx
+**/ios/Flutter/app.zip
+**/ios/Flutter/flutter_assets/
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/ServiceDefinitions.json
+**/ios/Runner/GeneratedPluginRegistrant.*
+**/ios/Podfile.lock
+**/ios/Pods/
+
+# macOS
+**/macos/Flutter/GeneratedPluginRegistrant.swift
+**/macos/Flutter/Flutter-Debug.xcconfig
+**/macos/Flutter/Flutter-Release.xcconfig
+**/macos/Flutter/ephemeral/
+
+# Web
+**/lib/generated_plugin_registrant.dart
+
+# ======================
+# OCR data files (large, download separately)
+# ======================
+**/tessdata/*.traineddata
+
+# ======================
+# Uploaded recipe images
+# ======================
+**/wwwroot/images/
+**/data/images/
+
+# ======================
+# IDE
+# ======================
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+
+# ======================
+# OS
+# ======================
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.AppleDouble
+.LSOverride
