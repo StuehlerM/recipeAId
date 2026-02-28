@@ -20,6 +20,10 @@ FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
 WORKDIR /app
 COPY --from=build /app/publish .
 
+# curl is used by the Docker Compose health check
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
 # SQLite database lives in a mounted volume
 VOLUME /data
 ENV ConnectionStrings__DefaultConnection="Data Source=/data/recipeaid.db"

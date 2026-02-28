@@ -9,7 +9,15 @@ import type { RecipeAIdWorld } from "./world";
 
 setDefaultTimeout(60_000);
 
-// ── Paths ─────────────────────────────────────────────────────────────────────
+// ── Config ────────────────────────────────────────────────────────────────────
+
+const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:5228";
+const FRONTEND_URL = process.env.FRONTEND_URL ?? "http://localhost:5173";
+
+// Set SPAWN_SERVERS=false in Docker — services are already running as containers
+const SPAWN_SERVERS = process.env.SPAWN_SERVERS !== "false";
+
+// ── Paths (only used when SPAWN_SERVERS=true) ─────────────────────────────────
 
 // __dirname is available natively in CommonJS
 const ROOT = resolve(__dirname, "../../../");
@@ -17,9 +25,6 @@ const BACKEND_DIR = resolve(ROOT, "backend");
 const FRONTEND_DIR = resolve(ROOT, "frontend");
 const API_PROJECT = resolve(BACKEND_DIR, "src/RecipeAId.Api/RecipeAId.Api.csproj");
 const TEST_DB = resolve(BACKEND_DIR, "src/RecipeAId.Api/recipeaid-test.db");
-
-const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:5228";
-const FRONTEND_URL = process.env.FRONTEND_URL ?? "http://localhost:5173";
 
 // ── State ─────────────────────────────────────────────────────────────────────
 
@@ -71,42 +76,50 @@ function killProc(proc: ChildProcess | null): void {
 // ── Global lifecycle ──────────────────────────────────────────────────────────
 
 BeforeAll(async function () {
-  // Start with a clean test database — backend will auto-migrate on startup
-  if (existsSync(TEST_DB)) rmSync(TEST_DB);
+  if (SPAWN_SERVERS) {
+    // Local dev: start backend and frontend as child processes
+    if (existsSync(TEST_DB)) rmSync(TEST_DB);
 
-  // Start backend with test DB
-  backendProc = spawnProc(
-    "dotnet",
-    ["run", "--project", API_PROJECT, "--no-launch-profile"],
-    BACKEND_DIR,
-    {
-      ASPNETCORE_ENVIRONMENT: "Development",
-      ASPNETCORE_URLS: BACKEND_URL,
-      ConnectionStrings__DefaultConnection: `Data Source=${TEST_DB}`,
-    }
-  );
-  await waitForUrl(`${BACKEND_URL}/openapi/v1.json`);
+    backendProc = spawnProc(
+      "dotnet",
+      ["run", "--project", API_PROJECT, "--no-launch-profile"],
+      BACKEND_DIR,
+      {
+        ASPNETCORE_ENVIRONMENT: "Development",
+        ASPNETCORE_URLS: BACKEND_URL,
+        ConnectionStrings__DefaultConnection: `Data Source=${TEST_DB}`,
+      }
+    );
+    await waitForUrl(`${BACKEND_URL}/openapi/v1.json`);
 
-  // Start frontend pointing at real backend
-  frontendProc = spawnProc(
-    "npm",
-    ["run", "dev", "--", "--port", "5173", "--strictPort"],
-    FRONTEND_DIR,
-    {
-      VITE_API_BASE_URL: BACKEND_URL,
-    }
-  );
-  await waitForUrl(FRONTEND_URL);
+    frontendProc = spawnProc(
+      "npm",
+      ["run", "dev", "--", "--port", "5173", "--strictPort"],
+      FRONTEND_DIR,
+      { VITE_API_BASE_URL: BACKEND_URL }
+    );
+    await waitForUrl(FRONTEND_URL);
+  }
+  // In Docker (SPAWN_SERVERS=false), services are healthy before this container starts.
+  // A brief confirmation ping is still useful to surface misconfigurations early.
+  else {
+    await waitForUrl(`${BACKEND_URL}/openapi/v1.json`, 10_000);
+    await waitForUrl(FRONTEND_URL, 10_000);
+  }
 
   sharedBrowser = await chromium.launch({
     headless: process.env.PWDEBUG !== "1",
+    // --no-sandbox is required when running as root inside a Docker container
+    args: SPAWN_SERVERS ? [] : ["--no-sandbox", "--disable-setuid-sandbox"],
   });
 });
 
 AfterAll(async function () {
   await sharedBrowser?.close();
-  killProc(frontendProc);
-  killProc(backendProc);
+  if (SPAWN_SERVERS) {
+    killProc(frontendProc);
+    killProc(backendProc);
+  }
 });
 
 // ── Per-scenario lifecycle ────────────────────────────────────────────────────

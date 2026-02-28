@@ -71,6 +71,33 @@ pip install -r requirements.txt
 uvicorn main:app --port 8001
 ```
 
+## Docker commands
+
+Run the full stack (backend + ocr-service + frontend) from the repo root:
+
+```bash
+# Build and start all three services
+docker compose up --build
+
+# Start without rebuilding
+docker compose up
+
+# Stop and remove containers
+docker compose down
+
+# Stop and also remove the SQLite volume (wipes database)
+docker compose down -v
+```
+
+Services after `docker compose up`:
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8080
+- OCR sidecar: http://localhost:8001
+
+**Note:** The first `docker compose build` for `ocr-service` downloads the ~200 MB EasyOCR model into the image layer. Subsequent builds use the Docker cache and are fast.
+
+**Note:** `VITE_API_BASE_URL=http://localhost:8080` is baked into the frontend bundle at build time via a Docker build arg. To deploy to a different host/port, override it in `docker-compose.yml`.
+
 ## Architecture
 
 **Dependency rule:** `Api → Core ← Data`. Core has zero infrastructure dependencies; all interfaces live there.

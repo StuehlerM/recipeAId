@@ -1,5 +1,5 @@
 import { Then, When } from "@cucumber/cucumber";
-import type { RecipeAIdWorld } from "../support/world.js";
+import type { RecipeAIdWorld } from "../support/world";
 
 Then(
   "I should see the ingredient {string}",

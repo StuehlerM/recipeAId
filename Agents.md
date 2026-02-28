@@ -137,6 +137,18 @@ recipeaid/
 
 ---
 
+## Docker / Deployment
+
+- [x] `backend/Dockerfile` — multi-stage build (SDK → ASP.NET runtime); SQLite DB persisted via named volume
+- [x] `frontend/Dockerfile` — multi-stage build (Node → nginx); accepts `VITE_API_BASE_URL` build arg
+- [x] `ocr-service/Dockerfile` — Python 3.11-slim; EasyOCR model pre-downloaded at build time (~200 MB layer)
+- [x] `docker-compose.yml` — all three services wired together:
+  - `ocr-service` exposes :8001
+  - `backend` depends on `ocr-service`; `OcrService__BaseUrl=http://ocr-service:8001`; CORS allows `http://localhost:3000`
+  - `frontend` depends on `backend`; built with `VITE_API_BASE_URL=http://localhost:8080`
+
+---
+
 ## Open / Future Decisions
 - `[ ]` OCR upgrade path: replace EasyOCR sidecar with Azure AI Document Intelligence for higher accuracy on handwritten cards (swap `PythonOcrService` implementation only — interface unchanged)
 - `[ ]` Ingredient fuzzy matching: Levenshtein distance or synonym table (Phase 4)

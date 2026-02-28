@@ -1,0 +1,60 @@
+services:
+
+  # ── Backend ──────────────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=8080
+      # Use a fresh isolated DB for every test run
+      - ConnectionStrings__DefaultConnection=Data Source=/data/recipeaid-test.db
+      # Allow requests from the frontend container's origin
+      - Cors__AllowedOrigins__0=http://frontend
+    volumes:
+      - integration_db:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/openapi/v1.json || exit 1"]
+      interval: 5s
+      timeout: 10s
+      retries: 24        # up to 2 minutes for first .NET build/JIT startup
+      start_period: 10s
+
+  # ── Frontend (Nginx + Vite static build) ─────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Point the compiled JS bundle at the backend container
+        VITE_API_BASE_URL: http://backend:8080
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:80 > /dev/null || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  # ── Integration tests ─────────────────────────────────────────────────────────
+  integration:
+    build:
+      context: ./integration
+      dockerfile: Dockerfile
+    environment:
+      - FRONTEND_URL=http://frontend
+      - BACKEND_URL=http://backend:8080
+      # Skip spawning backend/frontend — they are already running as services
+      - SPAWN_SERVERS=false
+    depends_on:
+      frontend:
+        condition: service_healthy
+    volumes:
+      # HTML report is written here; mount so it survives after the container exits
+      - ./integration/reports:/app/reports
+
+volumes:
+  integration_db:

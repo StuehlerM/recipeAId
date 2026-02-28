@@ -1,5 +1,5 @@
 import { Given, When, Then } from "@cucumber/cucumber";
-import type { RecipeAIdWorld } from "../support/world.js";
+import type { RecipeAIdWorld } from "../support/world";
 import type { DataTable } from "@cucumber/cucumber";
 
 // ── Data seeding via API (no browser needed) ──────────────────────────────────
