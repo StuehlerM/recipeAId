@@ -14,38 +14,39 @@
 
 ```
 recipeaid/
-├── backend/                    # ASP.NET Core 8 Web API
+├── backend/                    # ASP.NET Core 9 Web API
+│   ├── RecipeAId.sln
 │   └── src/
 │       ├── RecipeAId.Core/     # Entities, interfaces, DTOs, business logic
 │       ├── RecipeAId.Data/     # EF Core, SQLite, repositories, migrations
 │       └── RecipeAId.Api/      # Controllers, OCR services, DI host
-└── frontend/                   # Flutter (iOS, Android, Web)
+└── frontend/                   # React (Vite + TypeScript)
 ```
 
 **Tech stack:**
-- Backend: ASP.NET Core 8, Entity Framework Core 8, SQLite
+- Backend: ASP.NET Core 9, Entity Framework Core 9, SQLite
 - OCR: Tesseract.NET (Phase 1) → Azure AI Document Intelligence (Phase 2 upgrade)
-- Frontend: Flutter with `image_picker`, `riverpod`, `dio`
+- Frontend: React with Vite, TypeScript, TanStack Query, React Router v6
 
 **Dependency rule:** `Api → Core ← Data`. Core has no infrastructure dependencies.
 
 ---
 
 ## Phase 1: Foundation
-- [ ] Solution and project scaffolding (`dotnet new sln`, `classlib`, `webapi`)
-- [ ] Core entities: `Recipe`, `Ingredient`, `RecipeIngredient`
-- [ ] Core interfaces: `IRecipeRepository`, `IIngredientRepository`, `IOcrService`, `IOcrParser`, `IRecipeSuggestionService` (stub)
-- [ ] Core DTOs: `CreateRecipeRequest`, `RecipeDto`, `RecipeIngredientDto`, `RecipeOcrDraftDto`, `IngredientSearchResultDto`
-- [ ] `AppDbContext` with EF Core fluent configuration
-- [ ] EF Core initial migration + SQLite DB creation verified
-- [ ] Repository implementations: `RecipeRepository`, `IngredientRepository`
-- [ ] DI registration in `Program.cs`
+- [x] Solution and project scaffolding (`dotnet new sln`, `classlib`, `webapi`)
+- [x] Core entities: `Recipe`, `Ingredient`, `RecipeIngredient`
+- [x] Core interfaces: `IRecipeRepository`, `IIngredientRepository`, `IOcrService`, `IOcrParser`, `IRecipeSuggestionService` (stub)
+- [x] Core DTOs: `CreateRecipeRequest`, `RecipeDto`, `RecipeIngredientDto`, `RecipeOcrDraftDto`, `IngredientSearchResultDto`
+- [x] `AppDbContext` with EF Core fluent configuration
+- [x] EF Core initial migration + SQLite DB creation (auto-applied on startup)
+- [x] Repository implementations: `RecipeRepository`, `IngredientRepository`
+- [x] DI registration in `Program.cs`
 
 ## Phase 2: CRUD API
 - [ ] `RecipeService` (orchestration, ingredient normalization to lowercase)
 - [ ] `RecipesController`: `GET /api/v1/recipes`, `GET /api/v1/recipes/{id}`, `POST`, `PUT`, `DELETE`
 - [ ] Swagger / OpenAPI configured
-- [ ] CORS configured (allow Flutter dev origin)
+- [ ] CORS configured (allow `http://localhost:5173` Vite dev origin)
 - [ ] Global error handling middleware
 - [ ] Manual tested via Swagger UI
 
@@ -65,14 +66,14 @@ recipeaid/
 - [ ] `POST /api/v1/recipes/from-image` — multipart upload → OCR → return draft (does NOT save)
 - [ ] Two-phase save: draft returned → user edits → `POST /api/v1/recipes` confirms
 
-## Phase 5: Flutter Frontend
-- [ ] Flutter project scaffold in `frontend/`
-- [ ] API client (`dio`) configured, typed wrappers for all endpoints
-- [ ] State management with `riverpod`
-- [ ] Recipe list screen (browse all, title search)
-- [ ] Recipe detail screen (title, ingredients, instructions)
-- [ ] Ingredient search screen (chip input, ranked results with match counts)
-- [ ] Camera capture screen (`image_picker`) + OCR draft review + confirm/edit + save
+## Phase 5: React Frontend
+- [ ] Vite + React + TypeScript scaffold in `frontend/`
+- [ ] API client (typed fetch wrappers) + TanStack Query setup
+- [ ] React Router v6 routing
+- [ ] Recipe list page (browse all, title search)
+- [ ] Recipe detail page (title, ingredients, instructions)
+- [ ] Ingredient search page (chip input, ranked results with match counts)
+- [ ] Camera/upload page: `<input capture="environment">` for mobile camera, file picker fallback; OCR draft review + edit + confirm save
 
 ---
 
