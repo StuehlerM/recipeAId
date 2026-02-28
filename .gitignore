@@ -99,6 +99,13 @@ build/
 **/data/images/
 
 # ======================
+# Node / React frontend
+# ======================
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# ======================
 # Claude Code agent memory
 # ======================
 .claude/

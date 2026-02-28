@@ -78,13 +78,14 @@ recipeaid/
 - [ ] Two-phase save: draft returned → user edits → `POST /api/v1/recipes` confirms
 
 ## Phase 6: React Frontend
-- [ ] Vite + React + TypeScript scaffold in `frontend/`
-- [ ] API client (typed fetch wrappers) + TanStack Query setup
-- [ ] React Router v6 routing
-- [ ] Recipe list page (browse all, title search)
-- [ ] Recipe detail page (title, ingredients, instructions)
-- [ ] Ingredient search page (chip input, ranked results with match counts)
-- [ ] Camera/upload page: `<input capture="environment">` for mobile camera, file picker fallback; OCR draft review + edit + confirm save
+- [x] Vite + React + TypeScript scaffold in `frontend/`
+- [x] API client (typed fetch wrappers) + TanStack Query setup
+- [x] React Router v6 routing
+- [x] Recipe list page (browse all, title search)
+- [x] Recipe detail page (title, ingredients, instructions)
+- [x] Ingredient search page (chip input, ranked results with match counts)
+- [x] Camera/upload page: `<input capture="environment">` for mobile camera, file picker fallback; OCR draft review + edit + confirm save
+- Note: all API calls use mock data; swap `frontend/src/api/client.ts` for real fetch calls when backend is ready
 
 ---
 
