@@ -20,12 +20,13 @@ recipeaid/
 │       ├── RecipeAId.Core/     # Entities, interfaces, DTOs, business logic
 │       ├── RecipeAId.Data/     # EF Core, SQLite, repositories, migrations
 │       └── RecipeAId.Api/      # Controllers, OCR services, DI host
+├── ocr-service/                # Python FastAPI + EasyOCR (port 8001)
 └── frontend/                   # React (Vite + TypeScript)
 ```
 
 **Tech stack:**
 - Backend: ASP.NET Core 9, Entity Framework Core 9, SQLite
-- OCR: Tesseract.NET (Phase 1) → Azure AI Document Intelligence (Phase 2 upgrade)
+- OCR: Python EasyOCR sidecar (FastAPI, :8001) — upgrade path: Azure AI Document Intelligence
 - Frontend: React with Vite, TypeScript, TanStack Query, React Router v6
 
 **Dependency rule:** `Api → Core ← Data`. Core has no infrastructure dependencies.
@@ -68,14 +69,16 @@ recipeaid/
 - [x] Unit tests for `RecipeMatchingService`
 
 ## Phase 5: OCR Integration
-- [ ] Tesseract.NET NuGet package + `eng.traineddata` tessdata setup
-- [ ] `TesseractOcrService` implementing `IOcrService`
-- [ ] `OcrParserService` implementing `IOcrParser`:
+- [x] Python EasyOCR sidecar (`ocr-service/main.py`, FastAPI on :8001) — replaces Tesseract.NET
+- [x] `PythonOcrService` implementing `IOcrService` (calls sidecar via named `HttpClient`)
+- [x] `OcrParserService` implementing `IOcrParser`:
   - Title: first non-empty line or line after "Recipe:" header
   - Ingredients: numbered/bulleted lines or lines under "Ingredients:" header
   - Instructions: lines after "Instructions:"/"Directions:"/"Method:" header
-- [ ] `POST /api/v1/recipes/from-image` — multipart upload → OCR → return draft (does NOT save)
-- [ ] Two-phase save: draft returned → user edits → `POST /api/v1/recipes` confirms
+- [x] `POST /api/v1/recipes/from-image` — multipart upload → OCR → return draft (does NOT save)
+- [x] Two-phase save: draft returned → user edits → `POST /api/v1/recipes` confirms
+- [x] Unit tests for `OcrParserService` (13 cases)
+- [x] Frontend `uploadRecipeImage` wired to real endpoint (`USE_MOCK` fallback when `VITE_API_BASE_URL` unset)
 
 ## Phase 6: React Frontend
 - [x] Vite + React + TypeScript scaffold in `frontend/`
@@ -85,7 +88,7 @@ recipeaid/
 - [x] Recipe detail page (title, ingredients, instructions)
 - [x] Ingredient search page (chip input, ranked results with match counts)
 - [x] Camera/upload page: `<input capture="environment">` for mobile camera, file picker fallback; OCR draft review + edit + confirm save
-- Note: all API calls use mock data; swap `frontend/src/api/client.ts` for real fetch calls when backend is ready
+- Note: CRUD, search, and OCR calls are wired to the real backend when `VITE_API_BASE_URL` is set; mock data is used as fallback when running without a backend
 
 ---
 
@@ -135,7 +138,7 @@ recipeaid/
 ---
 
 ## Open / Future Decisions
-- `[ ]` OCR upgrade trigger: switch to Azure AI Document Intelligence when Tesseract accuracy is insufficient for handwritten cards
+- `[ ]` OCR upgrade path: replace EasyOCR sidecar with Azure AI Document Intelligence for higher accuracy on handwritten cards (swap `PythonOcrService` implementation only — interface unchanged)
 - `[ ]` Ingredient fuzzy matching: Levenshtein distance or synonym table (Phase 4)
 - `[ ]` LLM recipe suggestion: `IRecipeSuggestionService` interface exists as a seam; implement when needed
 - `[ ]` Image storage: local filesystem for now; Azure Blob / S3 upgrade path via `IImageStorageService`

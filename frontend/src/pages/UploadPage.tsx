@@ -22,9 +22,9 @@ export default function UploadPage() {
     mutationFn: (file: File) => uploadRecipeImage(file),
     onSuccess: (data) => {
       setDraft(data);
-      setTitle(data.title);
-      setInstructions(data.instructions ?? "");
-      setIngredients(data.ingredients.map((i) => ({ name: i.name, quantity: i.quantity ?? "" })));
+      setTitle(data.detectedTitle ?? "");
+      setInstructions(data.detectedInstructions ?? "");
+      setIngredients(data.detectedIngredients.map((i) => ({ name: i.name, quantity: i.quantity ?? "" })));
     },
   });
 
@@ -179,7 +179,7 @@ export default function UploadPage() {
         <button
           className={styles.manualBtn}
           onClick={() => {
-            setDraft({ title: "", instructions: null, ingredients: [], rawOcrText: "" });
+            setDraft({ detectedTitle: "", detectedInstructions: null, detectedIngredients: [], rawOcrText: "", imagePath: null });
             setTitle("");
             setInstructions("");
             setIngredients([{ name: "", quantity: "" }]);

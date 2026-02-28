@@ -18,13 +18,15 @@ export interface RecipeDto {
   createdAt: string;
   updatedAt: string;
   ingredients: RecipeIngredientDto[];
+  ingredientCount?: number;
 }
 
 export interface RecipeOcrDraftDto {
-  title: string;
-  instructions: string | null;
-  ingredients: { name: string; quantity: string | null }[];
+  detectedTitle: string | null;
+  detectedInstructions: string | null;
+  detectedIngredients: { name: string; quantity: string | null }[];
   rawOcrText: string;
+  imagePath: string | null;
 }
 
 export interface IngredientSearchResultDto {

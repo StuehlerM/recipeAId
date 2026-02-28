@@ -6,7 +6,11 @@ namespace RecipeAId.Api.Controllers;
 
 [ApiController]
 [Route("api/v1/recipes")]
-public class RecipesController(IRecipeService recipeService, IRecipeMatchingService matchingService) : ControllerBase
+public class RecipesController(
+    IRecipeService recipeService,
+    IRecipeMatchingService matchingService,
+    IOcrService ocrService,
+    IOcrParser ocrParser) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IEnumerable<RecipeSummaryDto>>> GetAll(
@@ -71,5 +75,27 @@ public class RecipesController(IRecipeService recipeService, IRecipeMatchingServ
     {
         var deleted = await recipeService.DeleteAsync(id, ct);
         return deleted ? NoContent() : NotFound();
+    }
+
+    [HttpPost("from-image")]
+    [Consumes("multipart/form-data")]
+    public async Task<ActionResult<RecipeOcrDraftDto>> FromImage(
+        IFormFile image,
+        CancellationToken ct)
+    {
+        if (image is null || image.Length == 0)
+            return BadRequest(new { error = "An image file is required." });
+
+        if (!image.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+            return BadRequest(new { error = "File must be an image." });
+
+        await using var stream = image.OpenReadStream();
+        var ocrResult = await ocrService.ExtractTextAsync(stream, image.ContentType, ct);
+
+        if (!ocrResult.Success)
+            return UnprocessableEntity(new { error = ocrResult.ErrorMessage });
+
+        var draft = ocrParser.Parse(ocrResult.RawText);
+        return Ok(draft);
     }
 }

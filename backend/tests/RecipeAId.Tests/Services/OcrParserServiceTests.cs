@@ -1,0 +1,219 @@
+using RecipeAId.Core.Services;
+using Xunit;
+
+namespace RecipeAId.Tests.Services;
+
+public class OcrParserServiceTests
+{
+    private readonly OcrParserService _sut = new();
+
+    // ── Structured (section headers) ────────────────────────────────────────
+
+    [Fact]
+    public void Parse_StructuredRecipe_ExtractsAllSections()
+    {
+        var text = """
+            Chocolate Chip Cookies
+
+            Ingredients:
+            2 cups flour
+            1 cup sugar
+            2 eggs
+
+            Instructions:
+            Mix dry ingredients. Add eggs. Bake at 350°F for 12 minutes.
+            """;
+
+        var draft = _sut.Parse(text);
+
+        Assert.Equal("Chocolate Chip Cookies", draft.DetectedTitle);
+        Assert.Equal(3, draft.DetectedIngredients.Count);
+        Assert.Contains(draft.DetectedIngredients, i => i.Name.Contains("flour"));
+        Assert.Contains(draft.DetectedIngredients, i => i.Name.Contains("sugar"));
+        Assert.Contains(draft.DetectedIngredients, i => i.Name.Contains("eggs"));
+        Assert.NotNull(draft.DetectedInstructions);
+        Assert.Contains("Bake", draft.DetectedInstructions);
+    }
+
+    [Fact]
+    public void Parse_StructuredRecipe_ParsesQuantitiesFromIngredients()
+    {
+        var text = """
+            Pancakes
+
+            Ingredients:
+            2 cups flour
+            1 tsp baking powder
+
+            Directions:
+            Mix and cook.
+            """;
+
+        var draft = _sut.Parse(text);
+
+        var flour = draft.DetectedIngredients.First(i => i.Name.Contains("flour"));
+        Assert.Equal("flour", flour.Name, ignoreCase: true);
+        Assert.Equal("2 cups", flour.Quantity, ignoreCase: true);
+    }
+
+    [Fact]
+    public void Parse_StructuredRecipe_CaseInsensitiveHeaders()
+    {
+        var text = """
+            Soup
+
+            INGREDIENTS:
+            1 cup broth
+
+            METHOD:
+            Simmer for 20 minutes.
+            """;
+
+        var draft = _sut.Parse(text);
+
+        Assert.Equal("Soup", draft.DetectedTitle);
+        Assert.Single(draft.DetectedIngredients);
+        Assert.NotNull(draft.DetectedInstructions);
+    }
+
+    [Fact]
+    public void Parse_RecipeHeader_ExtractsTitleFromNextLine()
+    {
+        var text = """
+            Recipe:
+            Banana Bread
+
+            Ingredients:
+            3 bananas
+            """;
+
+        var draft = _sut.Parse(text);
+
+        Assert.Equal("Banana Bread", draft.DetectedTitle);
+    }
+
+    // ── Unstructured (no section headers) ───────────────────────────────────
+
+    [Fact]
+    public void Parse_Unstructured_FirstLineIsTitle()
+    {
+        var text = """
+            Grandma's Stew
+            2 cups potatoes
+            1 lb beef
+            """;
+
+        var draft = _sut.Parse(text);
+
+        Assert.Equal("Grandma's Stew", draft.DetectedTitle);
+    }
+
+    [Fact]
+    public void Parse_Unstructured_NumberedIngredients()
+    {
+        var text = """
+            Simple Salad
+            1. 2 cups lettuce
+            2. 1 tomato
+            3. Olive oil
+            """;
+
+        var draft = _sut.Parse(text);
+
+        Assert.Equal("Simple Salad", draft.DetectedTitle);
+        Assert.Equal(3, draft.DetectedIngredients.Count);
+    }
+
+    [Fact]
+    public void Parse_Unstructured_BulletedIngredients()
+    {
+        var text = """
+            Rice Bowl
+            - 1 cup rice
+            - 2 tbsp soy sauce
+            """;
+
+        var draft = _sut.Parse(text);
+
+        Assert.Equal(2, draft.DetectedIngredients.Count);
+        Assert.Contains(draft.DetectedIngredients, i => i.Name.Contains("rice"));
+    }
+
+    // ── Edge cases ───────────────────────────────────────────────────────────
+
+    [Fact]
+    public void Parse_EmptyText_ReturnsEmptyDraft()
+    {
+        var draft = _sut.Parse(string.Empty);
+
+        Assert.Null(draft.DetectedTitle);
+        Assert.Null(draft.DetectedInstructions);
+        Assert.Empty(draft.DetectedIngredients);
+    }
+
+    [Fact]
+    public void Parse_WhitespaceOnlyText_ReturnsEmptyDraft()
+    {
+        var draft = _sut.Parse("   \n\n   \n");
+
+        Assert.Null(draft.DetectedTitle);
+        Assert.Empty(draft.DetectedIngredients);
+    }
+
+    [Fact]
+    public void Parse_TitleOnly_NoIngredientsOrInstructions()
+    {
+        var draft = _sut.Parse("My Recipe");
+
+        Assert.Equal("My Recipe", draft.DetectedTitle);
+        Assert.Empty(draft.DetectedIngredients);
+        Assert.Null(draft.DetectedInstructions);
+    }
+
+    [Fact]
+    public void Parse_RawTextPreserved()
+    {
+        var text = "Some recipe\n2 eggs";
+        var draft = _sut.Parse(text, imagePath: "/images/photo.jpg");
+
+        Assert.Equal(text, draft.RawOcrText);
+        Assert.Equal("/images/photo.jpg", draft.ImagePath);
+    }
+
+    [Fact]
+    public void Parse_IngredientsWithFractions_ParsesQuantity()
+    {
+        var text = """
+            Scones
+
+            Ingredients:
+            1/2 cup butter
+            1/4 tsp salt
+            """;
+
+        var draft = _sut.Parse(text);
+
+        Assert.Equal(2, draft.DetectedIngredients.Count);
+        var butter = draft.DetectedIngredients.First(i => i.Name.Contains("butter"));
+        Assert.NotNull(butter.Quantity);
+        Assert.Contains("cup", butter.Quantity, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Parse_StructuredRecipe_EmptyIngredientSection_ReturnsEmpty()
+    {
+        var text = """
+            Empty Recipe
+
+            Ingredients:
+
+            Instructions:
+            Do nothing.
+            """;
+
+        var draft = _sut.Parse(text);
+
+        Assert.Empty(draft.DetectedIngredients);
+        Assert.NotNull(draft.DetectedInstructions);
+    }
+}

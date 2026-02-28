@@ -120,10 +120,10 @@ export function searchByIngredients(
 }
 
 export const MOCK_OCR_DRAFT: RecipeOcrDraftDto = {
-  title: "Grandma's Apple Pie",
-  instructions:
+  detectedTitle: "Grandma's Apple Pie",
+  detectedInstructions:
     "Preheat oven to 180°C. Mix flour and butter until crumbly. Add water gradually to form dough. Peel and slice apples, toss with sugar and cinnamon. Line pie dish with half the dough, fill with apple mixture, cover with remaining dough. Bake 45 minutes until golden.",
-  ingredients: [
+  detectedIngredients: [
     { name: "flour", quantity: "2 cups" },
     { name: "butter", quantity: "125g" },
     { name: "apple", quantity: "6 large" },
@@ -133,4 +133,5 @@ export const MOCK_OCR_DRAFT: RecipeOcrDraftDto = {
   ],
   rawOcrText:
     "Grandma's Apple Pie\n\nIngredients:\n2 cups flour\n125g butter\n6 large apples\n3/4 cup sugar\n1 tsp cinnamon\n4 tbsp water\n\nInstructions:\nPreheat oven to 180C...",
+  imagePath: null,
 };

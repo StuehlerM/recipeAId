@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using RecipeAId.Api.Middleware;
+using RecipeAId.Api.OcrServices;
 using RecipeAId.Core.Interfaces;
 using RecipeAId.Core.Services;
 using RecipeAId.Data;
@@ -23,14 +24,22 @@ builder.Services.AddScoped<IRecipeService, RecipeService>();
 builder.Services.AddScoped<IRecipeMatchingService, RecipeMatchingService>();
 builder.Services.AddSingleton<IUnitConversionService, UnitConversionService>();
 
+// OCR
+var ocrBaseUrl = builder.Configuration["OcrService:BaseUrl"] ?? "http://localhost:8001";
+builder.Services.AddHttpClient("OcrService", c => c.BaseAddress = new Uri(ocrBaseUrl));
+builder.Services.AddScoped<IOcrService, PythonOcrService>();
+builder.Services.AddScoped<IOcrParser, OcrParserService>();
+
 // Controllers + OpenAPI
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
-// CORS — allow Vite dev server
+// CORS — origins configurable via Cors:AllowedOrigins (env: Cors__AllowedOrigins__0, etc.)
+var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+    ?? ["http://localhost:5173"];
 builder.Services.AddCors(options =>
     options.AddPolicy("DevPolicy", policy =>
-        policy.WithOrigins("http://localhost:5173")
+        policy.WithOrigins(corsOrigins)
               .AllowAnyMethod()
               .AllowAnyHeader()));
 
@@ -50,8 +59,7 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.MapScalarApiReference(options => options.Title = "RecipeAId API");
+    app.UseHttpsRedirection();
 }
-
-app.UseHttpsRedirection();
 app.MapControllers();
 app.Run();

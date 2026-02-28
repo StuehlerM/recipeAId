@@ -49,7 +49,7 @@ export default function RecipeListPage() {
             <Link to={`/recipes/${recipe.id}`} className={styles.cardLink}>
               <span className={styles.cardTitle}>{recipe.title}</span>
               <span className={styles.cardMeta}>
-                {recipe.ingredients.length} ingredient{recipe.ingredients.length !== 1 ? "s" : ""}
+                {(recipe.ingredientCount ?? recipe.ingredients.length)} ingredient{(recipe.ingredientCount ?? recipe.ingredients.length) !== 1 ? "s" : ""}
                 &ensp;·&ensp;
                 {new Date(recipe.createdAt).toLocaleDateString()}
               </span>
