@@ -1,0 +1,117 @@
+.page {
+  max-width: 700px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.back {
+  display: inline-block;
+  color: #a0aec0;
+  text-decoration: none;
+  font-size: 0.875rem;
+  margin-bottom: 1.25rem;
+  transition: color 0.15s;
+}
+
+.back:hover {
+  color: #e8a838;
+}
+
+.title {
+  font-size: 2rem;
+  color: #e2e8f0;
+  margin-bottom: 0.25rem;
+}
+
+.meta {
+  color: #718096;
+  font-size: 0.85rem;
+  margin-bottom: 2rem;
+}
+
+.section {
+  margin-bottom: 2rem;
+}
+
+.section h2 {
+  font-size: 1.1rem;
+  color: #e8a838;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid #2d2d4e;
+  padding-bottom: 0.4rem;
+}
+
+.ingredients {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.ingredient {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  background: #16213e;
+}
+
+.ingredientName {
+  color: #e2e8f0;
+  font-size: 0.95rem;
+  text-transform: capitalize;
+}
+
+.quantity {
+  color: #a0aec0;
+  font-size: 0.875rem;
+}
+
+.instructions {
+  color: #cbd5e0;
+  line-height: 1.8;
+  white-space: pre-line;
+  background: #16213e;
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+
+.deleteBtn {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: 1px solid #e53e3e;
+  background: transparent;
+  color: #fc8181;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: background 0.15s, color 0.15s;
+}
+
+.deleteBtn:hover:not(:disabled) {
+  background: #e53e3e;
+  color: #fff;
+}
+
+.deleteBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.status {
+  color: #a0aec0;
+  margin: 2rem auto;
+  text-align: center;
+}
+
+.error {
+  color: #fc8181;
+  margin: 2rem auto;
+  text-align: center;
+}
