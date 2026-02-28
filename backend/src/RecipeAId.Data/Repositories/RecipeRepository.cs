@@ -32,9 +32,20 @@ public class RecipeRepository(AppDbContext db) : IRecipeRepository
         return recipe;
     }
 
-    public async Task UpdateAsync(Recipe recipe, CancellationToken ct = default)
+    public async Task UpdateAsync(Recipe recipe, IEnumerable<RecipeIngredient> newIngredients, CancellationToken ct = default)
     {
-        db.Recipes.Update(recipe);
+        // Explicitly replace ingredients to avoid EF tracking conflicts
+        var old = await db.RecipeIngredients.Where(ri => ri.RecipeId == recipe.Id).ToListAsync(ct);
+        db.RecipeIngredients.RemoveRange(old);
+
+        db.Entry(recipe).State = EntityState.Modified;
+
+        foreach (var ri in newIngredients)
+        {
+            ri.RecipeId = recipe.Id;
+            db.RecipeIngredients.Add(ri);
+        }
+
         await db.SaveChangesAsync(ct);
     }
 
