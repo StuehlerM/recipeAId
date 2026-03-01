@@ -1,11 +1,11 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import NavBar from "./components/NavBar";
-import RecipeListPage from "./pages/RecipeListPage";
-import RecipeDetailPage from "./pages/RecipeDetailPage";
-import IngredientSearchPage from "./pages/IngredientSearchPage";
-import UploadPage from "./pages/UploadPage";
-import AddRecipePage from "./pages/AddRecipePage";
-import PlannerPage from "./pages/PlannerPage";
+import RecipeListPage from "./features/recipes/RecipeListPage";
+import RecipeDetailPage from "./features/recipes/RecipeDetailPage";
+import IngredientSearchPage from "./features/search/IngredientSearchPage";
+import UploadPage from "./features/upload/UploadPage";
+import AddRecipePage from "./features/add-recipe/AddRecipePage";
+import PlannerPage from "./features/planner/PlannerPage";
 
 export default function App() {
   return (

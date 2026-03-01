@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { getRecipes } from "../api/client";
+import { getRecipes } from "../../api/client";
 import styles from "./RecipeListPage.module.css";
 
 export default function RecipeListPage() {

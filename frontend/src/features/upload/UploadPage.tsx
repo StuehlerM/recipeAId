@@ -1,8 +1,8 @@
 import { useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { uploadRecipeImage, createRecipe } from "../api/client";
-import type { RecipeOcrDraftDto } from "../api/types";
+import { uploadRecipeImage, createRecipe } from "../../api/client";
+import type { RecipeOcrDraftDto } from "../../api/types";
 import styles from "./UploadPage.module.css";
 
 type DraftIngredient = { name: string; amount: string; unit: string };

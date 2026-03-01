@@ -1,6 +1,6 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getRecipe, deleteRecipe } from "../api/client";
+import { getRecipe, deleteRecipe } from "../../api/client";
 import styles from "./RecipeDetailPage.module.css";
 
 export default function RecipeDetailPage() {

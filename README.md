@@ -116,9 +116,14 @@ recipeaid/
 ├── frontend/              # React 19 + Vite 7 + TypeScript
 │   ├── src/
 │   │   ├── api/               # client.ts, types.ts, mockData.ts
-│   │   ├── components/        # NavBar, OcrCaptureButton
-│   │   ├── hooks/             # usePlanner.ts, useOcrCapture.ts
-│   │   └── pages/             # RecipeList, RecipeDetail, IngredientSearch, Upload, Add, Planner
+│   │   ├── components/        # Shared: NavBar, OcrCaptureButton
+│   │   ├── hooks/             # Shared: useOcrCapture.ts
+│   │   └── features/          # Feature-based modules
+│   │       ├── recipes/       # RecipeListPage, RecipeDetailPage
+│   │       ├── search/        # IngredientSearchPage
+│   │       ├── upload/        # UploadPage
+│   │       ├── add-recipe/    # AddRecipePage wizard, StepIndicator, UnitCombobox
+│   │       └── planner/       # PlannerPage, usePlanner, quantityAggregator
 │   └── Dockerfile
 └── integration/           # BDD integration tests (Cucumber + Playwright)
     ├── features/              # Gherkin .feature files

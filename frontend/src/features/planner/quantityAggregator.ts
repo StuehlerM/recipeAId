@@ -1,4 +1,4 @@
-import type { RecipeDto } from "../api/types";
+import type { RecipeDto } from "../../api/types";
 
 type IngredientEntry = { amount: string | null; unit: string | null };
 

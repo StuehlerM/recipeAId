@@ -1,86 +1,14 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { createRecipe, getRecipes } from "../api/client";
-import OcrCaptureButton from "../components/OcrCaptureButton";
-import type { RecipeOcrDraftDto } from "../api/types";
+import { createRecipe, getRecipes } from "../../api/client";
+import OcrCaptureButton from "../../components/OcrCaptureButton";
+import type { RecipeOcrDraftDto } from "../../api/types";
+import StepIndicator from "./StepIndicator";
+import type { Step } from "./StepIndicator";
+import UnitCombobox from "./UnitCombobox";
 
 type IngredientRow = { name: string; amount: string; unit: string };
-
-const STEP_LABELS = ["Title", "Ingredients", "Instructions", "Book"] as const;
-type Step = 1 | 2 | 3 | 4;
-
-const UNIT_SUGGESTIONS = [
-  "g", "kg", "ml", "l", "cup", "cups", "tbsp", "tsp",
-  "oz", "lb", "pcs", "pinch", "to taste", "handful", "cloves", "slices",
-];
-
-function StepIndicator({ step }: { step: Step }) {
-  return (
-    <div className="flex items-center mb-8 px-2">
-      {([1, 2, 3, 4] as Step[]).map((n, i) => (
-        <div key={n} className="flex items-center flex-1 last:flex-none">
-          <div
-            className={[
-              "w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 transition-colors",
-              n < step
-                ? "bg-spruce-mid border-2 border-olive text-olive-light"
-                : n === step
-                ? "bg-olive text-spruce-dark"
-                : "border-2 border-border text-muted",
-            ].join(" ")}
-          >
-            {n < step ? "✓" : n}
-          </div>
-          <span
-            className={[
-              "ml-1 text-[0.6rem] leading-tight",
-              n === step ? "text-olive font-semibold" : "text-muted",
-            ].join(" ")}
-          >
-            {STEP_LABELS[n - 1]}
-          </span>
-          {i < 3 && (
-            <div
-              className={[
-                "flex-1 h-px mx-2",
-                n < step ? "bg-olive" : "bg-border",
-              ].join(" ")}
-            />
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function UnitCombobox({
-  value,
-  onChange,
-  inputCls,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  inputCls: string;
-}) {
-  const id = `unit-list-${Math.random().toString(36).slice(2)}`;
-  return (
-    <>
-      <input
-        className={inputCls}
-        list={id}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="Unit"
-      />
-      <datalist id={id}>
-        {UNIT_SUGGESTIONS.map((u) => (
-          <option key={u} value={u} />
-        ))}
-      </datalist>
-    </>
-  );
-}
 
 export default function AddRecipePage() {
   const navigate = useNavigate();

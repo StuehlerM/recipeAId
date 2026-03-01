@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useQuery, useQueries } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { getRecipes, getRecipe } from "../api/client";
-import { usePlanner } from "../hooks/usePlanner";
-import { aggregateIngredients } from "../utils/quantityAggregator";
-import type { RecipeDto } from "../api/types";
+import { getRecipes, getRecipe } from "../../api/client";
+import { usePlanner } from "./usePlanner";
+import { aggregateIngredients } from "./quantityAggregator";
+import type { RecipeDto } from "../../api/types";
 
 export default function PlannerPage() {
   const [search, setSearch] = useState("");

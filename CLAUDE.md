@@ -18,12 +18,15 @@ recipeaid/
 │       └── RecipeAId.Tests/  # xUnit + Moq — references Core only
 └── frontend/          # React 19 + Vite 7 + TypeScript + Tailwind CSS v4
     └── src/
-        ├── api/        # client.ts, mockData.ts, types.ts
-        ├── components/ # NavBar (bottom tab bar), OcrCaptureButton
-        ├── hooks/      # usePlanner.ts, useOcrCapture.ts
-        ├── utils/      # quantityAggregator.ts
-        └── pages/      # RecipeListPage, RecipeDetailPage, IngredientSearchPage,
-                        # UploadPage, AddRecipePage (4-step wizard), PlannerPage
+        ├── api/            # client.ts, mockData.ts, types.ts
+        ├── components/     # Shared: NavBar (bottom tab bar), OcrCaptureButton
+        ├── hooks/          # Shared: useOcrCapture.ts
+        └── features/       # Feature-based modules
+            ├── recipes/    # RecipeListPage, RecipeDetailPage (+ CSS modules)
+            ├── search/     # IngredientSearchPage (+ CSS module)
+            ├── upload/     # UploadPage (+ CSS module)
+            ├── add-recipe/ # AddRecipePage (4-step wizard), StepIndicator, UnitCombobox
+            └── planner/    # PlannerPage, usePlanner.ts, quantityAggregator.ts
 ```
 
 ## Backend commands

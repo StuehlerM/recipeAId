@@ -21,7 +21,7 @@ recipeaid/
 │       ├── RecipeAId.Data/     # EF Core, SQLite, repositories, migrations
 │       └── RecipeAId.Api/      # Controllers, OCR services, DI host
 ├── ocr-service/                # Python FastAPI + EasyOCR (port 8001)
-└── frontend/                   # React (Vite + TypeScript)
+└── frontend/                   # React (Vite + TypeScript, feature-based folder structure)
 ```
 
 **Tech stack:**
@@ -98,10 +98,13 @@ recipeaid/
 - [x] Bottom tab bar navigation (fixed, 5 tabs: Recipes / Search / Add / Upload / Planner) — FAB-style Add button
 - [x] 4-step recipe wizard at `/add`: Title → Ingredients → Instructions → Book, step indicator, `useMutation` → navigate on success; OCR capture available at every step (`OcrCaptureButton`, `useOcrCapture`)
 - [x] Weekly planner at `/planner`: recipe browser with search, this-week list, aggregated shopping list
-- [x] `src/utils/quantityAggregator.ts` — same-unit quantities summed; mixed/unparseable quantities concatenated (uses Amount + Unit fields)
-- [x] `src/hooks/usePlanner.ts` — localStorage-backed (`recipeaid_planner_v1`), lazy-initialised
-- [x] `src/hooks/useOcrCapture.ts` — programmatic file-input OCR trigger, returns `RecipeOcrDraftDto`
-- [x] `src/components/OcrCaptureButton.tsx` — camera icon button with spinner and inline error display
+- [x] `src/features/planner/quantityAggregator.ts` — same-unit quantities summed; mixed/unparseable quantities concatenated (uses Amount + Unit fields)
+- [x] `src/features/planner/usePlanner.ts` — localStorage-backed (`recipeaid_planner_v1`), lazy-initialised
+- [x] `src/hooks/useOcrCapture.ts` — programmatic file-input OCR trigger, returns `RecipeOcrDraftDto` (shared)
+- [x] `src/components/OcrCaptureButton.tsx` — camera icon button with spinner and inline error display (shared)
+- [x] `src/features/add-recipe/StepIndicator.tsx` — 4-step progress indicator (extracted from AddRecipePage)
+- [x] `src/features/add-recipe/UnitCombobox.tsx` — datalist-based unit picker (extracted from AddRecipePage)
+- [x] Feature-based folder structure: `src/features/{recipes,search,upload,add-recipe,planner}/`
 - [x] `RecipeListPage`: book filter dropdown + `BookTitle` badge on recipe cards
 - [x] `RecipeDetailPage`: displays `BookTitle`; `RecipeIngredientDto` uses `amount` + `unit`
 - [x] `UploadPage`: updated for Amount + Unit ingredient model

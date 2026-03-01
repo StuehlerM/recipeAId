@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { searchRecipesByIngredients, getIngredients } from "../api/client";
+import { searchRecipesByIngredients, getIngredients } from "../../api/client";
 import styles from "./IngredientSearchPage.module.css";
 
 export default function IngredientSearchPage() {
