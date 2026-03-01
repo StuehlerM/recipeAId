@@ -286,6 +286,32 @@ public class OcrParserServiceTests
         Assert.Null(eggs.Unit);
     }
 
+    // ── Run-on ingredient splitting ─────────────────────────────────────────
+
+    [Fact]
+    public void Parse_RunOnIngredients_SplitsIntoSeparateEntries()
+    {
+        // Real OCR output where paragraph mode merged all ingredients into one line
+        var text = "Ingredients 8 oz linguine pasta 2 tbsp olive oil 1lb large shrimp, peeled and deveined Salt to taste Black pepper to taste 1tbsp minced garlic tsp red pepper flakes 1/2 cup chicken broth 1cup fresh lemon juice Zest of 1 lemon 1/2 cup finely chopped fresh parsley Grated Parmesan cheese for serving";
+
+        var draft = _sut.Parse(text);
+
+        // Should detect multiple ingredients, not just one blob
+        Assert.True(draft.DetectedIngredients.Count >= 8,
+            $"Expected at least 8 ingredients but got {draft.DetectedIngredients.Count}: [{string.Join(", ", draft.DetectedIngredients.Select(i => i.Name))}]");
+
+        // Verify some specific ingredients were parsed with amount/unit
+        var pasta = draft.DetectedIngredients.FirstOrDefault(i => i.Name.Contains("linguine", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(pasta);
+        Assert.Equal("8", pasta.Amount);
+        Assert.Equal("oz", pasta.Unit);
+
+        var oil = draft.DetectedIngredients.FirstOrDefault(i => i.Name.Contains("olive oil", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(oil);
+        Assert.Equal("2", oil.Amount);
+        Assert.Equal("tbsp", oil.Unit);
+    }
+
     // ── German section headers ───────────────────────────────────────────────
 
     [Fact]

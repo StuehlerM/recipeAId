@@ -43,6 +43,18 @@ public sealed partial class OcrParserService : IOcrParser
         RegexOptions.IgnoreCase)]
     private static partial Regex NameAmountPattern();
 
+    // Splits run-on ingredient text at quantity+unit boundaries mid-line
+    // e.g. "8 oz pasta 2 tbsp oil" → ["8 oz pasta", "2 tbsp oil"]
+    [GeneratedRegex(
+        @"(?<=\S)\s+(?=[\d½⅓⅔¼¾⅛⅜⅝⅞][\d/]*\s*(?:oz|ounce|tbsp|tsp|tablespoon|teaspoon|cup|cups|lb|pound|g|gram|kg|ml|l|liter|litre|pinch|dash|clove|cloves|slice|slices|can|bunch|handful|package|pkg|stick|el|tl|stk|prise|bund|scheibe|dose|päckchen|becher|msp)\b)",
+        RegexOptions.IgnoreCase)]
+    private static partial Regex QuantityBoundaryPattern();
+
+    // Splits at case transitions: lowercase/comma followed by Capitalized word
+    // e.g. "deveined Salt to taste" → ["deveined", "Salt to taste"]
+    [GeneratedRegex(@"(?<=[a-z,])\s+(?=[A-Z][a-z])")]
+    private static partial Regex CaseBoundaryPattern();
+
     // Matches leading bullets/numbers: "1." "1)" "-" "*" "•"
     [GeneratedRegex(@"^\s*(?:\d+[.)]\s*|[-*•]\s*)")]
     private static partial Regex LeadingBulletPattern();
@@ -55,7 +67,7 @@ public sealed partial class OcrParserService : IOcrParser
     {
         var lines = rawOcrText
             .Split('\n')
-            .Select(l => l.Trim())
+            .SelectMany(l => SplitRunOnIngredientLine(l.Trim()))
             .ToList();
 
         // Remove leading/trailing empty lines
@@ -185,7 +197,10 @@ public sealed partial class OcrParserService : IOcrParser
         foreach (var line in rest)
         {
             if (LooksLikeIngredient(line))
-                ingredients.Add(ParseIngredientLine(line));
+            {
+                foreach (var sub in SplitRunOnIngredientLine(line))
+                    ingredients.Add(ParseIngredientLine(sub));
+            }
             else
                 instrParts.Add(line);
         }
@@ -196,14 +211,45 @@ public sealed partial class OcrParserService : IOcrParser
 
     // ── Ingredient line helpers ──────────────────────────────────────────────
 
+    /// <summary>
+    /// Splits a long run-on ingredient line into individual ingredients.
+    /// Handles OCR output where multiple ingredients are on one line with no newlines.
+    /// </summary>
+    private static List<string> SplitRunOnIngredientLine(string line)
+    {
+        if (line.Length <= 50) return [line];
+
+        var parts = new List<string>();
+        // Split on quantity+unit boundaries first
+        foreach (var segment in QuantityBoundaryPattern().Split(line))
+        {
+            // Then split on case transitions (e.g. "deveined Salt to taste")
+            if (segment.Length > 50)
+            {
+                foreach (var sub in CaseBoundaryPattern().Split(segment))
+                {
+                    var trimmed = sub.Trim();
+                    if (trimmed.Length > 0) parts.Add(trimmed);
+                }
+            }
+            else
+            {
+                var trimmed = segment.Trim();
+                if (trimmed.Length > 0) parts.Add(trimmed);
+            }
+        }
+        return parts.Count > 0 ? parts : [line];
+    }
+
     private static List<IngredientLineDto> ParseIngredientLines(List<string> lines, int from, int to)
     {
         var result = new List<IngredientLineDto>();
         int end = Math.Min(to == int.MaxValue ? lines.Count : to, lines.Count);
         for (int i = from; i < end; i++)
         {
-            if (lines[i].Length > 0)
-                result.Add(ParseIngredientLine(lines[i]));
+            if (lines[i].Length == 0) continue;
+            foreach (var sub in SplitRunOnIngredientLine(lines[i]))
+                result.Add(ParseIngredientLine(sub));
         }
         return result;
     }
