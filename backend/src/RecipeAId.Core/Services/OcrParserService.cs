@@ -43,10 +43,13 @@ public sealed partial class OcrParserService : IOcrParser
         RegexOptions.IgnoreCase)]
     private static partial Regex NameAmountPattern();
 
-    // Splits run-on ingredient text at quantity+unit boundaries mid-line
-    // e.g. "8 oz pasta 2 tbsp oil" → ["8 oz pasta", "2 tbsp oil"]
+    // Splits run-on ingredient text at quantity+unit boundaries mid-line.
+    // Two branches (alternation):
+    //   1. digit + any unit: "pasta 2 tbsp oil" → split before "2 tbsp"
+    //   2. bare abbreviation after a letter: "garlic tsp pepper" → split before "tsp"
+    //      (requires [a-zA-Z,] before the space so "8 oz" is NOT split)
     [GeneratedRegex(
-        @"(?<=\S)\s+(?=[\d½⅓⅔¼¾⅛⅜⅝⅞][\d/]*\s*(?:oz|ounce|tbsp|tsp|tablespoon|teaspoon|cup|cups|lb|pound|g|gram|kg|ml|l|liter|litre|pinch|dash|clove|cloves|slice|slices|can|bunch|handful|package|pkg|stick|el|tl|stk|prise|bund|scheibe|dose|päckchen|becher|msp)\b)",
+        @"(?:(?<=\S)\s+(?=[\d½⅓⅔¼¾⅛⅜⅝⅞][\d/]*\s*(?:oz|ounce|tbsp|tsp|tablespoon|teaspoon|cup|cups|lb|pound|g|gram|kg|ml|l|liter|litre|pinch|dash|clove|cloves|slice|slices|can|bunch|handful|package|pkg|stick|el|tl|stk|prise|bund|scheibe|dose|päckchen|becher|msp)\b)|(?<=[a-zA-Z,])\s+(?=(?:tbsp|tsp)\b))",
         RegexOptions.IgnoreCase)]
     private static partial Regex QuantityBoundaryPattern();
 
@@ -220,21 +223,12 @@ public sealed partial class OcrParserService : IOcrParser
         if (line.Length <= 50) return [line];
 
         var parts = new List<string>();
-        // Split on quantity+unit boundaries first
+        // Split on quantity+unit boundaries, then case transitions within each segment
         foreach (var segment in QuantityBoundaryPattern().Split(line))
         {
-            // Then split on case transitions (e.g. "deveined Salt to taste")
-            if (segment.Length > 50)
+            foreach (var sub in CaseBoundaryPattern().Split(segment))
             {
-                foreach (var sub in CaseBoundaryPattern().Split(segment))
-                {
-                    var trimmed = sub.Trim();
-                    if (trimmed.Length > 0) parts.Add(trimmed);
-                }
-            }
-            else
-            {
-                var trimmed = segment.Trim();
+                var trimmed = sub.Trim();
                 if (trimmed.Length > 0) parts.Add(trimmed);
             }
         }

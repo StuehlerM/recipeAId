@@ -291,25 +291,38 @@ public class OcrParserServiceTests
     [Fact]
     public void Parse_RunOnIngredients_SplitsIntoSeparateEntries()
     {
-        // Real OCR output where paragraph mode merged all ingredients into one line
+        // Real OCR output where paragraph mode merged all ingredients into one line.
+        // The parser should split this into individual ingredients using the
+        // run-on splitter (quantity+unit boundaries and case transitions).
         var text = "Ingredients 8 oz linguine pasta 2 tbsp olive oil 1lb large shrimp, peeled and deveined Salt to taste Black pepper to taste 1tbsp minced garlic tsp red pepper flakes 1/2 cup chicken broth 1cup fresh lemon juice Zest of 1 lemon 1/2 cup finely chopped fresh parsley Grated Parmesan cheese for serving";
 
         var draft = _sut.Parse(text);
 
-        // Should detect multiple ingredients, not just one blob
-        Assert.True(draft.DetectedIngredients.Count >= 8,
-            $"Expected at least 8 ingredients but got {draft.DetectedIngredients.Count}: [{string.Join(", ", draft.DetectedIngredients.Select(i => i.Name))}]");
+        // "Ingredients" should be detected as section header.
+        // Each expected ingredient must appear as a separate entry.
+        var names = draft.DetectedIngredients.Select(i => i.Name).ToList();
 
-        // Verify some specific ingredients were parsed with amount/unit
-        var pasta = draft.DetectedIngredients.FirstOrDefault(i => i.Name.Contains("linguine", StringComparison.OrdinalIgnoreCase));
-        Assert.NotNull(pasta);
+        Assert.Contains(names, n => n.Contains("linguine pasta", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(names, n => n.Contains("olive oil", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(names, n => n.Contains("shrimp", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(names, n => n.Contains("garlic", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(names, n => n.Contains("chicken broth", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(names, n => n.Contains("lemon juice", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(names, n => n.Contains("parsley", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(names, n => n.Contains("Parmesan", StringComparison.OrdinalIgnoreCase));
+
+        // Verify amount/unit parsing
+        var pasta = draft.DetectedIngredients.First(i => i.Name.Contains("linguine", StringComparison.OrdinalIgnoreCase));
         Assert.Equal("8", pasta.Amount);
         Assert.Equal("oz", pasta.Unit);
 
-        var oil = draft.DetectedIngredients.FirstOrDefault(i => i.Name.Contains("olive oil", StringComparison.OrdinalIgnoreCase));
-        Assert.NotNull(oil);
+        var oil = draft.DetectedIngredients.First(i => i.Name.Contains("olive oil", StringComparison.OrdinalIgnoreCase));
         Assert.Equal("2", oil.Amount);
         Assert.Equal("tbsp", oil.Unit);
+
+        var broth = draft.DetectedIngredients.First(i => i.Name.Contains("chicken broth", StringComparison.OrdinalIgnoreCase));
+        Assert.Equal("1/2", broth.Amount);
+        Assert.Equal("cup", broth.Unit);
     }
 
     // ── German section headers ───────────────────────────────────────────────

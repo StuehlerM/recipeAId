@@ -76,7 +76,7 @@ recipeaid/
   - Title: first non-empty line or line after "Recipe:" header
   - Ingredients: numbered/bulleted lines or lines under "Ingredients:"/"Zutaten:" header; three regex patterns tried: `amount unit name`, `name amount unit`, `name amount` (no unit)
   - Instructions: lines after "Instructions:"/"Directions:"/"Method:"/"Zubereitung:"/"Anleitung:" header
-- [x] `POST /api/v1/recipes/from-image` — multipart upload → OCR → return draft (does NOT save); 10 MB upload limit; 30s HTTP client timeout; sidecar converts PIL→numpy array for EasyOCR compatibility
+- [x] `POST /api/v1/recipes/from-image` — multipart upload → OCR → return draft (does NOT save); 10 MB upload limit; 30s HTTP client timeout; sidecar uses `detail=1` bounding-box y-coordinate grouping to reconstruct line breaks; PIL→numpy array conversion for EasyOCR
 - [x] Two-phase save: draft returned → user edits → `POST /api/v1/recipes` confirms
 - [x] Unit tests for `OcrParserService` (18 cases — including name-amount-unit order, German headers, and run-on line splitting)
 - [x] Frontend `uploadRecipeImage` wired to real endpoint (`USE_MOCK` fallback when `VITE_API_BASE_URL` unset)
