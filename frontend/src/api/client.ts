@@ -19,7 +19,8 @@ const delay = (ms = 300) => new Promise((r) => setTimeout(r, ms));
 interface BackendIngredient {
   ingredientId: number;
   name: string;
-  quantity: string | null;
+  amount: string | null;
+  unit: string | null;
   sortOrder: number;
 }
 
@@ -28,6 +29,7 @@ interface BackendRecipeSummary {
   title: string;
   createdAt: string;
   ingredientCount: number;
+  bookTitle: string | null;
 }
 
 interface BackendRecipeDto {
@@ -35,6 +37,7 @@ interface BackendRecipeDto {
   title: string;
   instructions: string | null;
   imagePath: string | null;
+  bookTitle: string | null;
   createdAt: string;
   updatedAt: string;
   ingredients: BackendIngredient[];
@@ -56,12 +59,14 @@ function toRecipeDto(r: BackendRecipeDto): RecipeDto {
     title: r.title,
     instructions: r.instructions,
     imagePath: r.imagePath,
+    bookTitle: r.bookTitle,
     createdAt: r.createdAt,
     updatedAt: r.updatedAt,
     ingredients: r.ingredients.map((i) => ({
       ingredientId: i.ingredientId,
       ingredientName: i.name,
-      quantity: i.quantity,
+      amount: i.amount,
+      unit: i.unit,
       sortOrder: i.sortOrder,
     })),
     ingredientCount: r.ingredients.length,
@@ -74,6 +79,7 @@ function summaryToRecipeDto(s: BackendRecipeSummary): RecipeDto {
     title: s.title,
     instructions: null,
     imagePath: null,
+    bookTitle: s.bookTitle,
     createdAt: s.createdAt,
     updatedAt: s.createdAt,
     ingredients: [],
@@ -124,12 +130,14 @@ export async function createRecipe(data: CreateRecipeRequest): Promise<RecipeDto
       title: data.title,
       instructions: data.instructions,
       imagePath: null,
+      bookTitle: data.bookTitle,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       ingredients: data.ingredients.map((ing, idx) => ({
         ingredientId: 100 + idx,
         ingredientName: ing.name,
-        quantity: ing.quantity,
+        amount: ing.amount,
+        unit: ing.unit,
         sortOrder: ing.sortOrder,
       })),
     };
@@ -146,7 +154,8 @@ export async function createRecipe(data: CreateRecipeRequest): Promise<RecipeDto
         instructions: data.instructions,
         imagePath: null,
         rawOcrText: null,
-        ingredients: data.ingredients.map((i) => ({ name: i.name, quantity: i.quantity })),
+        bookTitle: data.bookTitle,
+        ingredients: data.ingredients.map((i) => ({ name: i.name, amount: i.amount, unit: i.unit })),
       }),
     }),
     "POST /api/v1/recipes"

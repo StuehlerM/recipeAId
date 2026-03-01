@@ -38,7 +38,7 @@ recipeaid/
 - [x] Solution and project scaffolding (`dotnet new sln`, `classlib`, `webapi`)
 - [x] Core entities: `Recipe`, `Ingredient`, `RecipeIngredient`
 - [x] Core interfaces: `IRecipeRepository`, `IIngredientRepository`, `IOcrService`, `IOcrParser`, `IRecipeSuggestionService` (stub)
-- [x] Core DTOs: `CreateRecipeRequest`, `RecipeDto`, `RecipeIngredientDto`, `RecipeOcrDraftDto`, `IngredientSearchResultDto`
+- [x] Core DTOs: `CreateRecipeRequest` (with `BookTitle`), `UpdateRecipeRequest` (with `BookTitle`), `RecipeDto`, `RecipeIngredientDto` (Amount + Unit), `RecipeSummaryDto` (with `BookTitle`), `RecipeOcrDraftDto`, `IngredientSearchResultDto`, `IngredientLineDto(Name, Amount, Unit)`, `IngredientDto`
 - [x] `AppDbContext` with EF Core fluent configuration
 - [x] EF Core initial migration + SQLite DB creation (auto-applied on startup)
 - [x] Repository implementations: `RecipeRepository`, `IngredientRepository`
@@ -96,10 +96,15 @@ recipeaid/
 - [x] PWA via `vite-plugin-pwa` — installable, `display: standalone`, `theme_color: #0c4e13`, SVG icon
 - [x] `viewport-fit=cover` + `env(safe-area-inset-bottom)` for iPhone notch/home-bar compatibility
 - [x] Bottom tab bar navigation (fixed, 5 tabs: Recipes / Search / Add / Upload / Planner) — FAB-style Add button
-- [x] 3-step recipe wizard at `/add`: Title → Ingredients → Instructions, step indicator, `useMutation` → navigate on success
+- [x] 4-step recipe wizard at `/add`: Title → Ingredients → Instructions → Book, step indicator, `useMutation` → navigate on success; OCR capture available at every step (`OcrCaptureButton`, `useOcrCapture`)
 - [x] Weekly planner at `/planner`: recipe browser with search, this-week list, aggregated shopping list
-- [x] `src/utils/quantityAggregator.ts` — same-unit quantities summed; mixed/unparseable quantities concatenated
+- [x] `src/utils/quantityAggregator.ts` — same-unit quantities summed; mixed/unparseable quantities concatenated (uses Amount + Unit fields)
 - [x] `src/hooks/usePlanner.ts` — localStorage-backed (`recipeaid_planner_v1`), lazy-initialised
+- [x] `src/hooks/useOcrCapture.ts` — programmatic file-input OCR trigger, returns `RecipeOcrDraftDto`
+- [x] `src/components/OcrCaptureButton.tsx` — camera icon button with spinner and inline error display
+- [x] `RecipeListPage`: book filter dropdown + `BookTitle` badge on recipe cards
+- [x] `RecipeDetailPage`: displays `BookTitle`; `RecipeIngredientDto` uses `amount` + `unit`
+- [x] `UploadPage`: updated for Amount + Unit ingredient model
 - [x] OCR `main.py` docstring updated for English + German language support
 
 ---
@@ -130,6 +135,7 @@ recipeaid/
 | Instructions | TEXT NULL | Free-form cooking steps |
 | ImagePath | TEXT NULL | Relative path to stored photo |
 | RawOcrText | TEXT NULL | Raw OCR output for reprocessing |
+| BookTitle | TEXT NULL | Source cookbook / recipe book name |
 | CreatedAt | DATETIME | |
 | UpdatedAt | DATETIME | |
 
@@ -144,7 +150,8 @@ recipeaid/
 |--------|------|-------|
 | RecipeId | FK → Recipe | CASCADE DELETE |
 | IngredientId | FK → Ingredient | |
-| Quantity | TEXT NULL | Raw string e.g. "2 cups" |
+| Amount | TEXT NULL | Numeric/textual amount e.g. "2" |
+| Unit | TEXT NULL | Unit string e.g. "cups" |
 | SortOrder | INTEGER | |
 
 ---

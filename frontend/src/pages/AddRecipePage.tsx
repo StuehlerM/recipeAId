@@ -1,16 +1,24 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { createRecipe } from "../api/client";
+import { createRecipe, getRecipes } from "../api/client";
+import OcrCaptureButton from "../components/OcrCaptureButton";
+import type { RecipeOcrDraftDto } from "../api/types";
 
-type IngredientRow = { name: string; quantity: string };
+type IngredientRow = { name: string; amount: string; unit: string };
 
-const STEP_LABELS = ["Title", "Ingredients", "Instructions"] as const;
+const STEP_LABELS = ["Title", "Ingredients", "Instructions", "Book"] as const;
+type Step = 1 | 2 | 3 | 4;
 
-function StepIndicator({ step }: { step: 1 | 2 | 3 }) {
+const UNIT_SUGGESTIONS = [
+  "g", "kg", "ml", "l", "cup", "cups", "tbsp", "tsp",
+  "oz", "lb", "pcs", "pinch", "to taste", "handful", "cloves", "slices",
+];
+
+function StepIndicator({ step }: { step: Step }) {
   return (
     <div className="flex items-center mb-8 px-2">
-      {[1, 2, 3].map((n, i) => (
+      {([1, 2, 3, 4] as Step[]).map((n, i) => (
         <div key={n} className="flex items-center flex-1 last:flex-none">
           <div
             className={[
@@ -32,7 +40,7 @@ function StepIndicator({ step }: { step: 1 | 2 | 3 }) {
           >
             {STEP_LABELS[n - 1]}
           </span>
-          {i < 2 && (
+          {i < 3 && (
             <div
               className={[
                 "flex-1 h-px mx-2",
@@ -46,28 +54,72 @@ function StepIndicator({ step }: { step: 1 | 2 | 3 }) {
   );
 }
 
+function UnitCombobox({
+  value,
+  onChange,
+  inputCls,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  inputCls: string;
+}) {
+  const id = `unit-list-${Math.random().toString(36).slice(2)}`;
+  return (
+    <>
+      <input
+        className={inputCls}
+        list={id}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Unit"
+      />
+      <datalist id={id}>
+        {UNIT_SUGGESTIONS.map((u) => (
+          <option key={u} value={u} />
+        ))}
+      </datalist>
+    </>
+  );
+}
+
 export default function AddRecipePage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
 
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<Step>(1);
   const [touched, setTouched] = useState(false);
   const [title, setTitle] = useState("");
-  const [ingredients, setIngredients] = useState<IngredientRow[]>([
-    { name: "", quantity: "" },
-  ]);
+  const [ingredients, setIngredients] = useState<IngredientRow[]>([{ name: "", amount: "", unit: "" }]);
   const [instructions, setInstructions] = useState("");
+  const [bookTitle, setBookTitle] = useState("");
+  const [replaceConfirm, setReplaceConfirm] = useState(false);
+  const [pendingDraft, setPendingDraft] = useState<RecipeOcrDraftDto | null>(null);
+
+  // Load existing recipes for book autocomplete
+  const { data: existingRecipes } = useQuery({
+    queryKey: ["recipes"],
+    queryFn: () => getRecipes(),
+  });
+  const bookSuggestions = Array.from(
+    new Set(
+      (existingRecipes ?? [])
+        .map((r) => r.bookTitle)
+        .filter((b): b is string => !!b)
+    )
+  ).sort();
 
   const saveMutation = useMutation({
     mutationFn: () =>
       createRecipe({
         title,
         instructions: instructions.trim() || null,
+        bookTitle: bookTitle.trim() || null,
         ingredients: ingredients
           .filter((i) => i.name.trim())
           .map((i, idx) => ({
             name: i.name.trim(),
-            quantity: i.quantity.trim() || null,
+            amount: i.amount.trim() || null,
+            unit: i.unit.trim() || null,
             sortOrder: idx,
           })),
       }),
@@ -88,7 +140,48 @@ export default function AddRecipePage() {
       setTouched(true);
       if (!title.trim()) return;
     }
-    setStep((s) => (s < 3 ? ((s + 1) as 1 | 2 | 3) : s));
+    setStep((s) => Math.min(s + 1, 4) as Step);
+  }
+
+  function handleBack() {
+    setStep((s) => Math.max(s - 1, 1) as Step);
+  }
+
+  // OCR handlers
+  function handleTitleScan(draft: RecipeOcrDraftDto) {
+    if (draft.detectedTitle) setTitle(draft.detectedTitle);
+  }
+
+  function handleIngredientScan(draft: RecipeOcrDraftDto) {
+    const hasRows = ingredients.some((r) => r.name.trim());
+    const mapped = draft.detectedIngredients.map((i) => ({
+      name: i.name,
+      amount: i.amount ?? "",
+      unit: i.unit ?? "",
+    }));
+    if (mapped.length === 0) return;
+    if (!hasRows) {
+      setIngredients(mapped.length > 0 ? mapped : [{ name: "", amount: "", unit: "" }]);
+    } else {
+      setPendingDraft(draft);
+      setReplaceConfirm(true);
+    }
+  }
+
+  function confirmReplace() {
+    if (!pendingDraft) return;
+    const mapped = pendingDraft.detectedIngredients.map((i) => ({
+      name: i.name,
+      amount: i.amount ?? "",
+      unit: i.unit ?? "",
+    }));
+    setIngredients(mapped.length > 0 ? mapped : [{ name: "", amount: "", unit: "" }]);
+    setPendingDraft(null);
+    setReplaceConfirm(false);
+  }
+
+  function handleInstructionScan(draft: RecipeOcrDraftDto) {
+    if (draft.detectedInstructions) setInstructions(draft.detectedInstructions);
   }
 
   const inputCls =
@@ -107,7 +200,10 @@ export default function AddRecipePage() {
       {/* ── Step 1: Title ── */}
       {step === 1 && (
         <div className="space-y-4">
-          <p className="text-muted text-sm">What's the name of this recipe?</p>
+          <div className="flex items-center justify-between">
+            <p className="text-muted text-sm">What's the name of this recipe?</p>
+            <OcrCaptureButton onResult={handleTitleScan} label="Scan" />
+          </div>
           <input
             className={inputCls}
             autoFocus
@@ -125,28 +221,59 @@ export default function AddRecipePage() {
       {/* ── Step 2: Ingredients ── */}
       {step === 2 && (
         <div className="space-y-3">
-          <p className="text-muted text-sm">Add your ingredients. You can skip this and fill in later.</p>
+          <div className="flex items-center justify-between">
+            <p className="text-muted text-sm">Add ingredients. You can skip and fill in later.</p>
+            <OcrCaptureButton onResult={handleIngredientScan} label="Scan" />
+          </div>
+
+          {replaceConfirm && (
+            <div className="bg-spruce-mid border border-olive rounded-lg p-3 space-y-2">
+              <p className="text-text text-sm">Replace existing ingredients with scanned ones?</p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={confirmReplace}
+                  className="px-3 py-1.5 bg-olive text-spruce-dark rounded-lg text-sm font-medium"
+                >
+                  Replace
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setReplaceConfirm(false); setPendingDraft(null); }}
+                  className="px-3 py-1.5 border border-border text-muted rounded-lg text-sm"
+                >
+                  Keep existing
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-2">
             {ingredients.map((ing, idx) => (
-              <div key={idx} className="flex gap-2 items-center">
+              <div key={idx} className="flex gap-1.5 items-center">
                 <input
-                  className={`${inputCls} flex-[2]`}
+                  className={`${inputCls} flex-[3] min-w-0`}
                   value={ing.name}
                   onChange={(e) => updateIngredient(idx, "name", e.target.value)}
                   placeholder="Ingredient"
                 />
                 <input
-                  className={`${inputCls} flex-1`}
-                  value={ing.quantity}
-                  onChange={(e) => updateIngredient(idx, "quantity", e.target.value)}
-                  placeholder="Amount"
+                  className={`${inputCls} w-16 shrink-0 px-2`}
+                  value={ing.amount}
+                  onChange={(e) => updateIngredient(idx, "amount", e.target.value)}
+                  placeholder="Amt"
                 />
+                <div className="w-24 shrink-0">
+                  <UnitCombobox
+                    value={ing.unit}
+                    onChange={(v) => updateIngredient(idx, "unit", v)}
+                    inputCls={`${inputCls} px-2`}
+                  />
+                </div>
                 {ingredients.length > 1 && (
                   <button
                     type="button"
-                    onClick={() =>
-                      setIngredients((prev) => prev.filter((_, i) => i !== idx))
-                    }
+                    onClick={() => setIngredients((prev) => prev.filter((_, i) => i !== idx))}
                     className="text-walnut-light hover:text-walnut text-xl leading-none shrink-0 w-8 h-8 flex items-center justify-center"
                     aria-label="Remove ingredient"
                   >
@@ -158,9 +285,7 @@ export default function AddRecipePage() {
           </div>
           <button
             type="button"
-            onClick={() =>
-              setIngredients((prev) => [...prev, { name: "", quantity: "" }])
-            }
+            onClick={() => setIngredients((prev) => [...prev, { name: "", amount: "", unit: "" }])}
             className="w-full py-2 border border-dashed border-border text-muted rounded-lg text-sm hover:border-olive hover:text-olive transition-colors"
           >
             + Add ingredient
@@ -171,7 +296,10 @@ export default function AddRecipePage() {
       {/* ── Step 3: Instructions ── */}
       {step === 3 && (
         <div className="space-y-3">
-          <p className="text-muted text-sm">Describe how to make it. (Optional)</p>
+          <div className="flex items-center justify-between">
+            <p className="text-muted text-sm">Describe how to make it. (Optional)</p>
+            <OcrCaptureButton onResult={handleInstructionScan} label="Scan" />
+          </div>
           <textarea
             className={`${inputCls} resize-none`}
             rows={9}
@@ -186,18 +314,39 @@ export default function AddRecipePage() {
         </div>
       )}
 
+      {/* ── Step 4: Book ── */}
+      {step === 4 && (
+        <div className="space-y-4">
+          <p className="text-muted text-sm">Which cookbook or source is this from? (Optional)</p>
+          <input
+            className={inputCls}
+            list="book-suggestions"
+            autoFocus
+            value={bookTitle}
+            onChange={(e) => setBookTitle(e.target.value)}
+            placeholder="e.g. Ottolenghi Simple"
+          />
+          {bookSuggestions.length > 0 && (
+            <datalist id="book-suggestions">
+              {bookSuggestions.map((b) => (
+                <option key={b} value={b} />
+              ))}
+            </datalist>
+          )}
+          {saveMutation.isError && (
+            <p className="text-walnut-light text-sm">Failed to save. Please try again.</p>
+          )}
+        </div>
+      )}
+
       {/* ── Navigation ── */}
       <div className={`mt-6 flex gap-3 ${step > 1 ? "justify-between" : "justify-end"}`}>
         {step > 1 && (
-          <button
-            type="button"
-            className={btnSecondary}
-            onClick={() => setStep((s) => (s > 1 ? ((s - 1) as 1 | 2 | 3) : s))}
-          >
+          <button type="button" className={btnSecondary} onClick={handleBack}>
             ← Back
           </button>
         )}
-        {step < 3 ? (
+        {step < 4 ? (
           <button type="button" className={`${btnPrimary} flex-1`} onClick={handleNext}>
             Next →
           </button>

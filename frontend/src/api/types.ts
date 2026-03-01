@@ -6,7 +6,8 @@ export interface Ingredient {
 export interface RecipeIngredientDto {
   ingredientId: number;
   ingredientName: string;
-  quantity: string | null;
+  amount: string | null;
+  unit: string | null;
   sortOrder: number;
 }
 
@@ -15,6 +16,7 @@ export interface RecipeDto {
   title: string;
   instructions: string | null;
   imagePath: string | null;
+  bookTitle: string | null;
   createdAt: string;
   updatedAt: string;
   ingredients: RecipeIngredientDto[];
@@ -24,7 +26,7 @@ export interface RecipeDto {
 export interface RecipeOcrDraftDto {
   detectedTitle: string | null;
   detectedInstructions: string | null;
-  detectedIngredients: { name: string; quantity: string | null }[];
+  detectedIngredients: { name: string; amount: string | null; unit: string | null }[];
   rawOcrText: string;
   imagePath: string | null;
 }
@@ -38,5 +40,6 @@ export interface IngredientSearchResultDto {
 export interface CreateRecipeRequest {
   title: string;
   instructions: string | null;
-  ingredients: { name: string; quantity: string | null; sortOrder: number }[];
+  bookTitle: string | null;
+  ingredients: { name: string; amount: string | null; unit: string | null; sortOrder: number }[];
 }

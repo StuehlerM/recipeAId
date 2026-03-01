@@ -39,7 +39,7 @@ public class RecipeMatchingService(IRecipeRepository recipeRepo) : IRecipeMatchi
             .ThenByDescending(x => x.Total > 0 ? (double)x.Matched.Count / x.Total : 0d)
             .Take(limit)
             .Select(x => new IngredientSearchResultDto(
-                new RecipeSummaryDto(x.Recipe.Id, x.Recipe.Title, x.Recipe.CreatedAt, x.Total),
+                new RecipeSummaryDto(x.Recipe.Id, x.Recipe.Title, x.Recipe.CreatedAt, x.Total, x.Recipe.BookTitle),
                 x.Matched.Count,
                 x.Total,
                 x.Matched,

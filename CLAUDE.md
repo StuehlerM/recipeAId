@@ -19,11 +19,11 @@ recipeaid/
 └── frontend/          # React 19 + Vite 7 + TypeScript + Tailwind CSS v4
     └── src/
         ├── api/        # client.ts, mockData.ts, types.ts
-        ├── components/ # NavBar (bottom tab bar)
-        ├── hooks/      # usePlanner.ts
+        ├── components/ # NavBar (bottom tab bar), OcrCaptureButton
+        ├── hooks/      # usePlanner.ts, useOcrCapture.ts
         ├── utils/      # quantityAggregator.ts
         └── pages/      # RecipeListPage, RecipeDetailPage, IngredientSearchPage,
-                        # UploadPage, AddRecipePage, PlannerPage
+                        # UploadPage, AddRecipePage (4-step wizard), PlannerPage
 ```
 
 ## Backend commands

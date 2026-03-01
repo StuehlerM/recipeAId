@@ -15,6 +15,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         {
             entity.HasKey(r => r.Id);
             entity.Property(r => r.Title).IsRequired().HasMaxLength(500);
+            entity.Property(r => r.BookTitle).HasMaxLength(300);
             entity.Property(r => r.CreatedAt).IsRequired();
             entity.Property(r => r.UpdatedAt).IsRequired();
         });
@@ -40,7 +41,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                   .HasForeignKey(ri => ri.IngredientId)
                   .OnDelete(DeleteBehavior.Restrict);
 
-            entity.Property(ri => ri.Quantity).HasMaxLength(200);
+            entity.Property(ri => ri.Amount).HasMaxLength(100);
+            entity.Property(ri => ri.Unit).HasMaxLength(50);
         });
     }
 

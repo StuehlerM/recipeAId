@@ -35,6 +35,7 @@ export default function RecipeDetailPage() {
       <h1 className={styles.title}>{recipe.title}</h1>
       <p className={styles.meta}>
         Added {new Date(recipe.createdAt).toLocaleDateString()}
+        {recipe.bookTitle && <> &middot; <span className={styles.bookBadge}>📖 {recipe.bookTitle}</span></>}
       </p>
 
       <section className={styles.section}>
@@ -43,8 +44,10 @@ export default function RecipeDetailPage() {
           {ingredientsSorted.map((ing) => (
             <li key={ing.ingredientId} className={styles.ingredient}>
               <span className={styles.ingredientName}>{ing.ingredientName}</span>
-              {ing.quantity && (
-                <span className={styles.quantity}>{ing.quantity}</span>
+              {(ing.amount || ing.unit) && (
+                <span className={styles.quantity}>
+                  {[ing.amount, ing.unit].filter(Boolean).join(" ")}
+                </span>
               )}
             </li>
           ))}

@@ -13,7 +13,8 @@ public class RecipeService(IRecipeRepository recipeRepo, IIngredientRepository i
             r.Id,
             r.Title,
             r.CreatedAt,
-            r.RecipeIngredients.Count));
+            r.RecipeIngredients.Count,
+            r.BookTitle));
     }
 
     public async Task<RecipeDto?> GetByIdAsync(int id, CancellationToken ct = default)
@@ -30,6 +31,7 @@ public class RecipeService(IRecipeRepository recipeRepo, IIngredientRepository i
             Instructions = request.Instructions,
             ImagePath = request.ImagePath,
             RawOcrText = request.RawOcrText,
+            BookTitle = request.BookTitle?.Trim(),
         };
 
         for (int i = 0; i < request.Ingredients.Count; i++)
@@ -41,7 +43,8 @@ public class RecipeService(IRecipeRepository recipeRepo, IIngredientRepository i
             {
                 Ingredient = ingredient,
                 IngredientId = ingredient.Id,
-                Quantity = line.Quantity?.Trim(),
+                Amount = line.Amount?.Trim(),
+                Unit = line.Unit?.Trim(),
                 SortOrder = i,
             });
         }
@@ -57,6 +60,7 @@ public class RecipeService(IRecipeRepository recipeRepo, IIngredientRepository i
 
         recipe.Title = request.Title.Trim();
         recipe.Instructions = request.Instructions;
+        recipe.BookTitle = request.BookTitle?.Trim();
 
         var newIngredients = new List<RecipeIngredient>();
         for (int i = 0; i < request.Ingredients.Count; i++)
@@ -69,7 +73,8 @@ public class RecipeService(IRecipeRepository recipeRepo, IIngredientRepository i
                 RecipeId = recipe.Id,
                 IngredientId = ingredient.Id,
                 Ingredient = ingredient,
-                Quantity = line.Quantity?.Trim(),
+                Amount = line.Amount?.Trim(),
+                Unit = line.Unit?.Trim(),
                 SortOrder = i,
             });
         }
@@ -92,6 +97,7 @@ public class RecipeService(IRecipeRepository recipeRepo, IIngredientRepository i
         recipe.Title,
         recipe.Instructions,
         recipe.ImagePath,
+        recipe.BookTitle,
         recipe.CreatedAt,
         recipe.UpdatedAt,
         recipe.RecipeIngredients
@@ -99,7 +105,8 @@ public class RecipeService(IRecipeRepository recipeRepo, IIngredientRepository i
             .Select(ri => new RecipeIngredientDto(
                 ri.IngredientId,
                 ri.Ingredient.Name,
-                ri.Quantity,
+                ri.Amount,
+                ri.Unit,
                 ri.SortOrder))
             .ToList());
 }

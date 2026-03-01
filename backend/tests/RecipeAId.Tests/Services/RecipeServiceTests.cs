@@ -69,7 +69,7 @@ public class RecipeServiceTests
             Title = "Cake",
             RecipeIngredients =
             [
-                new RecipeIngredient { IngredientId = 1, Ingredient = ingredient, Quantity = "2 cups", SortOrder = 0 }
+                new RecipeIngredient { IngredientId = 1, Ingredient = ingredient, Amount = "2", Unit = "cups", SortOrder = 0 }
             ]
         };
         _recipeRepo.Setup(r => r.GetByIdAsync(1, default)).ReturnsAsync(recipe);
@@ -80,6 +80,8 @@ public class RecipeServiceTests
         Assert.Equal("Cake", result.Title);
         Assert.Single(result.Ingredients);
         Assert.Equal("flour", result.Ingredients[0].Name);
+        Assert.Equal("2", result.Ingredients[0].Amount);
+        Assert.Equal("cups", result.Ingredients[0].Unit);
     }
 
     // ── CreateAsync ────────────────────────────────────────────────────────
@@ -89,8 +91,8 @@ public class RecipeServiceTests
     {
         var request = new CreateRecipeRequest(
             "Test Recipe",
-            null, null, null,
-            [new IngredientLineDto("FLOUR", "2 cups"), new IngredientLineDto("Sugar", "1 cup")]);
+            null, null, null, null,
+            [new IngredientLineDto("FLOUR", "2", "cups"), new IngredientLineDto("Sugar", "1", "cup")]);
 
         string? capturedFlour = null;
         string? capturedSugar = null;
@@ -117,7 +119,7 @@ public class RecipeServiceTests
     [Fact]
     public async Task CreateAsync_TrimsTitleWhitespace()
     {
-        var request = new CreateRecipeRequest("  Pasta  ", null, null, null, []);
+        var request = new CreateRecipeRequest("  Pasta  ", null, null, null, null, []);
 
         Recipe? saved = null;
         _recipeRepo
@@ -127,6 +129,21 @@ public class RecipeServiceTests
         await _sut.CreateAsync(request);
 
         Assert.Equal("Pasta", saved?.Title);
+    }
+
+    [Fact]
+    public async Task CreateAsync_StoresBookTitle()
+    {
+        var request = new CreateRecipeRequest("Tarte Tatin", null, null, null, "French Classics", []);
+
+        Recipe? saved = null;
+        _recipeRepo
+            .Setup(r => r.AddAsync(It.IsAny<Recipe>(), default))
+            .ReturnsAsync((Recipe r, CancellationToken _) => { saved = r; return r; });
+
+        await _sut.CreateAsync(request);
+
+        Assert.Equal("French Classics", saved?.BookTitle);
     }
 
     // ── DeleteAsync ────────────────────────────────────────────────────────
@@ -161,7 +178,7 @@ public class RecipeServiceTests
     {
         _recipeRepo.Setup(r => r.GetByIdAsync(99, default)).ReturnsAsync((Recipe?)null);
 
-        var result = await _sut.UpdateAsync(99, new UpdateRecipeRequest("X", null, []));
+        var result = await _sut.UpdateAsync(99, new UpdateRecipeRequest("X", null, null, []));
 
         Assert.Null(result);
     }
@@ -179,11 +196,27 @@ public class RecipeServiceTests
             .Setup(r => r.GetOrCreateAsync(It.IsAny<string>(), default))
             .ReturnsAsync((string name, CancellationToken _) => new Ingredient { Id = 1, Name = name });
 
-        var request = new UpdateRecipeRequest("New Title", "Cook it.", [new IngredientLineDto("BUTTER", "100g")]);
+        var request = new UpdateRecipeRequest("New Title", "Cook it.", null, [new IngredientLineDto("BUTTER", "100", "g")]);
         var result = await _sut.UpdateAsync(1, request);
 
         Assert.NotNull(result);
         Assert.Equal("New Title", result.Title);
         _ingredientRepo.Verify(r => r.GetOrCreateAsync("butter", default), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_UpdatesBookTitle()
+    {
+        var recipe = new Recipe { Id = 1, Title = "Old", BookTitle = null, RecipeIngredients = [] };
+        _recipeRepo.Setup(r => r.GetByIdAsync(1, default)).ReturnsAsync(recipe);
+        _recipeRepo
+            .Setup(r => r.UpdateAsync(It.IsAny<Recipe>(), It.IsAny<IEnumerable<RecipeIngredient>>(), default))
+            .Returns(Task.CompletedTask);
+
+        var request = new UpdateRecipeRequest("Old", null, "My Cookbook", []);
+        var result = await _sut.UpdateAsync(1, request);
+
+        Assert.NotNull(result);
+        Assert.Equal("My Cookbook", result.BookTitle);
     }
 }

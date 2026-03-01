@@ -36,7 +36,7 @@ public class OcrParserServiceTests
     }
 
     [Fact]
-    public void Parse_StructuredRecipe_ParsesQuantitiesFromIngredients()
+    public void Parse_StructuredRecipe_ParsesAmountAndUnit()
     {
         var text = """
             Pancakes
@@ -53,7 +53,26 @@ public class OcrParserServiceTests
 
         var flour = draft.DetectedIngredients.First(i => i.Name.Contains("flour"));
         Assert.Equal("flour", flour.Name, ignoreCase: true);
-        Assert.Equal("2 cups", flour.Quantity, ignoreCase: true);
+        Assert.Equal("2", flour.Amount);
+        Assert.Equal("cups", flour.Unit, ignoreCase: true);
+    }
+
+    [Fact]
+    public void Parse_StructuredRecipe_ParsesAmountUnitNoSpace()
+    {
+        var text = """
+            Bread
+
+            Ingredients:
+            200g flour
+            """;
+
+        var draft = _sut.Parse(text);
+
+        var flour = draft.DetectedIngredients.First(i => i.Name.Contains("flour"));
+        Assert.Equal("flour", flour.Name, ignoreCase: true);
+        Assert.Equal("200", flour.Amount);
+        Assert.Equal("g", flour.Unit, ignoreCase: true);
     }
 
     [Fact]
@@ -181,7 +200,7 @@ public class OcrParserServiceTests
     }
 
     [Fact]
-    public void Parse_IngredientsWithFractions_ParsesQuantity()
+    public void Parse_IngredientsWithFractions_ParsesAmountAndUnit()
     {
         var text = """
             Scones
@@ -195,8 +214,8 @@ public class OcrParserServiceTests
 
         Assert.Equal(2, draft.DetectedIngredients.Count);
         var butter = draft.DetectedIngredients.First(i => i.Name.Contains("butter"));
-        Assert.NotNull(butter.Quantity);
-        Assert.Contains("cup", butter.Quantity, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("1/2", butter.Amount);
+        Assert.Contains("cup", butter.Unit, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

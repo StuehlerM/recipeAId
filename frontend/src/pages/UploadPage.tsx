@@ -5,7 +5,7 @@ import { uploadRecipeImage, createRecipe } from "../api/client";
 import type { RecipeOcrDraftDto } from "../api/types";
 import styles from "./UploadPage.module.css";
 
-type DraftIngredient = { name: string; quantity: string };
+type DraftIngredient = { name: string; amount: string; unit: string };
 
 export default function UploadPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -24,7 +24,7 @@ export default function UploadPage() {
       setDraft(data);
       setTitle(data.detectedTitle ?? "");
       setInstructions(data.detectedInstructions ?? "");
-      setIngredients(data.detectedIngredients.map((i) => ({ name: i.name, quantity: i.quantity ?? "" })));
+      setIngredients(data.detectedIngredients.map((i) => ({ name: i.name, amount: i.amount ?? "", unit: i.unit ?? "" })));
     },
   });
 
@@ -33,9 +33,10 @@ export default function UploadPage() {
       createRecipe({
         title,
         instructions: instructions || null,
+        bookTitle: null,
         ingredients: ingredients
           .filter((i) => i.name.trim())
-          .map((i, idx) => ({ name: i.name.trim(), quantity: i.quantity.trim() || null, sortOrder: idx })),
+          .map((i, idx) => ({ name: i.name.trim(), amount: i.amount.trim() || null, unit: i.unit.trim() || null, sortOrder: idx })),
       }),
     onSuccess: (recipe) => {
       qc.invalidateQueries({ queryKey: ["recipes"] });
@@ -56,7 +57,7 @@ export default function UploadPage() {
   }
 
   function addIngredient() {
-    setIngredients((prev) => [...prev, { name: "", quantity: "" }]);
+    setIngredients((prev) => [...prev, { name: "", amount: "", unit: "" }]);
   }
 
   function removeIngredient(idx: number) {
@@ -133,9 +134,15 @@ export default function UploadPage() {
                 />
                 <input
                   className={`${styles.input} ${styles.quantityInput}`}
-                  value={ing.quantity}
-                  onChange={(e) => updateIngredient(idx, "quantity", e.target.value)}
-                  placeholder="Quantity"
+                  value={ing.amount}
+                  onChange={(e) => updateIngredient(idx, "amount", e.target.value)}
+                  placeholder="Amount"
+                />
+                <input
+                  className={`${styles.input} ${styles.quantityInput}`}
+                  value={ing.unit}
+                  onChange={(e) => updateIngredient(idx, "unit", e.target.value)}
+                  placeholder="Unit"
                 />
                 <button
                   type="button"
@@ -182,7 +189,7 @@ export default function UploadPage() {
             setDraft({ detectedTitle: "", detectedInstructions: null, detectedIngredients: [], rawOcrText: "", imagePath: null });
             setTitle("");
             setInstructions("");
-            setIngredients([{ name: "", quantity: "" }]);
+            setIngredients([{ name: "", amount: "", unit: "" }]);
           }}
         >
           Enter recipe manually instead

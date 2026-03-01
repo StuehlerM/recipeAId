@@ -8,8 +8,8 @@ A recipe management app that reads physical recipe cards with your camera. Point
 
 - **Scan recipe cards** — upload a photo or use your phone camera; OCR extracts title, ingredients, and instructions automatically (English + German)
 - **Review before saving** — the OCR result comes back as a draft you can edit before confirming
-- **3-step recipe wizard** — add recipes manually in three focused steps: Title → Ingredients → Instructions
-- **Browse & search** — filter recipes by title or search by the ingredients you have on hand (ranked by match count)
+- **4-step recipe wizard** — add recipes manually in four focused steps: Title → Ingredients → Instructions → Book; OCR capture available at every step
+- **Browse & search** — filter recipes by title or by cookbook/book title; search by the ingredients you have on hand (ranked by match count)
 - **Weekly planner** — select recipes for the week; a shopping list is generated automatically with ingredient quantities summed across recipes
 - **Unit conversion** — convert quantities between imperial and metric (cups → mL, oz → g, °F → °C, and more)
 - **PWA / mobile-first** — installable on iOS and Android; bottom tab bar navigation with safe-area support
@@ -116,8 +116,9 @@ recipeaid/
 ├── frontend/              # React 19 + Vite 7 + TypeScript
 │   ├── src/
 │   │   ├── api/               # client.ts, types.ts, mockData.ts
-│   │   ├── components/
-│   │   └── pages/             # RecipeList, RecipeDetail, IngredientSearch, Upload
+│   │   ├── components/        # NavBar, OcrCaptureButton
+│   │   ├── hooks/             # usePlanner.ts, useOcrCapture.ts
+│   │   └── pages/             # RecipeList, RecipeDetail, IngredientSearch, Upload, Add, Planner
 │   └── Dockerfile
 └── integration/           # BDD integration tests (Cucumber + Playwright)
     ├── features/              # Gherkin .feature files

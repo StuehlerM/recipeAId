@@ -47,6 +47,35 @@
   opacity: 0.85;
 }
 
+.bookFilter {
+  width: 100%;
+  margin-bottom: 1rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #1e5c26;
+  background: #163d1c;
+  color: #e8edd8;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.bookFilter:focus {
+  outline: none;
+  border-color: #a7b16f;
+}
+
+.bookBadge {
+  display: inline-block;
+  font-size: 0.72rem;
+  color: #a7b16f;
+  background: #0c4e1320;
+  border: 1px solid #1e5c26;
+  border-radius: 4px;
+  padding: 0.1rem 0.5rem;
+  margin-top: 0.15rem;
+  align-self: flex-start;
+}
+
 .list {
   list-style: none;
   padding: 0;

@@ -184,19 +184,24 @@ public sealed class OcrParserService : IOcrParser
         // Strip leading bullet or number:  "- 2 cups flour"  "1. flour"  "* salt"
         var stripped = StripLeadingBullet(line);
 
-        // Try to split quantity from name: leading digits/fractions + unit word
-        // e.g. "2 cups flour" → quantity="2 cups", name="flour"
-        //      "1/2 tsp salt" → quantity="1/2 tsp", name="salt"
+        // Try to split amount and unit from name.
+        // e.g. "2 cups flour"  → amount="2",   unit="cups", name="flour"
+        //      "1/2 tsp salt"  → amount="1/2",  unit="tsp",  name="salt"
+        //      "200g butter"   → amount="200",  unit="g",    name="butter"
+        //      "1 1/2 cups"    → amount="1 1/2",unit="cups", name=...
         var match = System.Text.RegularExpressions.Regex.Match(
             stripped,
-            @"^(?<qty>[\d½⅓⅔¼¾⅛⅜⅝⅞\./\-\s]+(?:cup|cups|tbsp|tsp|tablespoon|teaspoon|oz|ounce|lb|pound|g|gram|kg|ml|l|liter|litre|pinch|dash|clove|cloves|slice|slices|can|cans|bunch|handful|large|medium|small|package|pkg|stick)\S*\s*)\s+(?<name>.+)$",
+            @"^(?<amount>[\d½⅓⅔¼¾⅛⅜⅝⅞\./\-]+(?:\s+[\d½⅓⅔¼¾⅛⅜⅝⅞\./\-]+)?)\s*(?<unit>(?:cup|tbsp|tsp|tablespoon|teaspoon|oz|ounce|lb|pound|g|gram|kg|ml|l|liter|litre|pinch|dash|clove|slice|can|bunch|handful|large|medium|small|package|pkg|stick)\S*)\s+(?<name>.+)$",
             System.Text.RegularExpressions.RegexOptions.IgnoreCase);
 
         if (match.Success)
-            return new IngredientLineDto(match.Groups["name"].Value.Trim(), match.Groups["qty"].Value.Trim());
+            return new IngredientLineDto(
+                match.Groups["name"].Value.Trim(),
+                match.Groups["amount"].Value.Trim(),
+                match.Groups["unit"].Value.Trim());
 
-        // Fallback: just a name, no parseable quantity
-        return new IngredientLineDto(stripped, null);
+        // Fallback: just a name, no parseable amount/unit
+        return new IngredientLineDto(stripped, null, null);
     }
 
     private static string StripLeadingBullet(string line)
