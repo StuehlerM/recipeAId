@@ -5,6 +5,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8001:8001"
+    networks:
+      - internal
     restart: unless-stopped
 
   backend:
@@ -20,6 +22,8 @@ services:
       - ConnectionStrings__DefaultConnection=Data Source=/data/recipeaid.db
       - OcrService__BaseUrl=http://ocr-service:8001
       - Cors__AllowedOrigins__0=http://localhost:3000
+    networks:
+      - internal
     depends_on:
       - ocr-service
     restart: unless-stopped
@@ -34,9 +38,32 @@ services:
         - VITE_API_BASE_URL=http://localhost:8080
     ports:
       - "3000:80"
+    networks:
+      - internal
     depends_on:
       - backend
     restart: unless-stopped
+
+  integration-tests:
+    profiles:
+      - integration
+    build:
+      context: ./integration
+      dockerfile: Dockerfile
+    environment:
+      - BASE_URL=http://frontend:80
+      - API_BASE_URL=http://backend:8080
+    networks:
+      - internal
+    depends_on:
+      - frontend
+      - backend
+      - ocr-service
+    restart: "no"
+
+networks:
+  internal:
+    driver: bridge
 
 volumes:
   db-data:

@@ -4,10 +4,12 @@ RecipeAId OCR sidecar service.
 Accepts an image upload and returns the extracted text using EasyOCR.
 The .NET backend calls this service; all recipe parsing happens there.
 
+Supported languages: English (en), German (de).
+
 Run:
     uvicorn main:app --port 8001
 
-First run will download the EasyOCR English model (~200 MB).
+First run will download the EasyOCR English and German models (~200 MB each).
 """
 
 import io
