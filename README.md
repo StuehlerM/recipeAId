@@ -153,7 +153,7 @@ recipeaid/
 | `GET` | `/api/v1/ingredients` | All known ingredients (for autocomplete) |
 | `POST` | `/api/v1/convert` | Convert a quantity (`{ "value": "2 cups", "toUnit": "ml" }`) |
 
-All error responses use the [RFC 7807 ProblemDetails](https://datatracker.ietf.org/doc/html/rfc7807) format. Image uploads are limited to 10 MB.
+All error responses use the [RFC 7807 ProblemDetails](https://datatracker.ietf.org/doc/html/rfc7807) format. Image uploads are limited to 10 MB (enforced by both the backend and the nginx proxy).
 
 The interactive Scalar explorer (`/scalar/v1`) is available in Development mode and lets you try every endpoint in the browser.
 

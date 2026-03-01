@@ -76,7 +76,7 @@ recipeaid/
   - Title: first non-empty line or line after "Recipe:" header
   - Ingredients: numbered/bulleted lines or lines under "Ingredients:" header
   - Instructions: lines after "Instructions:"/"Directions:"/"Method:" header
-- [x] `POST /api/v1/recipes/from-image` — multipart upload → OCR → return draft (does NOT save); 10 MB upload limit; 30s HTTP client timeout
+- [x] `POST /api/v1/recipes/from-image` — multipart upload → OCR → return draft (does NOT save); 10 MB upload limit; 30s HTTP client timeout; sidecar converts PIL→numpy array for EasyOCR compatibility
 - [x] Two-phase save: draft returned → user edits → `POST /api/v1/recipes` confirms
 - [x] Unit tests for `OcrParserService` (13 cases)
 - [x] Frontend `uploadRecipeImage` wired to real endpoint (`USE_MOCK` fallback when `VITE_API_BASE_URL` unset)
@@ -168,7 +168,7 @@ recipeaid/
 - [x] `docker-compose.yml` — all three services wired together:
   - `ocr-service` exposes :8001
   - `backend` depends on `ocr-service`; `OcrService__BaseUrl=http://ocr-service:8001`; CORS allows `https://localhost:3443`
-  - `frontend` depends on `backend`; HTTP :3000 redirects to HTTPS :3443; self-signed cert generated at image build time
+  - `frontend` depends on `backend`; HTTP :3000 redirects to HTTPS :3443; self-signed cert generated at image build time; nginx `/api/` proxy: `client_max_body_size 10m`, `proxy_read_timeout 35s`
 - [x] HTTPS support:
   - Dev server: `@vitejs/plugin-basic-ssl` → `https://localhost:5173`; `appsettings.Development.json` adds `https://localhost:5173` to CORS
   - Docker: nginx serves HTTP on :80 (redirects to HTTPS) and HTTPS on :443 with a self-signed cert; host ports `3000:80` and `3443:443`

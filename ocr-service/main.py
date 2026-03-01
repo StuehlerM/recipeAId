@@ -16,6 +16,7 @@ import io
 import logging
 
 import easyocr
+import numpy as np
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import JSONResponse
 from PIL import Image
@@ -50,7 +51,7 @@ async def extract_text(file: UploadFile = File(...)) -> JSONResponse:
         raise HTTPException(status_code=422, detail="Cannot read image file") from exc
 
     try:
-        results = reader.readtext(image, detail=0, paragraph=True)
+        results = reader.readtext(np.array(image), detail=0, paragraph=True)
     except Exception as exc:
         logger.error("EasyOCR failed: %s", exc)
         raise HTTPException(status_code=500, detail="OCR processing failed") from exc
