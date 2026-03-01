@@ -8,7 +8,9 @@ import type { CreateRecipeRequest, IngredientSearchResultDto, Ingredient, Recipe
 import { MOCK_INGREDIENTS, MOCK_OCR_DRAFT, MOCK_RECIPES, searchByIngredients } from "./mockData";
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? "";
-const USE_MOCK = BASE === "";
+// In production (nginx), BASE is empty and the proxy handles /api/ routes.
+// In dev, BASE empty → use mock data so the Vite dev server works offline.
+const USE_MOCK = BASE === "" && import.meta.env.DEV;
 
 const delay = (ms = 300) => new Promise((r) => setTimeout(r, ms));
 
@@ -94,7 +96,7 @@ export async function getRecipes(q?: string): Promise<RecipeDto[]> {
     return MOCK_RECIPES.filter((r) => r.title.toLowerCase().includes(lower));
   }
 
-  const url = new URL(`${BASE}/api/v1/recipes`);
+  const url = new URL(`${BASE}/api/v1/recipes`, window.location.origin);
   if (q) url.searchParams.set("q", q);
   const res = await checkOk(await fetch(url.toString()), "GET /api/v1/recipes");
   return (await res.json() as BackendRecipeSummary[]).map(summaryToRecipeDto);

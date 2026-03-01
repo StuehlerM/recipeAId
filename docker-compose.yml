@@ -34,10 +34,9 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      args:
-        # Baked into the Vite bundle at build time — must be the URL the
-        # browser uses to reach the backend (i.e. from the host machine).
-        - VITE_API_BASE_URL=http://localhost:8080
+      # No VITE_API_BASE_URL: nginx proxies /api/ → backend internally,
+      # so the browser always talks to the same origin (port 3000).
+      # This means any device on the local network can use http://<host-ip>:3000.
     ports:
       - "3000:80"
     networks:
