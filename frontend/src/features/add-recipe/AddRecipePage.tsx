@@ -112,8 +112,9 @@ export default function AddRecipePage() {
     if (draft.detectedInstructions) setInstructions(draft.detectedInstructions);
   }
 
-  const inputCls =
-    "w-full bg-spruce-mid border border-border rounded-lg px-3 py-3 text-text text-base placeholder-muted focus:outline-none focus:border-olive transition-colors";
+  const inputBase =
+    "bg-spruce-mid border border-border rounded-lg py-3 text-text text-base placeholder-muted focus:outline-none focus:border-olive transition-colors";
+  const inputCls = `w-full ${inputBase} px-3`;
   const btnPrimary =
     "w-full bg-olive text-spruce-dark font-bold py-3 rounded-xl text-base transition-opacity disabled:opacity-40";
   const btnSecondary =
@@ -180,29 +181,29 @@ export default function AddRecipePage() {
             {ingredients.map((ing, idx) => (
               <div key={idx} className="flex gap-1.5 items-center">
                 <input
-                  className={`${inputCls} flex-[3] min-w-0`}
+                  className={`${inputBase} px-2 flex-1 min-w-0`}
                   value={ing.name}
                   onChange={(e) => updateIngredient(idx, "name", e.target.value)}
                   placeholder="Ingredient"
                 />
                 <input
-                  className={`${inputCls} w-16 shrink-0 px-2`}
+                  className={`${inputBase} px-2 w-14 shrink-0`}
                   value={ing.amount}
                   onChange={(e) => updateIngredient(idx, "amount", e.target.value)}
                   placeholder="Amt"
                 />
-                <div className="w-24 shrink-0">
+                <div className="w-20 shrink-0">
                   <UnitCombobox
                     value={ing.unit}
                     onChange={(v) => updateIngredient(idx, "unit", v)}
-                    inputCls={`${inputCls} px-2`}
+                    inputCls={`${inputBase} px-2 w-full`}
                   />
                 </div>
                 {ingredients.length > 1 && (
                   <button
                     type="button"
                     onClick={() => setIngredients((prev) => prev.filter((_, i) => i !== idx))}
-                    className="text-walnut-light hover:text-walnut text-xl leading-none shrink-0 w-8 h-8 flex items-center justify-center"
+                    className="text-walnut-light hover:text-walnut text-xl leading-none shrink-0 w-6 h-8 flex items-center justify-center"
                     aria-label="Remove ingredient"
                   >
                     ×
