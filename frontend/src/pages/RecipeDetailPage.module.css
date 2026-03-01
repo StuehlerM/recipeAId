@@ -6,7 +6,7 @@
 
 .back {
   display: inline-block;
-  color: #a0aec0;
+  color: #8a9470;
   text-decoration: none;
   font-size: 0.875rem;
   margin-bottom: 1.25rem;
@@ -14,17 +14,17 @@
 }
 
 .back:hover {
-  color: #e8a838;
+  color: #a7b16f;
 }
 
 .title {
   font-size: 2rem;
-  color: #e2e8f0;
+  color: #e8edd8;
   margin-bottom: 0.25rem;
 }
 
 .meta {
-  color: #718096;
+  color: #8a9470;
   font-size: 0.85rem;
   margin-bottom: 2rem;
 }
@@ -35,11 +35,11 @@
 
 .section h2 {
   font-size: 1.1rem;
-  color: #e8a838;
+  color: #a7b16f;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 0.75rem;
-  border-bottom: 1px solid #2d2d4e;
+  border-bottom: 1px solid #1e5c26;
   padding-bottom: 0.4rem;
 }
 
@@ -58,25 +58,25 @@
   align-items: baseline;
   padding: 0.4rem 0.75rem;
   border-radius: 6px;
-  background: #16213e;
+  background: #163d1c;
 }
 
 .ingredientName {
-  color: #e2e8f0;
+  color: #e8edd8;
   font-size: 0.95rem;
   text-transform: capitalize;
 }
 
 .quantity {
-  color: #a0aec0;
+  color: #8a9470;
   font-size: 0.875rem;
 }
 
 .instructions {
-  color: #cbd5e0;
+  color: #e8edd8;
   line-height: 1.8;
   white-space: pre-line;
-  background: #16213e;
+  background: #163d1c;
   padding: 1rem 1.25rem;
   border-radius: 8px;
   font-size: 0.95rem;
@@ -86,17 +86,17 @@
   margin-top: 1rem;
   padding: 0.5rem 1rem;
   border-radius: 6px;
-  border: 1px solid #e53e3e;
+  border: 1px solid #61210f;
   background: transparent;
-  color: #fc8181;
+  color: #9e3b1a;
   cursor: pointer;
   font-size: 0.875rem;
   transition: background 0.15s, color 0.15s;
 }
 
 .deleteBtn:hover:not(:disabled) {
-  background: #e53e3e;
-  color: #fff;
+  background: #61210f;
+  color: #e8edd8;
 }
 
 .deleteBtn:disabled {
@@ -105,13 +105,13 @@
 }
 
 .status {
-  color: #a0aec0;
+  color: #8a9470;
   margin: 2rem auto;
   text-align: center;
 }
 
 .error {
-  color: #fc8181;
+  color: #9e3b1a;
   margin: 2rem auto;
   text-align: center;
 }

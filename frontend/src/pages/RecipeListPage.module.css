@@ -7,7 +7,7 @@
 .page h1 {
   font-size: 1.8rem;
   margin-bottom: 1.25rem;
-  color: #e2e8f0;
+  color: #e8edd8;
 }
 
 .searchForm {
@@ -20,23 +20,23 @@
   flex: 1;
   padding: 0.5rem 0.75rem;
   border-radius: 6px;
-  border: 1px solid #2d2d4e;
-  background: #16213e;
-  color: #e2e8f0;
+  border: 1px solid #1e5c26;
+  background: #163d1c;
+  color: #e8edd8;
   font-size: 0.95rem;
 }
 
 .searchInput:focus {
   outline: none;
-  border-color: #e8a838;
+  border-color: #a7b16f;
 }
 
 .searchBtn {
   padding: 0.5rem 1rem;
   border-radius: 6px;
   border: none;
-  background: #e8a838;
-  color: #1a1a2e;
+  background: #a7b16f;
+  color: #071f08;
   font-weight: 600;
   cursor: pointer;
   font-size: 0.9rem;
@@ -58,13 +58,13 @@
 
 .card {
   border-radius: 8px;
-  background: #16213e;
-  border: 1px solid #2d2d4e;
+  background: #163d1c;
+  border: 1px solid #1e5c26;
   transition: border-color 0.15s;
 }
 
 .card:hover {
-  border-color: #e8a838;
+  border-color: #a7b16f;
 }
 
 .cardLink {
@@ -79,20 +79,20 @@
 .cardTitle {
   font-size: 1.05rem;
   font-weight: 600;
-  color: #e2e8f0;
+  color: #e8edd8;
 }
 
 .cardMeta {
   font-size: 0.8rem;
-  color: #718096;
+  color: #8a9470;
 }
 
 .status {
-  color: #a0aec0;
+  color: #8a9470;
   margin-top: 1rem;
 }
 
 .error {
-  color: #fc8181;
+  color: #9e3b1a;
   margin-top: 1rem;
 }
