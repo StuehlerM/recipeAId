@@ -7,6 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```
 recipeaid/
 ├── Agents.md          # Phase tracker and full API reference
+├── build-ocr.ps1      # PowerShell helper — builds ocr-service image with BuildKit caching
 ├── ocr-service/       # Python EasyOCR sidecar (FastAPI, port 8001)
 ├── backend/           # ASP.NET Core 9 Web API
 │   ├── RecipeAId.sln
@@ -103,6 +104,14 @@ Services after `docker compose up`:
 - OCR sidecar: http://localhost:8001
 
 **Note:** The first `docker compose build` for `ocr-service` downloads the ~200 MB EasyOCR model into the image layer. Subsequent builds use the Docker cache and are fast.
+
+**Rebuilding only the OCR image (faster):** Use `build-ocr.ps1` instead of `docker compose up --build`. It sets `DOCKER_BUILDKIT=1`, which activates the `--mount=type=cache` pip cache in the Dockerfile so torch/EasyOCR wheels are not re-downloaded when requirements change.
+
+```powershell
+.\build-ocr.ps1            # normal build (uses layer + pip cache)
+.\build-ocr.ps1 -NoCache   # fully clean rebuild
+.\build-ocr.ps1 -Pull      # also refresh the python:3.11-slim base image
+```
 
 **Note:** The frontend Docker image generates a self-signed TLS cert at build time using `openssl`. nginx serves HTTP on port 80 (redirect only) and HTTPS on port 443. Host mappings: `3000:80` and `3443:443`.
 

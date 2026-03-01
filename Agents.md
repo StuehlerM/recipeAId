@@ -164,6 +164,7 @@ recipeaid/
 - [x] `backend/Dockerfile` — multi-stage build (SDK → ASP.NET runtime); SQLite DB persisted via named volume
 - [x] `frontend/Dockerfile` — multi-stage build (Node → nginx); accepts `VITE_API_BASE_URL` build arg
 - [x] `ocr-service/Dockerfile` — Python 3.11-slim; EasyOCR model pre-downloaded at build time (~200 MB layer)
+- [x] `build-ocr.ps1` — PowerShell helper script; sets `DOCKER_BUILDKIT=1` so the pip cache mount is active (avoids re-downloading torch/EasyOCR on every requirements change); supports `-NoCache` and `-Pull` flags
 - [x] `docker-compose.yml` — all three services wired together:
   - `ocr-service` exposes :8001
   - `backend` depends on `ocr-service`; `OcrService__BaseUrl=http://ocr-service:8001`; CORS allows `https://localhost:3443`

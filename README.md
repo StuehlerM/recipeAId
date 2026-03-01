@@ -26,7 +26,9 @@ cd recipeAId
 docker compose up --build
 ```
 
-> **First build takes a few minutes** — the OCR image downloads the ~200 MB EasyOCR model and bakes it into the image layer. Subsequent builds are fast thanks to Docker's cache.
+> **First build takes a few minutes** — the OCR image downloads PyTorch and the ~200 MB EasyOCR model. Subsequent builds are fast thanks to Docker's layer cache and the BuildKit pip cache.
+>
+> **Rebuilding only the OCR image:** Use `.\build-ocr.ps1` (PowerShell) instead of `docker compose up --build`. It sets `DOCKER_BUILDKIT=1` so the pip cache is active and wheels are not re-downloaded on every build.
 
 Once running:
 
