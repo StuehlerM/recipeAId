@@ -121,6 +121,16 @@ Services after `docker compose up`:
 
 **CORS:** `DevPolicy` is applied globally (not environment-gated). Origins are configured via `Cors:AllowedOrigins` — defaulting to `["http://localhost:5173", "https://localhost:5173"]` in Development (`appsettings.Development.json`) and `https://localhost:3443` in Docker (`docker-compose.yml`). Since nginx proxies `/api/` to the backend on the same origin, CORS is not exercised in the Docker setup anyway.
 
+## Before committing and pushing
+
+**ALWAYS update these three files before every commit/push — no exceptions:**
+
+- **`CLAUDE.md`** — keep the repository layout, architecture notes, and conventions accurate for the AI agent
+- **`Agents.md`** — the authoritative phase tracker and API reference; update phase checkboxes, database schema, and API table to reflect every change
+- **`README.md`** — the human-facing project overview; update features, project structure, and API reference so the owner always has an accurate picture
+
+Failing to update these before committing leaves the project documentation out of sync, which makes future work harder.
+
 ## Testing conventions
 
 - Test project references `RecipeAId.Core` only — tests must not depend on `RecipeAId.Data` or `RecipeAId.Api`.
