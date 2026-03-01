@@ -95,6 +95,7 @@ Open http://localhost:5173. Without `VITE_API_BASE_URL` set, the frontend runs e
 ```
 recipeaid/
 ├── docker-compose.yml
+├── docker-compose.integration.yml
 ├── ocr-service/           # Python FastAPI + EasyOCR (port 8001)
 │   ├── main.py
 │   ├── requirements.txt
@@ -108,11 +109,19 @@ recipeaid/
 │   ├── tests/
 │   │   └── RecipeAId.Tests/   # xUnit + Moq
 │   └── Dockerfile
-└── frontend/              # React 19 + Vite 7 + TypeScript
+├── frontend/              # React 19 + Vite 7 + TypeScript
+│   ├── src/
+│   │   ├── api/               # client.ts, types.ts, mockData.ts
+│   │   ├── components/
+│   │   └── pages/             # RecipeList, RecipeDetail, IngredientSearch, Upload
+│   └── Dockerfile
+└── integration/           # BDD integration tests (Cucumber + Playwright)
+    ├── features/              # Gherkin .feature files
     ├── src/
-    │   ├── api/               # client.ts, types.ts, mockData.ts
-    │   ├── components/
-    │   └── pages/             # RecipeList, RecipeDetail, IngredientSearch, Upload
+    │   ├── steps/             # Step definitions (TypeScript)
+    │   └── support/           # World, hooks, server lifecycle
+    ├── reports/               # HTML test report (generated, gitignored)
+    ├── cucumber.config.js
     └── Dockerfile
 ```
 
@@ -144,6 +153,79 @@ dotnet test
 ```
 
 Tests live in `RecipeAId.Tests` and cover all service and business logic. They reference `RecipeAId.Core` only — no database or HTTP required.
+
+---
+
+## Integration tests (BDD)
+
+End-to-end tests are written in [Gherkin](https://cucumber.io/docs/gherkin/) and executed by [Cucumber.js](https://github.com/cucumber/cucumber-js) driving a headless Chromium browser via [Playwright](https://playwright.dev/).
+
+```
+integration/
+├── features/                  # Human-readable scenarios
+│   ├── recipes.feature        # Recipe list + title search
+│   ├── recipe-detail.feature  # Detail view + delete
+│   ├── create-recipe.feature  # Manual recipe creation form
+│   └── ingredient-search.feature
+├── src/
+│   ├── steps/                 # Cucumber step definitions (TypeScript)
+│   └── support/               # World, global hooks, server lifecycle
+└── reports/report.html        # Generated after each run (gitignored)
+```
+
+> **Note:** The integration tests cover the frontend UI and backend API only. The OCR upload scenario is excluded because it requires the heavy EasyOCR model; use the unit tests in `RecipeAId.Tests` for OCR parsing logic.
+
+### Option A — Docker Compose (recommended)
+
+This is the simplest approach: a dedicated Compose file spins up backend + frontend and then runs the test container against them.
+
+```bash
+# First run (or after changes): build all images
+docker compose -f docker-compose.integration.yml build
+
+# Run the tests — exits with the integration container's exit code
+docker compose -f docker-compose.integration.yml up --exit-code-from integration
+
+# View the HTML report (written to integration/reports/report.html)
+# Open the file in your browser after the run.
+
+# Clean up containers AND the isolated test database when done
+docker compose -f docker-compose.integration.yml down -v
+```
+
+Always run `down -v` between test runs to start from a clean database. Without `-v`, data seeded by a previous run persists and can cause false failures in scenarios that assert a record is absent.
+
+### Option B — Local (no Docker)
+
+When you want faster feedback during development the test runner can start the backend and frontend for you automatically (set by `SPAWN_SERVERS`, which defaults to `true`).
+
+**Prerequisites:** .NET 9 SDK, Node.js 24+, npm.
+
+```bash
+cd integration
+npm install
+npm run install:browsers   # download Playwright's Chromium (one-time)
+npm test                   # starts backend + frontend, runs all scenarios
+```
+
+The runner:
+1. Deletes any leftover `recipeaid-test.db` from the previous run.
+2. Starts the ASP.NET backend (`dotnet run`) with `ASPNETCORE_ENVIRONMENT=Development` pointing at the isolated test DB, then waits until `/openapi/v1.json` responds.
+3. Starts the Vite dev server (`npm run dev`) and waits until it responds.
+4. Runs all Cucumber scenarios in series (one browser context per scenario).
+5. Shuts both servers down and writes `reports/report.html`.
+
+To run a single feature file:
+
+```bash
+npm run test:feature -- features/recipes.feature
+```
+
+To run with a visible browser window (useful for debugging):
+
+```bash
+npm run test:headed
+```
 
 ---
 

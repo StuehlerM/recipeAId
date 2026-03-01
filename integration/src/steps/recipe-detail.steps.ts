@@ -21,6 +21,6 @@ When(
     // Accept the window.confirm dialog before clicking, then wait for navigation
     this.page.once("dialog", (dialog) => dialog.accept());
     await this.page.getByRole("button", { name: buttonText }).click();
-    await this.page.waitForURL(/^http:\/\/localhost:\d+\/?$/);
+    await this.page.waitForURL((url) => new URL(url).pathname === "/");
   }
 );
