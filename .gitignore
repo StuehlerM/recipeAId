@@ -24,73 +24,33 @@ TestResults/
 *.coverage
 *.coveragexml
 
-# EF Core migrations SQLite DB files
+# EF Core / SQLite database files
 *.db
 *.db-shm
 *.db-wal
 
-# User secrets
+# User secrets & local overrides
 **/secrets.json
 **/appsettings.Development.json
 
 # ======================
-# Flutter / Dart
+# Python / OCR sidecar
 # ======================
-# Files and directories created by pub
-.dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
-.packages
-.pub-cache/
-.pub/
-build/
-
-# Android specific
-**/android/**/gradle-wrapper.jar
-**/android/.gradle
-**/android/captures/
-**/android/gradlew
-**/android/gradlew.bat
-**/android/local.properties
-**/android/**/GeneratedPluginRegistrant.java
-**/android/key.properties
-**/*.keystore
-**/*.jks
-
-# iOS/macOS specific
-**/ios/**/*.mode1v3
-**/ios/**/*.mode2v3
-**/ios/**/*.perspectivev3
-**/ios/**/*.xcworkspace
-**/ios/**/*.xcuserstate
-**/ios/**/*.xccheckout
-**/ios/**/*.moved-aside
-**/ios/Flutter/App.framework
-**/ios/Flutter/Flutter.framework
-**/ios/Flutter/Flutter.podspec
-**/ios/Flutter/Generated.xcconfig
-**/ios/Flutter/app.flx
-**/ios/Flutter/app.zip
-**/ios/Flutter/flutter_assets/
-**/ios/Flutter/flutter_export_environment.sh
-**/ios/ServiceDefinitions.json
-**/ios/Runner/GeneratedPluginRegistrant.*
-**/ios/Podfile.lock
-**/ios/Pods/
-
-# macOS
-**/macos/Flutter/GeneratedPluginRegistrant.swift
-**/macos/Flutter/Flutter-Debug.xcconfig
-**/macos/Flutter/Flutter-Release.xcconfig
-**/macos/Flutter/ephemeral/
-
-# Web
-**/lib/generated_plugin_registrant.dart
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+.pytest_cache/
+*.egg-info/
 
 # ======================
-# OCR data files (large, download separately)
+# Environment / secrets
 # ======================
-**/tessdata/*.traineddata
+.env
+.env.local
+.env.*.local
 
 # ======================
 # Uploaded recipe images
@@ -106,9 +66,11 @@ frontend/dist/
 frontend/.vite/
 
 # ======================
-# Integration test reports
+# Integration tests
 # ======================
 integration/reports/
+integration/playwright-report/
+integration/test-results/
 
 # ======================
 # Claude Code agent memory

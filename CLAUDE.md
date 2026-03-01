@@ -16,11 +16,14 @@ recipeaid/
 │   │   └── RecipeAId.Api/    # Controllers, OCR services, middleware, Program.cs
 │   └── tests/
 │       └── RecipeAId.Tests/  # xUnit + Moq — references Core only
-└── frontend/          # React 19 + Vite 7 + TypeScript
+└── frontend/          # React 19 + Vite 7 + TypeScript + Tailwind CSS v4
     └── src/
         ├── api/        # client.ts, mockData.ts, types.ts
-        ├── components/
-        └── pages/      # RecipeListPage, RecipeDetailPage, IngredientSearchPage, UploadPage
+        ├── components/ # NavBar (bottom tab bar)
+        ├── hooks/      # usePlanner.ts
+        ├── utils/      # quantityAggregator.ts
+        └── pages/      # RecipeListPage, RecipeDetailPage, IngredientSearchPage,
+                        # UploadPage, AddRecipePage, PlannerPage
 ```
 
 ## Backend commands
@@ -58,6 +61,8 @@ npm run lint     # ESLint
 ```
 
 To point the frontend at a real backend, set `VITE_API_BASE_URL=http://localhost:<port>` in a `.env.local` file. Without it, `client.ts` falls back to mock data automatically for all endpoints.
+
+**Styling:** Tailwind CSS v4 via `@tailwindcss/vite`. Custom color tokens are defined in `src/index.css` under `@theme`. Key tokens: `spruce` (#0c4e13), `spruce-dark` (#071f08), `spruce-mid` (#163d1c), `olive` (#a7b16f), `walnut` (#61210f). New pages use Tailwind classes; existing pages keep their CSS Modules.
 
 ## OCR sidecar commands
 

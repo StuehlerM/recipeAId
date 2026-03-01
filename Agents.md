@@ -26,8 +26,9 @@ recipeaid/
 
 **Tech stack:**
 - Backend: ASP.NET Core 9, Entity Framework Core 9, SQLite
-- OCR: Python EasyOCR sidecar (FastAPI, :8001) — upgrade path: Azure AI Document Intelligence
-- Frontend: React with Vite, TypeScript, TanStack Query, React Router v6
+- OCR: Python EasyOCR sidecar (FastAPI, :8001), English + German — upgrade path: Azure AI Document Intelligence
+- Frontend: React 19, Vite 7, TypeScript, Tailwind CSS v4, TanStack Query v5, React Router v6
+- PWA: `vite-plugin-pwa` (installable, standalone)
 
 **Dependency rule:** `Api → Core ← Data`. Core has no infrastructure dependencies.
 
@@ -89,6 +90,17 @@ recipeaid/
 - [x] Ingredient search page (chip input, ranked results with match counts)
 - [x] Camera/upload page: `<input capture="environment">` for mobile camera, file picker fallback; OCR draft review + edit + confirm save
 - Note: CRUD, search, and OCR calls are wired to the real backend when `VITE_API_BASE_URL` is set; mock data is used as fallback when running without a backend
+
+## Phase 7: Mobile-First Design + PWA
+- [x] Tailwind CSS v4 (`@tailwindcss/vite`) with custom `@theme` palette: `dark-spruce` (#0c4e13), `muted-olive` (#a7b16f), `dark-walnut` (#61210f)
+- [x] PWA via `vite-plugin-pwa` — installable, `display: standalone`, `theme_color: #0c4e13`, SVG icon
+- [x] `viewport-fit=cover` + `env(safe-area-inset-bottom)` for iPhone notch/home-bar compatibility
+- [x] Bottom tab bar navigation (fixed, 5 tabs: Recipes / Search / Add / Upload / Planner) — FAB-style Add button
+- [x] 3-step recipe wizard at `/add`: Title → Ingredients → Instructions, step indicator, `useMutation` → navigate on success
+- [x] Weekly planner at `/planner`: recipe browser with search, this-week list, aggregated shopping list
+- [x] `src/utils/quantityAggregator.ts` — same-unit quantities summed; mixed/unparseable quantities concatenated
+- [x] `src/hooks/usePlanner.ts` — localStorage-backed (`recipeaid_planner_v1`), lazy-initialised
+- [x] OCR `main.py` docstring updated for English + German language support
 
 ---
 

@@ -9,13 +9,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# Install Python dependencies first (better layer caching)
+# Install Python dependencies.
+# The BuildKit cache mount keeps the pip HTTP cache between builds so that
+# large wheels (torch ~2 GB) are not re-downloaded when requirements change.
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install -r requirements.txt
 
-# Pre-download the EasyOCR English model (~200 MB) at build time so the
-# container starts quickly and doesn't need internet access at runtime.
-RUN python -c "import easyocr; easyocr.Reader(['en'], gpu=False, verbose=False)"
+# Models are NOT pre-downloaded here.  They are stored in a named Docker
+# volume mounted at /root/.EasyOCR (see docker-compose.yml), so they survive
+# image rebuilds and are only downloaded once on first container startup.
 
 COPY main.py .
 

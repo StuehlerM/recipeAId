@@ -1,24 +1,40 @@
-*, *::before, *::after {
-  box-sizing: border-box;
+@import "tailwindcss";
+
+@theme {
+  --color-spruce:       #0c4e13;
+  --color-spruce-dark:  #071f08;
+  --color-spruce-mid:   #163d1c;
+  --color-spruce-light: #1e5c26;
+  --color-olive:        #a7b16f;
+  --color-olive-light:  #c8d4a0;
+  --color-walnut:       #61210f;
+  --color-walnut-light: #9e3b1a;
+  --color-text:         #e8edd8;
+  --color-muted:        #8a9470;
+  --color-border:       #1e5c26;
+
+  --font-sans: system-ui, -apple-system, Helvetica, Arial, sans-serif;
 }
 
-:root {
-  font-family: system-ui, -apple-system, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-  color-scheme: dark;
-  color: #e2e8f0;
-  background-color: #0f0f1a;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
   min-width: 320px;
-  min-height: 100vh;
+  min-height: 100svh;
+  background-color: var(--color-spruce-dark);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: dark;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 a {
@@ -26,7 +42,9 @@ a {
   text-decoration: none;
 }
 
-h1, h2, h3 {
+h1,
+h2,
+h3 {
   margin: 0 0 0.5rem;
   line-height: 1.2;
 }

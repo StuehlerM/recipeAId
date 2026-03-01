@@ -6,11 +6,13 @@ A recipe management app that reads physical recipe cards with your camera. Point
 
 ## Features
 
-- **Scan recipe cards** — upload a photo or use your phone camera; OCR extracts title, ingredients, and instructions automatically
+- **Scan recipe cards** — upload a photo or use your phone camera; OCR extracts title, ingredients, and instructions automatically (English + German)
 - **Review before saving** — the OCR result comes back as a draft you can edit before confirming
+- **3-step recipe wizard** — add recipes manually in three focused steps: Title → Ingredients → Instructions
 - **Browse & search** — filter recipes by title or search by the ingredients you have on hand (ranked by match count)
+- **Weekly planner** — select recipes for the week; a shopping list is generated automatically with ingredient quantities summed across recipes
 - **Unit conversion** — convert quantities between imperial and metric (cups → mL, oz → g, °F → °C, and more)
-- **Full CRUD** — create, edit, and delete recipes manually if you prefer to type
+- **PWA / mobile-first** — installable on iOS and Android; bottom tab bar navigation with safe-area support
 
 ---
 
@@ -175,9 +177,19 @@ integration/
 
 > **Note:** The integration tests cover the frontend UI and backend API only. The OCR upload scenario is excluded because it requires the heavy EasyOCR model; use the unit tests in `RecipeAId.Tests` for OCR parsing logic.
 
-### Option A — Docker Compose (recommended)
+### Option A — Docker Compose profile (recommended)
 
-This is the simplest approach: a dedicated Compose file spins up backend + frontend and then runs the test container against them.
+The integration tests are defined as a Docker Compose profile. The normal `docker compose up` starts only frontend + backend + OCR. Adding `--profile integration` also builds and runs the test container.
+
+```bash
+# Normal stack only
+docker compose up --build
+
+# Stack + integration tests (exits when tests finish)
+docker compose --profile integration up --build
+```
+
+Use `docker compose --profile integration down -v` to clean up and wipe the test database between runs.
 
 ```bash
 # First run (or after changes): build all images
@@ -233,7 +245,8 @@ npm run test:headed
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | React 19, Vite 7, TypeScript, TanStack Query v5, React Router v6 |
+| Frontend | React 19, Vite 7, TypeScript, Tailwind CSS v4, TanStack Query v5, React Router v6 |
+| PWA | vite-plugin-pwa (installable, standalone, theme-color) |
 | Backend | ASP.NET Core 9, Entity Framework Core 9, SQLite |
-| OCR | Python 3.11, EasyOCR, FastAPI, uvicorn |
-| Container | Docker Compose (three services) |
+| OCR | Python 3.11, EasyOCR (English + German), FastAPI, uvicorn |
+| Container | Docker Compose (three services + optional integration profile) |
