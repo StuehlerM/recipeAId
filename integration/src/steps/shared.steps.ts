@@ -100,7 +100,7 @@ When(
 Then(
   "I should be on the recipe list page",
   async function (this: RecipeAIdWorld) {
-    await this.page.waitForURL(/^http:\/\/localhost:\d+\/?$/);
+    await this.page.waitForURL((url) => new URL(url).pathname === "/");
     await this.page.waitForSelector("h1");
   }
 );
