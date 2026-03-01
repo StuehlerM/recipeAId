@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using RecipeAId.Core.DTOs;
 using RecipeAId.Core.Interfaces;
 
 namespace RecipeAId.Api.OcrServices;

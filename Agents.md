@@ -17,7 +17,7 @@ recipeaid/
 ├── backend/                    # ASP.NET Core 9 Web API
 │   ├── RecipeAId.sln
 │   └── src/
-│       ├── RecipeAId.Core/     # Entities, interfaces, DTOs, business logic
+│       ├── RecipeAId.Core/     # Entities, interfaces, DTOs (one per file), services
 │       ├── RecipeAId.Data/     # EF Core, SQLite, repositories, migrations
 │       └── RecipeAId.Api/      # Controllers, OCR services, DI host
 ├── ocr-service/                # Python FastAPI + EasyOCR (port 8001)
@@ -37,19 +37,19 @@ recipeaid/
 ## Phase 1: Foundation
 - [x] Solution and project scaffolding (`dotnet new sln`, `classlib`, `webapi`)
 - [x] Core entities: `Recipe`, `Ingredient`, `RecipeIngredient`
-- [x] Core interfaces: `IRecipeRepository`, `IIngredientRepository`, `IOcrService`, `IOcrParser`, `IRecipeSuggestionService` (stub)
-- [x] Core DTOs: `CreateRecipeRequest` (with `BookTitle`), `UpdateRecipeRequest` (with `BookTitle`), `RecipeDto`, `RecipeIngredientDto` (Amount + Unit), `RecipeSummaryDto` (with `BookTitle`), `RecipeOcrDraftDto`, `IngredientSearchResultDto`, `IngredientLineDto(Name, Amount, Unit)`, `IngredientDto`
+- [x] Core interfaces: `IRecipeRepository`, `IIngredientRepository`, `IRecipeService`, `IIngredientService`, `IRecipeMatchingService`, `IUnitConversionService`, `IOcrService`, `IOcrParser`, `IRecipeSuggestionService` (stub)
+- [x] Core DTOs (one record per file): `CreateRecipeRequest` (with `BookTitle`), `UpdateRecipeRequest` (with `BookTitle`), `RecipeDto`, `RecipeIngredientDto` (Amount + Unit), `RecipeSummaryDto` (with `BookTitle`), `RecipeOcrDraftDto`, `OcrResult`, `IngredientSearchResultDto`, `IngredientLineDto(Name, Amount, Unit)`, `IngredientDto`, `ConvertRequest`, `ConvertResult`
 - [x] `AppDbContext` with EF Core fluent configuration
 - [x] EF Core initial migration + SQLite DB creation (auto-applied on startup)
 - [x] Repository implementations: `RecipeRepository`, `IngredientRepository`
 - [x] DI registration in `Program.cs`
 
 ## Phase 2: CRUD API
-- [x] `RecipeService` (orchestration, ingredient normalization to lowercase)
+- [x] `RecipeService` (orchestration, ingredient normalization via shared `BuildIngredientsAsync` helper)
 - [x] `RecipesController`: `GET /api/v1/recipes`, `GET /api/v1/recipes/{id}`, `POST`, `PUT`, `DELETE`
 - [x] Swagger / OpenAPI configured (Scalar UI at `/scalar/v1` in Development)
 - [x] CORS configured (allow `http://localhost:5173` Vite dev origin)
-- [x] Global error handling middleware (`ExceptionHandlingMiddleware`)
+- [x] Global error handling middleware (`ExceptionHandlingMiddleware`); all error responses use `ProblemDetails` (RFC 7807)
 - [ ] Manual tested via Swagger UI
 
 ## Phase 3: Unit Conversion
@@ -66,17 +66,17 @@ recipeaid/
 ## Phase 4: Search API
 - [x] `RecipeMatchingService` (LINQ ranked by ingredient match count, then match ratio)
 - [x] `GET /api/v1/recipes/search/by-ingredients?ingredients=...&minMatch=1&limit=20`
-- [x] `GET /api/v1/ingredients` (autocomplete list)
+- [x] `GET /api/v1/ingredients` (autocomplete list, served by `IIngredientService`)
 - [x] Unit tests for `RecipeMatchingService`
 
 ## Phase 5: OCR Integration
 - [x] Python EasyOCR sidecar (`ocr-service/main.py`, FastAPI on :8001) — replaces Tesseract.NET
 - [x] `PythonOcrService` implementing `IOcrService` (calls sidecar via named `HttpClient`)
-- [x] `OcrParserService` implementing `IOcrParser`:
+- [x] `OcrParserService` implementing `IOcrParser` (uses `[GeneratedRegex]` source generators):
   - Title: first non-empty line or line after "Recipe:" header
   - Ingredients: numbered/bulleted lines or lines under "Ingredients:" header
   - Instructions: lines after "Instructions:"/"Directions:"/"Method:" header
-- [x] `POST /api/v1/recipes/from-image` — multipart upload → OCR → return draft (does NOT save)
+- [x] `POST /api/v1/recipes/from-image` — multipart upload → OCR → return draft (does NOT save); 10 MB upload limit; 30s HTTP client timeout
 - [x] Two-phase save: draft returned → user edits → `POST /api/v1/recipes` confirms
 - [x] Unit tests for `OcrParserService` (13 cases)
 - [x] Frontend `uploadRecipeImage` wired to real endpoint (`USE_MOCK` fallback when `VITE_API_BASE_URL` unset)
@@ -131,7 +131,7 @@ recipeaid/
 | Column | Type | Notes |
 |--------|------|-------|
 | Id | INTEGER PK | |
-| Title | TEXT NOT NULL | |
+| Title | TEXT NOT NULL | Indexed for title filter queries |
 | Instructions | TEXT NULL | Free-form cooking steps |
 | ImagePath | TEXT NULL | Relative path to stored photo |
 | RawOcrText | TEXT NULL | Raw OCR output for reprocessing |

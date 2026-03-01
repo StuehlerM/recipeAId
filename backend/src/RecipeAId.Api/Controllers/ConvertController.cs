@@ -18,7 +18,7 @@ public class ConvertController(IUnitConversionService converter) : ControllerBas
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(new { error = ex.Message });
+            return BadRequest(new ProblemDetails { Title = "Conversion failed.", Detail = ex.Message });
         }
     }
 }

@@ -34,20 +34,7 @@ public class RecipeService(IRecipeRepository recipeRepo, IIngredientRepository i
             BookTitle = request.BookTitle?.Trim(),
         };
 
-        for (int i = 0; i < request.Ingredients.Count; i++)
-        {
-            var line = request.Ingredients[i];
-            var normalized = line.Name.Trim().ToLowerInvariant();
-            var ingredient = await ingredientRepo.GetOrCreateAsync(normalized, ct);
-            recipe.RecipeIngredients.Add(new RecipeIngredient
-            {
-                Ingredient = ingredient,
-                IngredientId = ingredient.Id,
-                Amount = line.Amount?.Trim(),
-                Unit = line.Unit?.Trim(),
-                SortOrder = i,
-            });
-        }
+        recipe.RecipeIngredients = await BuildIngredientsAsync(request.Ingredients, ct);
 
         await recipeRepo.AddAsync(recipe, ct);
         return MapToDto(recipe);
@@ -62,26 +49,34 @@ public class RecipeService(IRecipeRepository recipeRepo, IIngredientRepository i
         recipe.Instructions = request.Instructions;
         recipe.BookTitle = request.BookTitle?.Trim();
 
-        var newIngredients = new List<RecipeIngredient>();
-        for (int i = 0; i < request.Ingredients.Count; i++)
+        var newIngredients = await BuildIngredientsAsync(request.Ingredients, ct, recipe.Id);
+
+        await recipeRepo.UpdateAsync(recipe, newIngredients, ct);
+        recipe.RecipeIngredients = newIngredients;
+        return MapToDto(recipe);
+    }
+
+    private async Task<List<RecipeIngredient>> BuildIngredientsAsync(
+        List<IngredientLineDto> lines, CancellationToken ct, int? recipeId = null)
+    {
+        var result = new List<RecipeIngredient>(lines.Count);
+        for (int i = 0; i < lines.Count; i++)
         {
-            var line = request.Ingredients[i];
+            var line = lines[i];
             var normalized = line.Name.Trim().ToLowerInvariant();
             var ingredient = await ingredientRepo.GetOrCreateAsync(normalized, ct);
-            newIngredients.Add(new RecipeIngredient
+            var ri = new RecipeIngredient
             {
-                RecipeId = recipe.Id,
                 IngredientId = ingredient.Id,
                 Ingredient = ingredient,
                 Amount = line.Amount?.Trim(),
                 Unit = line.Unit?.Trim(),
                 SortOrder = i,
-            });
+            };
+            if (recipeId.HasValue) ri.RecipeId = recipeId.Value;
+            result.Add(ri);
         }
-
-        await recipeRepo.UpdateAsync(recipe, newIngredients, ct);
-        recipe.RecipeIngredients = newIngredients;
-        return MapToDto(recipe);
+        return result;
     }
 
     public async Task<bool> DeleteAsync(int id, CancellationToken ct = default)

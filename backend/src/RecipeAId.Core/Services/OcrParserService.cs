@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using RecipeAId.Core.DTOs;
 using RecipeAId.Core.Interfaces;
 
@@ -14,13 +15,27 @@ namespace RecipeAId.Core.Services;
 ///   4. If no headers, treat the first line as the title, then heuristically classify
 ///      remaining lines as ingredients (numbered/bulleted or short) vs. instructions.
 /// </summary>
-public sealed class OcrParserService : IOcrParser
+public sealed partial class OcrParserService : IOcrParser
 {
     private static readonly string[] IngredientHeaders =
         ["ingredients", "ingredient list", "you will need", "you'll need"];
 
     private static readonly string[] InstructionHeaders =
         ["instructions", "directions", "method", "steps", "preparation", "how to make", "procedure"];
+
+    // Matches "2 cups flour", "1/2 tsp salt", "200g butter", "1 1/2 cups sugar"
+    [GeneratedRegex(
+        @"^(?<amount>[\d½⅓⅔¼¾⅛⅜⅝⅞\./\-]+(?:\s+[\d½⅓⅔¼¾⅛⅜⅝⅞\./\-]+)?)\s*(?<unit>(?:cup|tbsp|tsp|tablespoon|teaspoon|oz|ounce|lb|pound|g|gram|kg|ml|l|liter|litre|pinch|dash|clove|slice|can|bunch|handful|large|medium|small|package|pkg|stick)\S*)\s+(?<name>.+)$",
+        RegexOptions.IgnoreCase)]
+    private static partial Regex AmountUnitNamePattern();
+
+    // Matches leading bullets/numbers: "1." "1)" "-" "*" "•"
+    [GeneratedRegex(@"^\s*(?:\d+[.)]\s*|[-*•]\s*)")]
+    private static partial Regex LeadingBulletPattern();
+
+    // Matches lines starting with a digit or fraction character
+    [GeneratedRegex(@"^\s*[\d½⅓⅔¼¾⅛⅜⅝⅞]")]
+    private static partial Regex StartsWithQuantityPattern();
 
     public RecipeOcrDraftDto Parse(string rawOcrText, string? imagePath = null)
     {
@@ -181,47 +196,31 @@ public sealed class OcrParserService : IOcrParser
 
     private static IngredientLineDto ParseIngredientLine(string line)
     {
-        // Strip leading bullet or number:  "- 2 cups flour"  "1. flour"  "* salt"
         var stripped = StripLeadingBullet(line);
 
-        // Try to split amount and unit from name.
-        // e.g. "2 cups flour"  → amount="2",   unit="cups", name="flour"
-        //      "1/2 tsp salt"  → amount="1/2",  unit="tsp",  name="salt"
-        //      "200g butter"   → amount="200",  unit="g",    name="butter"
-        //      "1 1/2 cups"    → amount="1 1/2",unit="cups", name=...
-        var match = System.Text.RegularExpressions.Regex.Match(
-            stripped,
-            @"^(?<amount>[\d½⅓⅔¼¾⅛⅜⅝⅞\./\-]+(?:\s+[\d½⅓⅔¼¾⅛⅜⅝⅞\./\-]+)?)\s*(?<unit>(?:cup|tbsp|tsp|tablespoon|teaspoon|oz|ounce|lb|pound|g|gram|kg|ml|l|liter|litre|pinch|dash|clove|slice|can|bunch|handful|large|medium|small|package|pkg|stick)\S*)\s+(?<name>.+)$",
-            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-
+        var match = AmountUnitNamePattern().Match(stripped);
         if (match.Success)
             return new IngredientLineDto(
                 match.Groups["name"].Value.Trim(),
                 match.Groups["amount"].Value.Trim(),
                 match.Groups["unit"].Value.Trim());
 
-        // Fallback: just a name, no parseable amount/unit
         return new IngredientLineDto(stripped, null, null);
     }
 
     private static string StripLeadingBullet(string line)
     {
-        // Remove "1." "1)" "-" "*" "•" etc.
-        var trimmed = System.Text.RegularExpressions.Regex.Replace(line, @"^\s*(?:\d+[.)]\s*|[-*•]\s*)", "");
-        return trimmed.Trim();
+        return LeadingBulletPattern().Replace(line, "").Trim();
     }
 
     private static bool LooksLikeIngredient(string line)
     {
-        // Numbered/bulleted line
-        if (System.Text.RegularExpressions.Regex.IsMatch(line, @"^\s*(?:\d+[.)]\s*|[-*•]\s*)"))
+        if (LeadingBulletPattern().IsMatch(line))
             return true;
 
-        // Starts with a quantity (digit, fraction, or fraction char)
-        if (System.Text.RegularExpressions.Regex.IsMatch(line, @"^\s*[\d½⅓⅔¼¾⅛⅜⅝⅞]"))
+        if (StartsWithQuantityPattern().IsMatch(line))
             return true;
 
-        // Short line unlikely to be an instruction sentence
         if (line.Length < 40 && !line.Contains('.'))
             return true;
 

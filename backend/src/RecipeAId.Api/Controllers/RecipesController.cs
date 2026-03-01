@@ -36,7 +36,7 @@ public class RecipesController(
         CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(ingredients))
-            return BadRequest(new { error = "At least one ingredient is required." });
+            return BadRequest(new ProblemDetails { Title = "At least one ingredient is required." });
 
         var names = ingredients
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
@@ -51,7 +51,7 @@ public class RecipesController(
         CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(request.Title))
-            return BadRequest(new { error = "Title is required." });
+            return BadRequest(new ProblemDetails { Title = "Title is required." });
 
         var created = await recipeService.CreateAsync(request, ct);
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
@@ -64,7 +64,7 @@ public class RecipesController(
         CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(request.Title))
-            return BadRequest(new { error = "Title is required." });
+            return BadRequest(new ProblemDetails { Title = "Title is required." });
 
         var updated = await recipeService.UpdateAsync(id, request, ct);
         return updated is null ? NotFound() : Ok(updated);
@@ -84,16 +84,20 @@ public class RecipesController(
         CancellationToken ct)
     {
         if (image is null || image.Length == 0)
-            return BadRequest(new { error = "An image file is required." });
+            return BadRequest(new ProblemDetails { Title = "An image file is required." });
 
         if (!image.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
-            return BadRequest(new { error = "File must be an image." });
+            return BadRequest(new ProblemDetails { Title = "File must be an image." });
+
+        const long maxSizeBytes = 10 * 1024 * 1024; // 10 MB
+        if (image.Length > maxSizeBytes)
+            return BadRequest(new ProblemDetails { Title = "Image must be smaller than 10 MB." });
 
         await using var stream = image.OpenReadStream();
         var ocrResult = await ocrService.ExtractTextAsync(stream, image.ContentType, ct);
 
         if (!ocrResult.Success)
-            return UnprocessableEntity(new { error = ocrResult.ErrorMessage });
+            return UnprocessableEntity(new ProblemDetails { Title = "OCR processing failed.", Detail = ocrResult.ErrorMessage });
 
         var draft = ocrParser.Parse(ocrResult.RawText);
         return Ok(draft);

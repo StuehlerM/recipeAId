@@ -21,12 +21,17 @@ builder.Services.AddScoped<IIngredientRepository, IngredientRepository>();
 
 // Services
 builder.Services.AddScoped<IRecipeService, RecipeService>();
+builder.Services.AddScoped<IIngredientService, IngredientService>();
 builder.Services.AddScoped<IRecipeMatchingService, RecipeMatchingService>();
 builder.Services.AddSingleton<IUnitConversionService, UnitConversionService>();
 
 // OCR
 var ocrBaseUrl = builder.Configuration["OcrService:BaseUrl"] ?? "http://localhost:8001";
-builder.Services.AddHttpClient("OcrService", c => c.BaseAddress = new Uri(ocrBaseUrl));
+builder.Services.AddHttpClient("OcrService", c =>
+{
+    c.BaseAddress = new Uri(ocrBaseUrl);
+    c.Timeout = TimeSpan.FromSeconds(30);
+});
 builder.Services.AddScoped<IOcrService, PythonOcrService>();
 builder.Services.AddScoped<IOcrParser, OcrParserService>();
 

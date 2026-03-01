@@ -6,12 +6,12 @@ namespace RecipeAId.Api.Controllers;
 
 [ApiController]
 [Route("api/v1/[controller]")]
-public class IngredientsController(IIngredientRepository ingredientRepo) : ControllerBase
+public class IngredientsController(IIngredientService ingredientService) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IEnumerable<IngredientDto>>> GetAll(CancellationToken ct)
     {
-        var ingredients = await ingredientRepo.GetAllAsync(ct);
-        return Ok(ingredients.Select(i => new IngredientDto(i.Id, i.Name)));
+        var ingredients = await ingredientService.GetAllAsync(ct);
+        return Ok(ingredients);
     }
 }

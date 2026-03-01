@@ -1,10 +1,6 @@
-namespace RecipeAId.Core.Interfaces;
+using RecipeAId.Core.DTOs;
 
-public record OcrResult(
-    string RawText,
-    bool Success,
-    string? ErrorMessage
-);
+namespace RecipeAId.Core.Interfaces;
 
 public interface IOcrService
 {

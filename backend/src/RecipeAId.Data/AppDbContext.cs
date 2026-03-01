@@ -18,6 +18,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(r => r.BookTitle).HasMaxLength(300);
             entity.Property(r => r.CreatedAt).IsRequired();
             entity.Property(r => r.UpdatedAt).IsRequired();
+            entity.HasIndex(r => r.Title);
         });
 
         modelBuilder.Entity<Ingredient>(entity =>
