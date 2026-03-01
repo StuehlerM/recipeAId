@@ -55,7 +55,7 @@ OpenAPI spec: `https://localhost:<port>/openapi/v1.json`
 All frontend commands run from `frontend/`.
 
 ```bash
-npm run dev      # Vite dev server at http://localhost:5173
+npm run dev      # Vite dev server at https://localhost:5173 (self-signed cert via @vitejs/plugin-basic-ssl)
 npm run build    # tsc + vite build
 npm run lint     # ESLint
 ```
@@ -95,13 +95,13 @@ docker compose down -v
 ```
 
 Services after `docker compose up`:
-- Frontend: http://localhost:3000
+- Frontend: https://localhost:3443 (HTTP on :3000 redirects automatically; self-signed cert — accept the browser warning once)
 - Backend API: http://localhost:8080
 - OCR sidecar: http://localhost:8001
 
 **Note:** The first `docker compose build` for `ocr-service` downloads the ~200 MB EasyOCR model into the image layer. Subsequent builds use the Docker cache and are fast.
 
-**Note:** `VITE_API_BASE_URL=http://localhost:8080` is baked into the frontend bundle at build time via a Docker build arg. To deploy to a different host/port, override it in `docker-compose.yml`.
+**Note:** The frontend Docker image generates a self-signed TLS cert at build time using `openssl`. nginx serves HTTP on port 80 (redirect only) and HTTPS on port 443. Host mappings: `3000:80` and `3443:443`.
 
 ## Architecture
 
@@ -119,7 +119,7 @@ Services after `docker compose up`:
 
 **Error handling:** `ExceptionHandlingMiddleware` catches all unhandled exceptions and returns `ProblemDetails` JSON. The `detail` field is only populated in Development.
 
-**CORS:** `DevPolicy` (`http://localhost:5173`) is applied globally (not environment-gated) so the frontend works against the API in any environment.
+**CORS:** `DevPolicy` is applied globally (not environment-gated). Origins are configured via `Cors:AllowedOrigins` — defaulting to `["http://localhost:5173", "https://localhost:5173"]` in Development (`appsettings.Development.json`) and `https://localhost:3443` in Docker (`docker-compose.yml`). Since nginx proxies `/api/` to the backend on the same origin, CORS is not exercised in the Docker setup anyway.
 
 ## Testing conventions
 

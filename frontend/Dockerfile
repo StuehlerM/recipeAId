@@ -19,4 +19,14 @@ RUN npm run build
 FROM nginx:alpine AS runtime
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-EXPOSE 80
+
+# Generate a self-signed TLS certificate for HTTPS (valid 10 years)
+RUN apk add --no-cache openssl && \
+    mkdir -p /etc/nginx/ssl && \
+    openssl req -x509 -newkey rsa:2048 \
+        -keyout /etc/nginx/ssl/key.pem \
+        -out /etc/nginx/ssl/cert.pem \
+        -days 3650 -nodes \
+        -subj "/CN=localhost"
+
+EXPOSE 80 443

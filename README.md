@@ -30,11 +30,13 @@ docker compose up --build
 
 Once running:
 
-| Service  | URL                    |
-|----------|------------------------|
-| Frontend | http://localhost:3000  |
-| Backend  | http://localhost:8080  |
-| OCR      | http://localhost:8001  |
+| Service  | URL                                                                 |
+|----------|---------------------------------------------------------------------|
+| Frontend | https://localhost:3443 (HTTP on :3000 redirects automatically)      |
+| Backend  | http://localhost:8080                                               |
+| OCR      | http://localhost:8001                                               |
+
+> **Self-signed certificate:** Your browser will show a security warning on first visit. Click **Advanced → Proceed to localhost** to continue. On iOS Safari, tap **Show Details → visit this website**. You only need to do this once per browser/device.
 
 To stop:
 
@@ -88,7 +90,7 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173. Without `VITE_API_BASE_URL` set, the frontend runs entirely on built-in mock data — useful for UI work without a backend.
+Open https://localhost:5173 (the dev server uses a self-signed cert via `@vitejs/plugin-basic-ssl`; accept the browser warning once). Without `VITE_API_BASE_URL` set, the frontend runs entirely on built-in mock data — useful for UI work without a backend.
 
 ---
 
@@ -250,3 +252,4 @@ npm run test:headed
 | Backend | ASP.NET Core 9, Entity Framework Core 9, SQLite |
 | OCR | Python 3.11, EasyOCR (English + German), FastAPI, uvicorn |
 | Container | Docker Compose (three services + optional integration profile) |
+| TLS | Self-signed cert (nginx, generated at image build time); `@vitejs/plugin-basic-ssl` for the Vite dev server |

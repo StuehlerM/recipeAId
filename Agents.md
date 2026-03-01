@@ -156,8 +156,11 @@ recipeaid/
 - [x] `ocr-service/Dockerfile` — Python 3.11-slim; EasyOCR model pre-downloaded at build time (~200 MB layer)
 - [x] `docker-compose.yml` — all three services wired together:
   - `ocr-service` exposes :8001
-  - `backend` depends on `ocr-service`; `OcrService__BaseUrl=http://ocr-service:8001`; CORS allows `http://localhost:3000`
-  - `frontend` depends on `backend`; built with `VITE_API_BASE_URL=http://localhost:8080`
+  - `backend` depends on `ocr-service`; `OcrService__BaseUrl=http://ocr-service:8001`; CORS allows `https://localhost:3443`
+  - `frontend` depends on `backend`; HTTP :3000 redirects to HTTPS :3443; self-signed cert generated at image build time
+- [x] HTTPS support:
+  - Dev server: `@vitejs/plugin-basic-ssl` → `https://localhost:5173`; `appsettings.Development.json` adds `https://localhost:5173` to CORS
+  - Docker: nginx serves HTTP on :80 (redirects to HTTPS) and HTTPS on :443 with a self-signed cert; host ports `3000:80` and `3443:443`
 
 ---
 
