@@ -235,4 +235,78 @@ public class OcrParserServiceTests
         Assert.Empty(draft.DetectedIngredients);
         Assert.NotNull(draft.DetectedInstructions);
     }
+
+    // ── Name-Amount-Unit format (reversed order) ─────────────────────────────
+
+    [Fact]
+    public void Parse_NameAmountUnit_ParsesCorrectly()
+    {
+        var text = """
+            Apfelkuchen
+
+            Ingredients:
+            Flour 200 g
+            Sugar 100 g
+            Butter 50 g
+
+            Instructions:
+            Mix and bake.
+            """;
+
+        var draft = _sut.Parse(text);
+
+        Assert.Equal(3, draft.DetectedIngredients.Count);
+
+        var flour = draft.DetectedIngredients.First(i => i.Name.Contains("Flour"));
+        Assert.Equal("200", flour.Amount);
+        Assert.Equal("g", flour.Unit);
+
+        var sugar = draft.DetectedIngredients.First(i => i.Name.Contains("Sugar"));
+        Assert.Equal("100", sugar.Amount);
+        Assert.Equal("g", sugar.Unit);
+    }
+
+    [Fact]
+    public void Parse_NameAmountNoUnit_ParsesCorrectly()
+    {
+        var text = """
+            Salad
+
+            Ingredients:
+            Eggs 2
+            Tomatoes 3
+            """;
+
+        var draft = _sut.Parse(text);
+
+        Assert.Equal(2, draft.DetectedIngredients.Count);
+
+        var eggs = draft.DetectedIngredients.First(i => i.Name.Contains("Eggs"));
+        Assert.Equal("2", eggs.Amount);
+        Assert.Null(eggs.Unit);
+    }
+
+    // ── German section headers ───────────────────────────────────────────────
+
+    [Fact]
+    public void Parse_GermanHeaders_ExtractsAllSections()
+    {
+        var text = """
+            Kartoffelsuppe
+
+            Zutaten:
+            500 g Kartoffeln
+            1 l Brühe
+
+            Zubereitung:
+            Kartoffeln schälen und kochen. Mit Brühe pürieren.
+            """;
+
+        var draft = _sut.Parse(text);
+
+        Assert.Equal("Kartoffelsuppe", draft.DetectedTitle);
+        Assert.Equal(2, draft.DetectedIngredients.Count);
+        Assert.NotNull(draft.DetectedInstructions);
+        Assert.Contains("pürieren", draft.DetectedInstructions);
+    }
 }

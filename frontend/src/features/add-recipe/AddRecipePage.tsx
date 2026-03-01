@@ -80,16 +80,28 @@ export default function AddRecipePage() {
     if (draft.detectedTitle) setTitle(draft.detectedTitle);
   }
 
+  function mapIngredients(draft: RecipeOcrDraftDto) {
+    if (draft.detectedIngredients.length > 0) {
+      return draft.detectedIngredients.map((i) => ({
+        name: i.name,
+        amount: i.amount ?? "",
+        unit: i.unit ?? "",
+      }));
+    }
+    // Fallback: split raw OCR text into one ingredient per line
+    return draft.rawOcrText
+      .split("\n")
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0)
+      .map((l) => ({ name: l, amount: "", unit: "" }));
+  }
+
   function handleIngredientScan(draft: RecipeOcrDraftDto) {
     const hasRows = ingredients.some((r) => r.name.trim());
-    const mapped = draft.detectedIngredients.map((i) => ({
-      name: i.name,
-      amount: i.amount ?? "",
-      unit: i.unit ?? "",
-    }));
+    const mapped = mapIngredients(draft);
     if (mapped.length === 0) return;
     if (!hasRows) {
-      setIngredients(mapped.length > 0 ? mapped : [{ name: "", amount: "", unit: "" }]);
+      setIngredients(mapped);
     } else {
       setPendingDraft(draft);
       setReplaceConfirm(true);
@@ -98,18 +110,16 @@ export default function AddRecipePage() {
 
   function confirmReplace() {
     if (!pendingDraft) return;
-    const mapped = pendingDraft.detectedIngredients.map((i) => ({
-      name: i.name,
-      amount: i.amount ?? "",
-      unit: i.unit ?? "",
-    }));
+    const mapped = mapIngredients(pendingDraft);
     setIngredients(mapped.length > 0 ? mapped : [{ name: "", amount: "", unit: "" }]);
     setPendingDraft(null);
     setReplaceConfirm(false);
   }
 
   function handleInstructionScan(draft: RecipeOcrDraftDto) {
-    if (draft.detectedInstructions) setInstructions(draft.detectedInstructions);
+    // Use parsed instructions, or fall back to raw OCR text
+    const text = draft.detectedInstructions ?? draft.rawOcrText;
+    if (text) setInstructions(text);
   }
 
   const inputBase =

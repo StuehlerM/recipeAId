@@ -18,16 +18,30 @@ namespace RecipeAId.Core.Services;
 public sealed partial class OcrParserService : IOcrParser
 {
     private static readonly string[] IngredientHeaders =
-        ["ingredients", "ingredient list", "you will need", "you'll need"];
+        ["ingredients", "ingredient list", "you will need", "you'll need",
+         "zutaten", "zutatenliste"];
 
     private static readonly string[] InstructionHeaders =
-        ["instructions", "directions", "method", "steps", "preparation", "how to make", "procedure"];
+        ["instructions", "directions", "method", "steps", "preparation", "how to make", "procedure",
+         "zubereitung", "anleitung", "so wird's gemacht"];
 
-    // Matches "2 cups flour", "1/2 tsp salt", "200g butter", "1 1/2 cups sugar"
+    // Matches "2 cups flour", "1/2 tsp salt", "200g butter" (amount unit name)
     [GeneratedRegex(
-        @"^(?<amount>[\d½⅓⅔¼¾⅛⅜⅝⅞\./\-]+(?:\s+[\d½⅓⅔¼¾⅛⅜⅝⅞\./\-]+)?)\s*(?<unit>(?:cup|tbsp|tsp|tablespoon|teaspoon|oz|ounce|lb|pound|g|gram|kg|ml|l|liter|litre|pinch|dash|clove|slice|can|bunch|handful|large|medium|small|package|pkg|stick)\S*)\s+(?<name>.+)$",
+        @"^(?<amount>[\d½⅓⅔¼¾⅛⅜⅝⅞\./\-]+(?:\s+[\d½⅓⅔¼¾⅛⅜⅝⅞\./\-]+)?)\s*(?<unit>(?:cup|cups|tbsp|tsp|tablespoon|teaspoon|oz|ounce|lb|pound|g|gram|kg|ml|l|liter|litre|pinch|dash|clove|cloves|slice|slices|can|bunch|handful|large|medium|small|package|pkg|stick|el|tl|stk|stück|prise|bund|scheibe|scheiben|dose|päckchen|becher|messerspitze|msp)\S*)\s+(?<name>.+)$",
         RegexOptions.IgnoreCase)]
     private static partial Regex AmountUnitNamePattern();
+
+    // Matches "Flour 200 g", "Butter 50 g", "Mehl 200 g" (name amount unit)
+    [GeneratedRegex(
+        @"^(?<name>[^\d½⅓⅔¼¾⅛⅜⅝⅞]+?)\s+(?<amount>[\d½⅓⅔¼¾⅛⅜⅝⅞\./\-]+(?:\s+[\d½⅓⅔¼¾⅛⅜⅝⅞\./\-]+)?)\s*(?<unit>(?:cup|cups|tbsp|tsp|tablespoon|teaspoon|oz|ounce|lb|pound|g|gram|kg|ml|l|liter|litre|pinch|dash|clove|cloves|slice|slices|can|bunch|handful|large|medium|small|package|pkg|stick|el|tl|stk|stück|prise|bund|scheibe|scheiben|dose|päckchen|becher|messerspitze|msp)\S*)\s*$",
+        RegexOptions.IgnoreCase)]
+    private static partial Regex NameAmountUnitPattern();
+
+    // Matches "Eggs 2", "Äpfel 3" (name amount, no unit)
+    [GeneratedRegex(
+        @"^(?<name>[^\d½⅓⅔¼¾⅛⅜⅝⅞]{2,}?)\s+(?<amount>[\d½⅓⅔¼¾⅛⅜⅝⅞\./\-]+)\s*$",
+        RegexOptions.IgnoreCase)]
+    private static partial Regex NameAmountPattern();
 
     // Matches leading bullets/numbers: "1." "1)" "-" "*" "•"
     [GeneratedRegex(@"^\s*(?:\d+[.)]\s*|[-*•]\s*)")]
@@ -198,12 +212,29 @@ public sealed partial class OcrParserService : IOcrParser
     {
         var stripped = StripLeadingBullet(line);
 
+        // Try "amount unit name" first (e.g. "2 cups flour")
         var match = AmountUnitNamePattern().Match(stripped);
         if (match.Success)
             return new IngredientLineDto(
                 match.Groups["name"].Value.Trim(),
                 match.Groups["amount"].Value.Trim(),
                 match.Groups["unit"].Value.Trim());
+
+        // Try "name amount unit" (e.g. "Flour 200 g")
+        match = NameAmountUnitPattern().Match(stripped);
+        if (match.Success)
+            return new IngredientLineDto(
+                match.Groups["name"].Value.Trim(),
+                match.Groups["amount"].Value.Trim(),
+                match.Groups["unit"].Value.Trim());
+
+        // Try "name amount" without unit (e.g. "Eggs 2")
+        match = NameAmountPattern().Match(stripped);
+        if (match.Success)
+            return new IngredientLineDto(
+                match.Groups["name"].Value.Trim(),
+                match.Groups["amount"].Value.Trim(),
+                null);
 
         return new IngredientLineDto(stripped, null, null);
     }

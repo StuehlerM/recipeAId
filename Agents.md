@@ -74,11 +74,11 @@ recipeaid/
 - [x] `PythonOcrService` implementing `IOcrService` (calls sidecar via named `HttpClient`)
 - [x] `OcrParserService` implementing `IOcrParser` (uses `[GeneratedRegex]` source generators):
   - Title: first non-empty line or line after "Recipe:" header
-  - Ingredients: numbered/bulleted lines or lines under "Ingredients:" header
-  - Instructions: lines after "Instructions:"/"Directions:"/"Method:" header
+  - Ingredients: numbered/bulleted lines or lines under "Ingredients:"/"Zutaten:" header; three regex patterns tried: `amount unit name`, `name amount unit`, `name amount` (no unit)
+  - Instructions: lines after "Instructions:"/"Directions:"/"Method:"/"Zubereitung:"/"Anleitung:" header
 - [x] `POST /api/v1/recipes/from-image` — multipart upload → OCR → return draft (does NOT save); 10 MB upload limit; 30s HTTP client timeout; sidecar converts PIL→numpy array for EasyOCR compatibility
 - [x] Two-phase save: draft returned → user edits → `POST /api/v1/recipes` confirms
-- [x] Unit tests for `OcrParserService` (13 cases)
+- [x] Unit tests for `OcrParserService` (16 cases — including name-amount-unit order and German headers)
 - [x] Frontend `uploadRecipeImage` wired to real endpoint (`USE_MOCK` fallback when `VITE_API_BASE_URL` unset)
 
 ## Phase 6: React Frontend
