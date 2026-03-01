@@ -6,7 +6,7 @@ A recipe management app that reads physical recipe cards with your camera. Point
 
 ## Features
 
-- **Scan recipe cards** — upload a photo or use your phone camera; OCR extracts title, ingredients, and instructions automatically (English + German)
+- **Scan recipe cards** — upload a photo or use your phone camera (iPhone HEIC supported); OCR extracts title, ingredients, and instructions automatically (English + German)
 - **Review before saving** — the OCR result comes back as a draft you can edit before confirming
 - **4-step recipe wizard** — add recipes manually in four focused steps: Title → Ingredients → Instructions → Book; OCR capture available at every step
 - **Browse & search** — filter recipes by title or by cookbook/book title; search by the ingredients you have on hand (ranked by match count)

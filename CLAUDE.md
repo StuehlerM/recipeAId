@@ -131,6 +131,8 @@ Services after `docker compose up`:
 
 **OCR architecture:** `PythonOcrService` (in `RecipeAId.Api/OcrServices/`) implements `IOcrService` by forwarding images to the Python EasyOCR sidecar via a named `HttpClient` (30-second timeout). `OcrParserService` (in `RecipeAId.Core/Services/`) implements `IOcrParser` with pure string logic — no infra deps, fully unit-tested. Regex patterns use `[GeneratedRegex]` source generators for performance. The sidecar URL is configurable via `OcrService:BaseUrl` in `appsettings.json` (default: `http://localhost:8001`). Image uploads are limited to 10 MB.
 
+**Frontend image handling:** `useOcrCapture.ts` converts all captured images to JPEG via Canvas before uploading. This handles iPhone HEIC format (which Pillow/EasyOCR cannot read natively) and downscales images larger than 2048px for faster uploads. No images are stored — they are disposed after text extraction.
+
 **Frontend API client (`src/api/client.ts`):** uses `VITE_API_BASE_URL` to toggle between real fetch calls and mock data. All endpoints — including OCR — fall back to mock data when `VITE_API_BASE_URL` is not set.
 
 **Error handling:** all error responses use `ProblemDetails` (RFC 7807) — both inline controller validation and the global `ExceptionHandlingMiddleware`. The `detail` field is only populated in Development for unhandled exceptions.
