@@ -21,9 +21,6 @@ from paddleocr import PaddleOCR
 from PIL import Image
 from pydantic import BaseModel
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
 app = FastAPI(title="RecipeAId OCR Service", docs_url="/docs")
 
 
@@ -37,12 +34,25 @@ class HealthResponse(BaseModel):
 # Initialise once at startup — model download happens here on first run.
 # lang="de" loads the latin PP-OCRv5 model which covers all 45 Latin-script
 # languages including both German and English.
-ocr = PaddleOCR(lang="de", device="cpu")
+# Orientation/unwarping models are disabled — recipe card photos are taken
+# right-way-up and don't need the extra PP-LCNet and UVDoc models.
+ocr = PaddleOCR(
+    lang="de",
+    device="cpu",
+    use_doc_orientation_classify=False,
+    use_doc_unwarping=False,
+    use_textline_orientation=False,
+)
+
+# Re-apply logging config after PaddleOCR init, which resets the root logger.
+logging.basicConfig(level=logging.INFO, force=True)
+logger = logging.getLogger(__name__)
 
 
 @app.post("/ocr", response_model=OcrResponse)
 async def extract_text(file: UploadFile = File(...)) -> OcrResponse:
     """Extract text from an uploaded image."""
+    logger.info("Request received: %s (%s)", file.filename, file.content_type)
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=415, detail="File must be an image")
 
@@ -67,8 +77,10 @@ async def extract_text(file: UploadFile = File(...)) -> OcrResponse:
         logger.info("OCR found no text in %s", file.filename)
         return OcrResponse(raw_text="")
 
-    page = results[0].json
-    texts = page.get("rec_texts", [])
+    # Access the result directly as a dict — .json wraps everything under 'res'
+    # which loses the top-level rec_texts/rec_polys keys.
+    result = results[0]
+    texts = result.get("rec_texts", [])
     if not texts:
         logger.info("OCR found no text in %s", file.filename)
         return OcrResponse(raw_text="")
@@ -76,8 +88,8 @@ async def extract_text(file: UploadFile = File(...)) -> OcrResponse:
     raw_text = "\n".join(
         _group_into_lines(
             texts,
-            page.get("rec_scores", []),
-            page.get("rec_polys", []),
+            result.get("rec_scores", []),
+            result.get("rec_polys", []),
         )
     )
     logger.info("OCR extracted %d chars from %s", len(raw_text), file.filename)

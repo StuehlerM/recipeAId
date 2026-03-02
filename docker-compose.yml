@@ -6,7 +6,7 @@ services:
     ports:
       - "8001:8001"
     volumes:
-      - ocr-models:/root/.paddleocr
+      - ocr-models:/root/.paddlex
     networks:
       - internal
     restart: unless-stopped
@@ -76,4 +76,4 @@ networks:
 
 volumes:
   db-data:
-  ocr-models:   # PaddleOCR model files — persists across image rebuilds
+  ocr-models:   # PaddleX model files (~/.paddlex) — persists across image rebuilds

@@ -21,7 +21,7 @@ if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
 
 # ── Enable BuildKit ────────────────────────────────────────────────────────────
 # BuildKit is required for the --mount=type=cache in the Dockerfile to work.
-# Without it, the pip cache mount is silently ignored and torch/EasyOCR are
+# Without it, the pip cache mount is silently ignored and PaddlePaddle wheels are
 # re-downloaded every single build.
 $env:DOCKER_BUILDKIT = "1"
 $env:COMPOSE_DOCKER_CLI_BUILD = "1"
