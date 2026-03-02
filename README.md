@@ -26,7 +26,7 @@ cd recipeAId
 docker compose up --build
 ```
 
-> **First build takes a few minutes** — the OCR image downloads PyTorch and the ~200 MB EasyOCR model. Subsequent builds are fast thanks to Docker's layer cache and the BuildKit pip cache. The backend waits for the OCR sidecar's health check before starting.
+> **First build takes a few minutes** — the OCR image downloads PaddlePaddle and PaddleOCR. Subsequent builds are fast thanks to Docker's layer cache and the BuildKit pip cache. The backend waits for the OCR sidecar's health check before starting.
 >
 > **Rebuilding only the OCR image:** Use `.\build-ocr.ps1` (PowerShell) instead of `docker compose up --build`. It sets `DOCKER_BUILDKIT=1` so the pip cache is active and wheels are not re-downloaded on every build.
 
@@ -36,7 +36,7 @@ Once running:
 |----------|---------------------------------------------------------------------|
 | Frontend | https://localhost:3443 (HTTP on :3000 redirects automatically)      |
 | Backend  | http://localhost:8080                                               |
-| OCR      | http://localhost:8001                                               |
+| OCR      | http://localhost:8001 (Swagger UI at `/docs`)                       |
 
 > **Self-signed certificate:** Your browser will show a security warning on first visit. Click **Advanced → Proceed to localhost** to continue. On iOS Safari, tap **Show Details → visit this website**. You only need to do this once per browser/device.
 
@@ -65,11 +65,12 @@ Run each service individually when you want hot-reload and the interactive API e
 
 ```bash
 cd ocr-service
-pip install -r requirements.txt   # downloads ~200 MB EasyOCR model on first run
+pip install paddlepaddle==3.2.0 -i https://www.paddlepaddle.org.cn/packages/stable/cpu/
+pip install -r requirements.txt   # downloads PaddleOCR models on first run
 uvicorn main:app --port 8001
 ```
 
-The sidecar must be running for the upload feature to work.
+The sidecar must be running for the upload feature to work. Swagger UI is available at `http://localhost:8001/docs` for testing the OCR endpoint directly.
 
 ### 2. Backend API
 
@@ -102,7 +103,7 @@ Open https://localhost:5173 (the dev server uses a self-signed cert via `@vitejs
 recipeaid/
 ├── docker-compose.yml
 ├── docker-compose.integration.yml
-├── ocr-service/           # Python FastAPI + EasyOCR (port 8001)
+├── ocr-service/           # Python FastAPI + PaddleOCR (port 8001)
 │   ├── main.py
 │   ├── requirements.txt
 │   └── Dockerfile
@@ -155,7 +156,7 @@ recipeaid/
 
 All error responses use the [RFC 7807 ProblemDetails](https://datatracker.ietf.org/doc/html/rfc7807) format. Image uploads are limited to 10 MB (enforced by both the backend and the nginx proxy).
 
-The interactive Scalar explorer (`/scalar/v1`) is available in Development mode and lets you try every endpoint in the browser.
+The interactive Scalar explorer (`/scalar/v1`) is available in Development mode and lets you try every endpoint in the browser. The OCR sidecar has its own Swagger UI at `http://localhost:8001/docs` for testing image uploads directly.
 
 ---
 
@@ -187,7 +188,7 @@ integration/
 └── reports/report.html        # Generated after each run (gitignored)
 ```
 
-> **Note:** The integration tests cover the frontend UI and backend API only. The OCR upload scenario is excluded because it requires the heavy EasyOCR model; use the unit tests in `RecipeAId.Tests` for OCR parsing logic.
+> **Note:** The integration tests cover the frontend UI and backend API only. The OCR upload scenario is excluded because it requires the PaddleOCR model; use the unit tests in `RecipeAId.Tests` for OCR parsing logic.
 
 ### Option A — Docker Compose profile (recommended)
 
@@ -260,6 +261,6 @@ npm run test:headed
 | Frontend | React 19, Vite 7, TypeScript, Tailwind CSS v4, TanStack Query v5, React Router v6 |
 | PWA | vite-plugin-pwa (installable, standalone, theme-color) |
 | Backend | ASP.NET Core 9, Entity Framework Core 9, SQLite |
-| OCR | Python 3.11, EasyOCR (English + German), FastAPI, uvicorn |
+| OCR | Python 3.11, PaddleOCR PP-OCRv5 (English + German), FastAPI, uvicorn |
 | Container | Docker Compose (three services + optional integration profile) |
 | TLS | Self-signed cert (nginx, generated at image build time); `@vitejs/plugin-basic-ssl` for the Vite dev server |

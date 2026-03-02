@@ -1,42 +1,48 @@
 """
 RecipeAId OCR sidecar service.
 
-Accepts an image upload and returns the extracted text using EasyOCR.
+Accepts an image upload and returns the extracted text using PaddleOCR (PP-OCRv5).
 The .NET backend calls this service; all recipe parsing happens there.
 
-Supported languages: English (en), German (de).
+Supported languages: English (en), German (de) — via the latin PP-OCRv5 model.
 
 Run:
     uvicorn main:app --port 8001
 
-First run will download the EasyOCR English and German models (~200 MB each).
+First run will download the PaddleOCR models (~50 MB).
 """
 
 import io
 import logging
 
-import easyocr
 import numpy as np
 from fastapi import FastAPI, File, HTTPException, UploadFile
-from fastapi.responses import JSONResponse
+from paddleocr import PaddleOCR
 from PIL import Image
+from pydantic import BaseModel
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="RecipeAId OCR Service")
+app = FastAPI(title="RecipeAId OCR Service", docs_url="/docs")
+
+
+class OcrResponse(BaseModel):
+    raw_text: str
+
+
+class HealthResponse(BaseModel):
+    status: str
 
 # Initialise once at startup — model download happens here on first run.
-reader = easyocr.Reader(["en"], gpu=False, verbose=False)
+# lang="de" loads the latin PP-OCRv5 model which covers all 45 Latin-script
+# languages including both German and English.
+ocr = PaddleOCR(lang="de", device="cpu")
 
 
-@app.post("/ocr")
-async def extract_text(file: UploadFile = File(...)) -> JSONResponse:
-    """Extract text from an uploaded image.
-
-    Returns:
-        { "raw_text": "<extracted text>" }
-    """
+@app.post("/ocr", response_model=OcrResponse)
+async def extract_text(file: UploadFile = File(...)) -> OcrResponse:
+    """Extract text from an uploaded image."""
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=415, detail="File must be an image")
 
@@ -51,31 +57,56 @@ async def extract_text(file: UploadFile = File(...)) -> JSONResponse:
         raise HTTPException(status_code=422, detail="Cannot read image file") from exc
 
     try:
-        results = reader.readtext(np.array(image), detail=1, paragraph=False)
+        img_array = np.array(image)
+        results = list(ocr.predict(img_array))
     except Exception as exc:
-        logger.error("EasyOCR failed: %s", exc)
+        logger.error("PaddleOCR failed: %s", exc)
         raise HTTPException(status_code=500, detail="OCR processing failed") from exc
 
-    raw_text = "\n".join(_group_into_lines(results))
+    if not results:
+        logger.info("OCR found no text in %s", file.filename)
+        return OcrResponse(raw_text="")
+
+    page = results[0].json
+    texts = page.get("rec_texts", [])
+    if not texts:
+        logger.info("OCR found no text in %s", file.filename)
+        return OcrResponse(raw_text="")
+
+    raw_text = "\n".join(
+        _group_into_lines(
+            texts,
+            page.get("rec_scores", []),
+            page.get("rec_polys", []),
+        )
+    )
     logger.info("OCR extracted %d chars from %s", len(raw_text), file.filename)
-    return JSONResponse({"raw_text": raw_text})
+    return OcrResponse(raw_text=raw_text)
 
 
-def _group_into_lines(results: list, y_threshold_ratio: float = 0.5) -> list[str]:
+def _group_into_lines(
+    texts: list[str],
+    scores: list[float],
+    polys: list,
+    y_threshold_ratio: float = 0.5,
+) -> list[str]:
     """Group OCR text blocks into lines based on y-coordinate proximity.
 
     Uses bounding-box y-centers to decide which blocks share a visual line,
     then sorts each line left-to-right and joins with spaces.
     Lines are returned top-to-bottom — preserving the recipe's visual layout.
+
+    Each poly is [[x1,y1],[x2,y2],[x3,y3],[x4,y4]] (quadrilateral).
     """
-    if not results:
+    if not texts:
         return []
 
     blocks = []
-    for bbox, text, _conf in results:
-        y_top = min(bbox[0][1], bbox[1][1])
-        y_bottom = max(bbox[2][1], bbox[3][1])
-        x_left = min(bbox[0][0], bbox[3][0])
+    for i, text in enumerate(texts):
+        poly = polys[i]  # four corner points: top-left, top-right, bottom-right, bottom-left
+        y_top = float(min(poly[0][1], poly[1][1]))
+        y_bottom = float(max(poly[2][1], poly[3][1]))
+        x_left = float(min(poly[0][0], poly[3][0]))
         blocks.append({
             "text": text,
             "y_center": (y_top + y_bottom) / 2,
@@ -101,6 +132,6 @@ def _group_into_lines(results: list, y_threshold_ratio: float = 0.5) -> list[str
     return output
 
 
-@app.get("/health")
-async def health() -> JSONResponse:
-    return JSONResponse({"status": "ok"})
+@app.get("/health", response_model=HealthResponse)
+async def health() -> HealthResponse:
+    return HealthResponse(status="ok")

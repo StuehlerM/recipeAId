@@ -59,3 +59,4 @@ Write-Host ""
 Write-Host "Next steps:" -ForegroundColor DarkGray
 Write-Host "  Start just OCR:     docker compose up ocr-service" -ForegroundColor DarkGray
 Write-Host "  Start full stack:   docker compose up" -ForegroundColor DarkGray
+

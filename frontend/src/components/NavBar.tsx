@@ -23,7 +23,7 @@ export default function NavBar() {
             [
               "flex-1 flex flex-col items-center justify-end pb-2 pt-1",
               "text-[0.6rem] leading-tight select-none transition-colors duration-150",
-              "min-h-[3.5rem]",
+              "min-h-14",
               isActive ? "text-olive" : "text-muted",
             ].join(" ")
           }

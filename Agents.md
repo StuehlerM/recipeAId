@@ -20,13 +20,13 @@ recipeaid/
 │       ├── RecipeAId.Core/     # Entities, interfaces, DTOs (one per file), services
 │       ├── RecipeAId.Data/     # EF Core, SQLite, repositories, migrations
 │       └── RecipeAId.Api/      # Controllers, OCR services, DI host
-├── ocr-service/                # Python FastAPI + EasyOCR (port 8001)
+├── ocr-service/                # Python FastAPI + PaddleOCR (port 8001)
 └── frontend/                   # React (Vite + TypeScript, feature-based folder structure)
 ```
 
 **Tech stack:**
 - Backend: ASP.NET Core 9, Entity Framework Core 9, SQLite
-- OCR: Python EasyOCR sidecar (FastAPI, :8001), English + German — upgrade path: Azure AI Document Intelligence
+- OCR: Python PaddleOCR sidecar (FastAPI, :8001), English + German (latin PP-OCRv5 model)
 - Frontend: React 19, Vite 7, TypeScript, Tailwind CSS v4, TanStack Query v5, React Router v6
 - PWA: `vite-plugin-pwa` (installable, standalone)
 
@@ -70,13 +70,13 @@ recipeaid/
 - [x] Unit tests for `RecipeMatchingService`
 
 ## Phase 5: OCR Integration
-- [x] Python EasyOCR sidecar (`ocr-service/main.py`, FastAPI on :8001) — replaces Tesseract.NET
+- [x] Python PaddleOCR sidecar (`ocr-service/main.py`, FastAPI on :8001) — PP-OCRv5 latin model (English + German)
 - [x] `PythonOcrService` implementing `IOcrService` (calls sidecar via named `HttpClient`)
 - [x] `OcrParserService` implementing `IOcrParser` (uses `[GeneratedRegex]` source generators):
   - Title: first non-empty line or line after "Recipe:" header
   - Ingredients: numbered/bulleted lines or lines under "Ingredients:"/"Zutaten:" header; three regex patterns tried: `amount unit name`, `name amount unit`, `name amount` (no unit)
   - Instructions: lines after "Instructions:"/"Directions:"/"Method:"/"Zubereitung:"/"Anleitung:" header
-- [x] `POST /api/v1/recipes/from-image` — multipart upload → OCR → return draft (does NOT save); 10 MB upload limit; 30s HTTP client timeout; sidecar uses `detail=1` bounding-box y-coordinate grouping to reconstruct line breaks; PIL→numpy array conversion for EasyOCR
+- [x] `POST /api/v1/recipes/from-image` — multipart upload → OCR → return draft (does NOT save); 10 MB upload limit; 30s HTTP client timeout; sidecar uses PaddleOCR `predict()` with bounding-box y-coordinate grouping to reconstruct line breaks; PIL→numpy array conversion
 - [x] Two-phase save: draft returned → user edits → `POST /api/v1/recipes` confirms
 - [x] Unit tests for `OcrParserService` (18 cases — including name-amount-unit order, German headers, and run-on line splitting)
 - [x] Frontend `uploadRecipeImage` wired to real endpoint (`USE_MOCK` fallback when `VITE_API_BASE_URL` unset)
@@ -163,8 +163,8 @@ recipeaid/
 
 - [x] `backend/Dockerfile` — multi-stage build (SDK → ASP.NET runtime); SQLite DB persisted via named volume
 - [x] `frontend/Dockerfile` — multi-stage build (Node → nginx); accepts `VITE_API_BASE_URL` build arg
-- [x] `ocr-service/Dockerfile` — Python 3.11-slim; EasyOCR model pre-downloaded at build time (~200 MB layer)
-- [x] `build-ocr.ps1` — PowerShell helper script; sets `DOCKER_BUILDKIT=1` so the pip cache mount is active (avoids re-downloading torch/EasyOCR on every requirements change); supports `-NoCache` and `-Pull` flags
+- [x] `ocr-service/Dockerfile` — Python 3.11-slim; PaddleOCR + PaddlePaddle (CPU); models cached in Docker volume; Swagger UI at `/docs`
+- [x] `build-ocr.ps1` — PowerShell helper script; sets `DOCKER_BUILDKIT=1` so the pip cache mount is active (avoids re-downloading PaddlePaddle wheels on every requirements change); supports `-NoCache` and `-Pull` flags
 - [x] `docker-compose.yml` — all three services wired together:
   - `ocr-service` exposes :8001
   - `backend` depends on `ocr-service` with `condition: service_healthy` (health check on `/health`, 60s start period); `OcrService__BaseUrl=http://ocr-service:8001`; CORS allows `https://localhost:3443`
@@ -176,7 +176,7 @@ recipeaid/
 ---
 
 ## Open / Future Decisions
-- `[ ]` OCR upgrade path: replace EasyOCR sidecar with Azure AI Document Intelligence for higher accuracy on handwritten cards (swap `PythonOcrService` implementation only — interface unchanged)
+- `[x]` OCR upgrade: replaced EasyOCR with PaddleOCR (PP-OCRv5) for better accuracy and faster inference; latin model covers English + German
 - `[ ]` Ingredient fuzzy matching: Levenshtein distance or synonym table (Phase 4)
 - `[ ]` LLM recipe suggestion: `IRecipeSuggestionService` interface exists as a seam; implement when needed
 - `[ ]` Image storage: local filesystem for now; Azure Blob / S3 upgrade path via `IImageStorageService`

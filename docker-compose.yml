@@ -6,7 +6,7 @@ services:
     ports:
       - "8001:8001"
     volumes:
-      - ocr-models:/root/.EasyOCR
+      - ocr-models:/root/.paddleocr
     networks:
       - internal
     restart: unless-stopped
@@ -76,4 +76,4 @@ networks:
 
 volumes:
   db-data:
-  ocr-models:   # EasyOCR model files — persists across image rebuilds
+  ocr-models:   # PaddleOCR model files — persists across image rebuilds

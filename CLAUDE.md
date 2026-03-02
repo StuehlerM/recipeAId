@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 recipeaid/
 ├── Agents.md          # Phase tracker and full API reference
 ├── build-ocr.ps1      # PowerShell helper — builds ocr-service image with BuildKit caching
-├── ocr-service/       # Python EasyOCR sidecar (FastAPI, port 8001)
+├── ocr-service/       # Python PaddleOCR sidecar (FastAPI, port 8001)
 ├── backend/           # ASP.NET Core 9 Web API
 │   ├── RecipeAId.sln
 │   ├── src/
@@ -73,12 +73,15 @@ To point the frontend at a real backend, set `VITE_API_BASE_URL=http://localhost
 All sidecar commands run from `ocr-service/`.
 
 ```bash
-# Install dependencies (one-time; first run also downloads the ~200 MB EasyOCR model)
+# Install dependencies (one-time; first run also downloads the PaddleOCR models ~50 MB)
+pip install paddlepaddle==3.2.0 -i https://www.paddlepaddle.org.cn/packages/stable/cpu/
 pip install -r requirements.txt
 
 # Start the sidecar (required for POST /api/v1/recipes/from-image to work)
 uvicorn main:app --port 8001
 ```
+
+Swagger UI: `http://localhost:8001/docs` — lets you test the `/ocr` endpoint directly with image uploads.
 
 ## Docker commands
 
@@ -101,11 +104,11 @@ docker compose down -v
 Services after `docker compose up`:
 - Frontend: https://localhost:3443 (HTTP on :3000 redirects automatically; self-signed cert — accept the browser warning once)
 - Backend API: http://localhost:8080
-- OCR sidecar: http://localhost:8001
+- OCR sidecar: http://localhost:8001 (Swagger UI at `/docs`)
 
-**Note:** The first `docker compose build` for `ocr-service` downloads the ~200 MB EasyOCR model into the image layer. Subsequent builds use the Docker cache and are fast.
+**Note:** The first `docker compose build` for `ocr-service` downloads PaddleOCR and PaddlePaddle wheels. Subsequent builds use the Docker cache and are fast.
 
-**Rebuilding only the OCR image (faster):** Use `build-ocr.ps1` instead of `docker compose up --build`. It sets `DOCKER_BUILDKIT=1`, which activates the `--mount=type=cache` pip cache in the Dockerfile so torch/EasyOCR wheels are not re-downloaded when requirements change.
+**Rebuilding only the OCR image (faster):** Use `build-ocr.ps1` instead of `docker compose up --build`. It sets `DOCKER_BUILDKIT=1`, which activates the `--mount=type=cache` pip cache in the Dockerfile so PaddlePaddle wheels are not re-downloaded when requirements change.
 
 ```powershell
 .\build-ocr.ps1            # normal build (uses layer + pip cache)
@@ -129,9 +132,9 @@ Services after `docker compose up`:
 
 **Key architectural decision — `IRecipeRepository.UpdateAsync`:** takes an explicit `newIngredients` list. The repository deletes all existing `RecipeIngredient` rows and re-inserts to avoid EF Core change-tracking conflicts.
 
-**OCR architecture:** `PythonOcrService` (in `RecipeAId.Api/OcrServices/`) implements `IOcrService` by forwarding images to the Python EasyOCR sidecar via a named `HttpClient` (30-second timeout). `OcrParserService` (in `RecipeAId.Core/Services/`) implements `IOcrParser` with pure string logic — no infra deps, fully unit-tested. Regex patterns use `[GeneratedRegex]` source generators for performance. Three ingredient patterns are tried in order: `amount unit name` ("2 cups flour"), `name amount unit` ("Flour 200 g"), and `name amount` ("Eggs 2"). German section headers are supported ("Zutaten", "Zubereitung"). Run-on ingredient lines (OCR with no newlines) are split at quantity+unit boundaries and case transitions before parsing. The sidecar uses `detail=1` with bounding-box y-coordinate grouping to reconstruct proper line breaks from the image layout (text blocks on the same visual line are merged, separate lines get `\n`). PIL images are converted to numpy arrays via `np.array()` (EasyOCR does not accept PIL Image objects). The sidecar URL is configurable via `OcrService:BaseUrl` in `appsettings.json` (default: `http://localhost:8001`). Image uploads are limited to 10 MB.
+**OCR architecture:** `PythonOcrService` (in `RecipeAId.Api/OcrServices/`) implements `IOcrService` by forwarding images to the Python PaddleOCR sidecar via a named `HttpClient` (30-second timeout). `OcrParserService` (in `RecipeAId.Core/Services/`) implements `IOcrParser` with pure string logic — no infra deps, fully unit-tested. Regex patterns use `[GeneratedRegex]` source generators for performance. Three ingredient patterns are tried in order: `amount unit name` ("2 cups flour"), `name amount unit` ("Flour 200 g"), and `name amount` ("Eggs 2"). German section headers are supported ("Zutaten", "Zubereitung"). Run-on ingredient lines (OCR with no newlines) are split at quantity+unit boundaries and case transitions before parsing. The sidecar uses PaddleOCR's `predict()` with bounding-box y-coordinate grouping to reconstruct proper line breaks from the image layout (text blocks on the same visual line are merged, separate lines get `\n`). PIL images are converted to numpy arrays via `np.array()` before passing to PaddleOCR. The `lang="de"` setting loads the latin PP-OCRv5 model which covers both German and English (45 Latin-script languages). The sidecar URL is configurable via `OcrService:BaseUrl` in `appsettings.json` (default: `http://localhost:8001`). Image uploads are limited to 10 MB.
 
-**Frontend image handling:** `useOcrCapture.ts` converts all captured images to JPEG via Canvas before uploading. This handles iPhone HEIC format (which Pillow/EasyOCR cannot read natively) and downscales images larger than 2048px for faster uploads. No images are stored — they are disposed after text extraction.
+**Frontend image handling:** `useOcrCapture.ts` converts all captured images to JPEG via Canvas before uploading. This handles iPhone HEIC format (which Pillow cannot read natively) and downscales images larger than 2048px for faster uploads. No images are stored — they are disposed after text extraction.
 
 **Frontend API client (`src/api/client.ts`):** uses `VITE_API_BASE_URL` to toggle between real fetch calls and mock data. All endpoints — including OCR — fall back to mock data when `VITE_API_BASE_URL` is not set.
 
