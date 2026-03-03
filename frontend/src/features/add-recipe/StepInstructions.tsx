@@ -5,11 +5,10 @@ interface StepInstructionsProps {
   instructions: string;
   onChange: (value: string) => void;
   onScan: (draft: RecipeOcrDraftDto) => void;
-  isSaveError: boolean;
   inputCls: string;
 }
 
-export default function StepInstructions({ instructions, onChange, onScan, isSaveError, inputCls }: StepInstructionsProps) {
+export default function StepInstructions({ instructions, onChange, onScan, inputCls }: StepInstructionsProps) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
@@ -24,9 +23,6 @@ export default function StepInstructions({ instructions, onChange, onScan, isSav
         placeholder="Step 1: Preheat oven to 180°C…"
         autoFocus
       />
-      {isSaveError && (
-        <p className="text-rose text-sm">Failed to save. Please try again.</p>
-      )}
     </div>
   );
 }

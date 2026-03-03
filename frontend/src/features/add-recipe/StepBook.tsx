@@ -2,11 +2,10 @@ interface StepBookProps {
   bookTitle: string;
   onChange: (value: string) => void;
   bookSuggestions: string[];
-  isSaveError: boolean;
   inputCls: string;
 }
 
-export default function StepBook({ bookTitle, onChange, bookSuggestions, isSaveError, inputCls }: StepBookProps) {
+export default function StepBook({ bookTitle, onChange, bookSuggestions, inputCls }: StepBookProps) {
   return (
     <div className="space-y-4">
       <p className="text-ghost text-sm">Which cookbook or source is this from? (Optional)</p>
@@ -24,9 +23,6 @@ export default function StepBook({ bookTitle, onChange, bookSuggestions, isSaveE
             <option key={b} value={b} />
           ))}
         </datalist>
-      )}
-      {isSaveError && (
-        <p className="text-rose text-sm">Failed to save. Please try again.</p>
       )}
     </div>
   );

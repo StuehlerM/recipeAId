@@ -259,7 +259,7 @@ npm run test:headed
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | React 19, Vite 7, TypeScript, Tailwind CSS v4, TanStack Query v5, React Router v6 |
+| Frontend | React 19, Vite 7, TypeScript, Tailwind CSS v4, TanStack Query v5, React Router v6, sonner (toasts), lucide-react (icons) |
 | PWA | vite-plugin-pwa (installable, standalone, theme-color) |
 | Backend | ASP.NET Core 9, Entity Framework Core 9, SQLite |
 | OCR | Python 3.11, PaddleOCR PP-OCRv5 (English + German), FastAPI, uvicorn |

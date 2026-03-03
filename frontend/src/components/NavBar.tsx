@@ -1,12 +1,14 @@
 import { NavLink } from "react-router-dom";
+import { BookOpen, Search, Plus, Camera, CalendarDays } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
-const TABS = [
-  { to: "/",        end: true,  icon: "🍽",  label: "Recipes"          },
-  { to: "/search",  end: false, icon: "🔍",  label: "Search"            },
-  { to: "/add",     end: false, icon: "+",   label: "Add",   fab: true  },
-  { to: "/upload",  end: false, icon: "📷",  label: "Upload"            },
-  { to: "/planner", end: false, icon: "📅",  label: "Planner"           },
-] as const;
+const TABS: { to: string; end: boolean; Icon: LucideIcon; label: string; fab?: true }[] = [
+  { to: "/",        end: true,  Icon: BookOpen,     label: "Recipes"  },
+  { to: "/search",  end: false, Icon: Search,       label: "Search"   },
+  { to: "/add",     end: false, Icon: Plus,         label: "Add",     fab: true },
+  { to: "/upload",  end: false, Icon: Camera,       label: "Upload"   },
+  { to: "/planner", end: false, Icon: CalendarDays, label: "Planner"  },
+];
 
 export default function NavBar() {
   return (
@@ -18,7 +20,7 @@ export default function NavBar() {
         <NavLink
           key={tab.to}
           to={tab.to}
-          end={"end" in tab ? tab.end : false}
+          end={tab.end}
           className={({ isActive }) =>
             [
               "flex-1 flex flex-col items-center justify-end pb-2 pt-1",
@@ -28,12 +30,12 @@ export default function NavBar() {
             ].join(" ")
           }
         >
-          {"fab" in tab && tab.fab ? (
-            <span className="flex items-center justify-center rounded-full bg-sage text-card w-10 h-10 font-bold text-2xl leading-none -mt-4 shadow-lg mb-0.5">
-              {tab.icon}
+          {tab.fab ? (
+            <span className="flex items-center justify-center rounded-full bg-sage text-card w-10 h-10 -mt-4 shadow-lg mb-0.5">
+              <tab.Icon size={22} strokeWidth={2.5} />
             </span>
           ) : (
-            <span className="text-xl leading-none mb-0.5">{tab.icon}</span>
+            <tab.Icon size={22} strokeWidth={1.75} className="mb-0.5" />
           )}
           <span>{tab.label}</span>
         </NavLink>

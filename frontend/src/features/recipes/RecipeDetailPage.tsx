@@ -1,5 +1,6 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { getRecipe, deleteRecipe } from "../../api/client";
 import styles from "./RecipeDetailPage.module.css";
 
@@ -19,7 +20,11 @@ export default function RecipeDetailPage() {
     mutationFn: () => deleteRecipe(recipeId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["recipes"] });
+      toast.success("Recipe deleted.");
       navigate("/");
+    },
+    onError: () => {
+      toast.error("Failed to delete recipe. Please try again.");
     },
   });
 

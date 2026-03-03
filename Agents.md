@@ -104,13 +104,15 @@ recipeaid/
 - [x] `src/components/OcrCaptureButton.tsx` — camera icon button with spinner and inline error display; renders `CropModal` (shared)
 - [x] `src/components/CropModal.tsx` — fullscreen crop overlay (`react-image-crop`); applies automatic image enhancement (grayscale + auto-contrast + sharpen via `imageEnhance.ts`) before OCR upload
 - [x] `src/utils/imageEnhance.ts` — Canvas-based image preprocessing pipeline: BT.601 grayscale, histogram-stretch auto-contrast (1% percentile clipping), unsharp-mask sharpening
-- [x] `src/features/add-recipe/StepIndicator.tsx` — 4-step progress indicator (extracted from AddRecipePage)
+- [x] `src/features/add-recipe/StepIndicator.tsx` — 4-step progress indicator (clickable for completed/current steps to enable backwards navigation; title required before forward navigation from step 1)
 - [x] `src/features/add-recipe/UnitCombobox.tsx` — datalist-based unit picker (extracted from AddRecipePage)
 - [x] Feature-based folder structure: `src/features/{recipes,search,upload,add-recipe,planner}/`
 - [x] `RecipeListPage`: book filter dropdown + `BookTitle` badge on recipe cards
 - [x] `RecipeDetailPage`: displays `BookTitle`; `RecipeIngredientDto` uses `amount` + `unit`
 - [x] `UploadPage`: updated for Amount + Unit ingredient model
 - [x] OCR `main.py` docstring updated for English + German language support
+- [x] Error & success notifications: sonner toast library (top-center); error toasts on save/delete/OCR failures, success toast on save/delete
+- [x] Navigation icons: replaced emoji with lucide-react icons (BookOpen, Search, Plus, Camera, CalendarDays)
 
 ---
 

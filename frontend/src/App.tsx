@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import { Toaster } from "sonner";
 import NavBar from "./components/NavBar";
 import RecipeListPage from "./features/recipes/RecipeListPage";
 import RecipeDetailPage from "./features/recipes/RecipeDetailPage";
@@ -10,6 +11,7 @@ import PlannerPage from "./features/planner/PlannerPage";
 export default function App() {
   return (
     <>
+      <Toaster position="top-center" richColors />
       <main className="pb-20">
         <Routes>
           <Route path="/" element={<RecipeListPage />} />

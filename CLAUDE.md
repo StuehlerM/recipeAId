@@ -83,6 +83,8 @@ To point the frontend at a real backend, set `VITE_API_BASE_URL=http://localhost
 
 New pages use Tailwind classes; existing pages keep their CSS Modules.
 
+**Frontend dependencies:** sonner (toast notifications), lucide-react (SVG icons), react-image-crop (crop modal), @tailwindcss/vite, TanStack Query v5, React Router v6.
+
 ## OCR sidecar commands
 
 All sidecar commands run from `ocr-service/`.

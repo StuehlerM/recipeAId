@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { uploadRecipeImage, createRecipe } from "../../api/client";
 import type { RecipeOcrDraftDto } from "../../api/types";
 import CropModal from "../../components/CropModal";
@@ -28,6 +29,9 @@ export default function UploadPage() {
       setInstructions(data.detectedInstructions ?? "");
       setIngredients(data.detectedIngredients.map((i) => ({ name: i.name, amount: i.amount ?? "", unit: i.unit ?? "" })));
     },
+    onError: () => {
+      toast.error("OCR failed. Please try another image or fill in manually below.");
+    },
   });
 
   const saveMutation = useMutation({
@@ -42,7 +46,11 @@ export default function UploadPage() {
       }),
     onSuccess: (recipe) => {
       qc.invalidateQueries({ queryKey: ["recipes"] });
+      toast.success("Recipe saved!");
       navigate(`/recipes/${recipe.id}`);
+    },
+    onError: () => {
+      toast.error("Failed to save recipe. Please try again.");
     },
   });
 
@@ -119,7 +127,7 @@ export default function UploadPage() {
           <p className={styles.processing}>Reading recipe with OCR… please wait.</p>
         )}
         {ocrMutation.isError && (
-          <p className={styles.error}>OCR failed. Please try another image or fill in manually below.</p>
+          <p className={styles.error}>OCR failed. Try another image or fill in manually below.</p>
         )}
       </section>
 
@@ -189,9 +197,6 @@ export default function UploadPage() {
           >
             {saveMutation.isPending ? "Saving…" : "Save Recipe"}
           </button>
-          {saveMutation.isError && (
-            <p className={styles.error}>Failed to save. Please try again.</p>
-          )}
         </section>
       )}
 

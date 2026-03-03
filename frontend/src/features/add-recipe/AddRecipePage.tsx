@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { createRecipe, getRecipes } from "../../api/client";
 import type { RecipeOcrDraftDto } from "../../api/types";
 import StepIndicator from "./StepIndicator";
@@ -53,7 +54,11 @@ export default function AddRecipePage() {
       }),
     onSuccess: (recipe) => {
       qc.invalidateQueries({ queryKey: ["recipes"] });
+      toast.success("Recipe saved!");
       navigate(`/recipes/${recipe.id}`);
+    },
+    onError: () => {
+      toast.error("Failed to save recipe. Please try again.");
     },
   });
 
@@ -73,6 +78,11 @@ export default function AddRecipePage() {
 
   function handleBack() {
     setStep((s) => Math.max(s - 1, 1) as Step);
+  }
+
+  function handleStepClick(target: Step) {
+    if (target > step) return;
+    setStep(target);
   }
 
   function handleTitleScan(draft: RecipeOcrDraftDto) {
@@ -131,7 +141,7 @@ export default function AddRecipePage() {
     <div className="max-w-sm mx-auto px-4 pt-6">
       <h1 className="text-2xl font-bold text-ink mb-6">New Recipe</h1>
 
-      <StepIndicator step={step} />
+      <StepIndicator step={step} onStepClick={handleStepClick} />
 
       {step === 1 && (
         <StepTitle
@@ -163,7 +173,6 @@ export default function AddRecipePage() {
           instructions={instructions}
           onChange={setInstructions}
           onScan={handleInstructionScan}
-          isSaveError={saveMutation.isError}
           inputCls={inputCls}
         />
       )}
@@ -173,7 +182,6 @@ export default function AddRecipePage() {
           bookTitle={bookTitle}
           onChange={setBookTitle}
           bookSuggestions={bookSuggestions}
-          isSaveError={saveMutation.isError}
           inputCls={inputCls}
         />
       )}
