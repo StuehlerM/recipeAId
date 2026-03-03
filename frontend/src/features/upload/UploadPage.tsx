@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { uploadRecipeImage, createRecipe } from "../../api/client";
 import type { RecipeOcrDraftDto } from "../../api/types";
+import CropModal from "../../components/CropModal";
 import styles from "./UploadPage.module.css";
 
 type DraftIngredient = { name: string; amount: string; unit: string };
@@ -17,6 +18,7 @@ export default function UploadPage() {
   const [instructions, setInstructions] = useState("");
   const [ingredients, setIngredients] = useState<DraftIngredient[]>([]);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [pendingImageUrl, setPendingImageUrl] = useState<string | null>(null);
 
   const ocrMutation = useMutation({
     mutationFn: (file: File) => uploadRecipeImage(file),
@@ -47,9 +49,21 @@ export default function UploadPage() {
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    setPreviewUrl(URL.createObjectURL(file));
+    // Show crop modal instead of uploading immediately
+    setPendingImageUrl(URL.createObjectURL(file));
+  }
+
+  function handleCropConfirm(croppedFile: File) {
+    if (pendingImageUrl) URL.revokeObjectURL(pendingImageUrl);
+    setPendingImageUrl(null);
+    setPreviewUrl(URL.createObjectURL(croppedFile));
     setDraft(null);
-    ocrMutation.mutate(file);
+    ocrMutation.mutate(croppedFile);
+  }
+
+  function handleCropCancel() {
+    if (pendingImageUrl) URL.revokeObjectURL(pendingImageUrl);
+    setPendingImageUrl(null);
   }
 
   function updateIngredient(idx: number, field: keyof DraftIngredient, value: string) {
@@ -194,6 +208,14 @@ export default function UploadPage() {
         >
           Enter recipe manually instead
         </button>
+      )}
+
+      {pendingImageUrl && (
+        <CropModal
+          imageUrl={pendingImageUrl}
+          onConfirm={handleCropConfirm}
+          onCancel={handleCropCancel}
+        />
       )}
     </div>
   );

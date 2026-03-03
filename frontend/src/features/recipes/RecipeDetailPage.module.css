@@ -6,7 +6,7 @@
 
 .back {
   display: inline-block;
-  color: #8a9470;
+  color: #6b6560;
   text-decoration: none;
   font-size: 0.875rem;
   margin-bottom: 1.25rem;
@@ -14,23 +14,23 @@
 }
 
 .back:hover {
-  color: #a7b16f;
+  color: #5c7a52;
 }
 
 .title {
   font-size: 2rem;
-  color: #e8edd8;
+  color: #1a1917;
   margin-bottom: 0.25rem;
 }
 
 .meta {
-  color: #8a9470;
+  color: #6b6560;
   font-size: 0.85rem;
   margin-bottom: 2rem;
 }
 
 .bookBadge {
-  color: #a7b16f;
+  color: #5c7a52;
 }
 
 .section {
@@ -39,11 +39,11 @@
 
 .section h2 {
   font-size: 1.1rem;
-  color: #a7b16f;
+  color: #5c7a52;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 0.75rem;
-  border-bottom: 1px solid #1e5c26;
+  border-bottom: 1px solid #e0dbd4;
   padding-bottom: 0.4rem;
 }
 
@@ -62,25 +62,25 @@
   align-items: baseline;
   padding: 0.4rem 0.75rem;
   border-radius: 6px;
-  background: #163d1c;
+  background: #f5f3ef;
 }
 
 .ingredientName {
-  color: #e8edd8;
+  color: #1a1917;
   font-size: 0.95rem;
   text-transform: capitalize;
 }
 
 .quantity {
-  color: #8a9470;
+  color: #6b6560;
   font-size: 0.875rem;
 }
 
 .instructions {
-  color: #e8edd8;
+  color: #1a1917;
   line-height: 1.8;
   white-space: pre-line;
-  background: #163d1c;
+  background: #f5f3ef;
   padding: 1rem 1.25rem;
   border-radius: 8px;
   font-size: 0.95rem;
@@ -90,17 +90,17 @@
   margin-top: 1rem;
   padding: 0.5rem 1rem;
   border-radius: 6px;
-  border: 1px solid #61210f;
+  border: 1px solid #b54f4f;
   background: transparent;
-  color: #9e3b1a;
+  color: #b54f4f;
   cursor: pointer;
   font-size: 0.875rem;
   transition: background 0.15s, color 0.15s;
 }
 
 .deleteBtn:hover:not(:disabled) {
-  background: #61210f;
-  color: #e8edd8;
+  background: #b54f4f;
+  color: #ffffff;
 }
 
 .deleteBtn:disabled {
@@ -109,13 +109,13 @@
 }
 
 .status {
-  color: #8a9470;
+  color: #6b6560;
   margin: 2rem auto;
   text-align: center;
 }
 
 .error {
-  color: #9e3b1a;
+  color: #8b3a3a;
   margin: 2rem auto;
   text-align: center;
 }

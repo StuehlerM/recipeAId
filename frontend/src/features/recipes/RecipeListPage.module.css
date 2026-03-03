@@ -7,7 +7,7 @@
 .page h1 {
   font-size: 1.8rem;
   margin-bottom: 1.25rem;
-  color: #e8edd8;
+  color: #1a1917;
 }
 
 .searchForm {
@@ -20,23 +20,23 @@
   flex: 1;
   padding: 0.5rem 0.75rem;
   border-radius: 6px;
-  border: 1px solid #1e5c26;
-  background: #163d1c;
-  color: #e8edd8;
+  border: 1px solid #e0dbd4;
+  background: #ffffff;
+  color: #1a1917;
   font-size: 0.95rem;
 }
 
 .searchInput:focus {
   outline: none;
-  border-color: #a7b16f;
+  border-color: #5c7a52;
 }
 
 .searchBtn {
   padding: 0.5rem 1rem;
   border-radius: 6px;
   border: none;
-  background: #a7b16f;
-  color: #071f08;
+  background: #5c7a52;
+  color: #ffffff;
   font-weight: 600;
   cursor: pointer;
   font-size: 0.9rem;
@@ -52,24 +52,24 @@
   margin-bottom: 1rem;
   padding: 0.5rem 0.75rem;
   border-radius: 6px;
-  border: 1px solid #1e5c26;
-  background: #163d1c;
-  color: #e8edd8;
+  border: 1px solid #e0dbd4;
+  background: #ffffff;
+  color: #1a1917;
   font-size: 0.9rem;
   cursor: pointer;
 }
 
 .bookFilter:focus {
   outline: none;
-  border-color: #a7b16f;
+  border-color: #5c7a52;
 }
 
 .bookBadge {
   display: inline-block;
   font-size: 0.72rem;
-  color: #a7b16f;
-  background: #0c4e1320;
-  border: 1px solid #1e5c26;
+  color: #5c7a52;
+  background: #5c7a5215;
+  border: 1px solid #e0dbd4;
   border-radius: 4px;
   padding: 0.1rem 0.5rem;
   margin-top: 0.15rem;
@@ -87,13 +87,14 @@
 
 .card {
   border-radius: 8px;
-  background: #163d1c;
-  border: 1px solid #1e5c26;
+  background: #ffffff;
+  border: 1px solid #e0dbd4;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   transition: border-color 0.15s;
 }
 
 .card:hover {
-  border-color: #a7b16f;
+  border-color: #5c7a52;
 }
 
 .cardLink {
@@ -108,20 +109,20 @@
 .cardTitle {
   font-size: 1.05rem;
   font-weight: 600;
-  color: #e8edd8;
+  color: #1a1917;
 }
 
 .cardMeta {
   font-size: 0.8rem;
-  color: #8a9470;
+  color: #6b6560;
 }
 
 .status {
-  color: #8a9470;
+  color: #6b6560;
   margin-top: 1rem;
 }
 
 .error {
-  color: #9e3b1a;
+  color: #8b3a3a;
   margin-top: 1rem;
 }

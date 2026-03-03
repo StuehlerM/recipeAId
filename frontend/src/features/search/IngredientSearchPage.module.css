@@ -6,12 +6,12 @@
 
 .page h1 {
   font-size: 1.8rem;
-  color: #e8edd8;
+  color: #1a1917;
   margin-bottom: 0.25rem;
 }
 
 .hint {
-  color: #8a9470;
+  color: #6b6560;
   font-size: 0.875rem;
   margin-bottom: 1.25rem;
 }
@@ -31,22 +31,22 @@
   align-items: center;
   padding: 0.5rem 0.75rem;
   border-radius: 8px;
-  border: 1px solid #1e5c26;
-  background: #163d1c;
+  border: 1px solid #e0dbd4;
+  background: #ffffff;
   cursor: text;
   min-height: 2.6rem;
 }
 
 .chipBox:focus-within {
-  border-color: #a7b16f;
+  border-color: #5c7a52;
 }
 
 .chip {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  background: #0c4e13;
-  color: #e8edd8;
+  background: #f5f3ef;
+  color: #1a1917;
   border-radius: 20px;
   padding: 0.2rem 0.6rem;
   font-size: 0.85rem;
@@ -55,7 +55,7 @@
 .chipRemove {
   background: none;
   border: none;
-  color: #8a9470;
+  color: #6b6560;
   cursor: pointer;
   padding: 0;
   line-height: 1;
@@ -65,7 +65,7 @@
 }
 
 .chipRemove:hover {
-  color: #9e3b1a;
+  color: #b54f4f;
 }
 
 .chipInput {
@@ -74,7 +74,7 @@
   background: transparent;
   border: none;
   outline: none;
-  color: #e8edd8;
+  color: #1a1917;
   font-size: 0.95rem;
 }
 
@@ -82,23 +82,24 @@
   list-style: none;
   padding: 0.25rem 0;
   margin: 0;
-  background: #163d1c;
-  border: 1px solid #1e5c26;
+  background: #ffffff;
+  border: 1px solid #e0dbd4;
   border-radius: 8px;
   overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .suggestion {
   padding: 0.45rem 0.75rem;
-  color: #e8edd8;
+  color: #1a1917;
   font-size: 0.9rem;
   cursor: pointer;
   text-transform: capitalize;
 }
 
 .suggestion:hover {
-  background: #0c4e13;
-  color: #a7b16f;
+  background: #f5f3ef;
+  color: #5c7a52;
 }
 
 .searchBtn {
@@ -106,8 +107,8 @@
   padding: 0.5rem 1.25rem;
   border-radius: 6px;
   border: none;
-  background: #a7b16f;
-  color: #071f08;
+  background: #5c7a52;
+  color: #ffffff;
   font-weight: 600;
   cursor: pointer;
   font-size: 0.9rem;
@@ -124,7 +125,7 @@
 }
 
 .status {
-  color: #8a9470;
+  color: #6b6560;
   margin-top: 0.5rem;
 }
 
@@ -139,13 +140,14 @@
 
 .card {
   border-radius: 8px;
-  background: #163d1c;
-  border: 1px solid #1e5c26;
+  background: #ffffff;
+  border: 1px solid #e0dbd4;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   transition: border-color 0.15s;
 }
 
 .card:hover {
-  border-color: #a7b16f;
+  border-color: #5c7a52;
 }
 
 .cardLink {
@@ -160,12 +162,12 @@
 .cardTitle {
   font-size: 1.05rem;
   font-weight: 600;
-  color: #e8edd8;
+  color: #1a1917;
 }
 
 .matchBadge {
   font-size: 0.8rem;
-  color: #a7b16f;
+  color: #5c7a52;
   font-weight: 500;
 }
 
@@ -179,8 +181,8 @@
 }
 
 .matchedChip {
-  background: #0c4e13;
-  color: #c8d4a0;
+  background: #f5f3ef;
+  color: #5c7a52;
   border-radius: 20px;
   padding: 0.15rem 0.6rem;
   font-size: 0.78rem;

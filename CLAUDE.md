@@ -20,13 +20,16 @@ recipeaid/
 └── frontend/          # React 19 + Vite 7 + TypeScript + Tailwind CSS v4
     └── src/
         ├── api/            # client.ts, mockData.ts, types.ts
-        ├── components/     # Shared: NavBar (bottom tab bar), OcrCaptureButton
+        ├── components/     # Shared: NavBar (bottom tab bar), OcrCaptureButton, CropModal
         ├── hooks/          # Shared: useOcrCapture.ts
+        ├── utils/          # imageEnhance.ts (Canvas-based OCR image preprocessing)
         └── features/       # Feature-based modules
             ├── recipes/    # RecipeListPage, RecipeDetailPage (+ CSS modules)
             ├── search/     # IngredientSearchPage (+ CSS module)
             ├── upload/     # UploadPage (+ CSS module)
             ├── add-recipe/ # AddRecipePage (4-step wizard), StepIndicator, UnitCombobox
+            │               # Step components: StepTitle, StepIngredients, StepInstructions, StepBook
+            │               # types.ts — shared IngredientRow type { name, amount, unit }
             └── planner/    # PlannerPage, usePlanner.ts, quantityAggregator.ts
 ```
 
@@ -66,7 +69,19 @@ npm run lint     # ESLint
 
 To point the frontend at a real backend, set `VITE_API_BASE_URL=http://localhost:<port>` in a `.env.local` file. Without it, `client.ts` falls back to mock data automatically for all endpoints.
 
-**Styling:** Tailwind CSS v4 via `@tailwindcss/vite`. Custom color tokens are defined in `src/index.css` under `@theme`. Key tokens: `spruce` (#0c4e13), `spruce-dark` (#071f08), `spruce-mid` (#163d1c), `olive` (#a7b16f), `walnut` (#61210f). New pages use Tailwind classes; existing pages keep their CSS Modules.
+**Styling:** Tailwind CSS v4 via `@tailwindcss/vite`. Custom color tokens are defined in `src/index.css` under `@theme`. The app uses a **light theme**. Key tokens:
+- `canvas` (#faf9f7) — page background
+- `card` (#ffffff) — surfaces / nav bar
+- `tint` (#f5f3ef) — subtle fills
+- `edge` (#e0dbd4) — borders
+- `sage` (#5c7a52) — primary accent (active states, CTAs, FAB)
+- `sage-light` (#7a9870) — lighter accent
+- `ink` (#1a1917) — primary text
+- `ghost` (#6b6560) — secondary text / placeholders
+- `rose` (#b54f4f) — destructive
+- `rose-dark` (#8b3a3a) — destructive hover
+
+New pages use Tailwind classes; existing pages keep their CSS Modules.
 
 ## OCR sidecar commands
 
@@ -134,7 +149,7 @@ Services after `docker compose up`:
 
 **OCR architecture:** `PythonOcrService` (in `RecipeAId.Api/OcrServices/`) implements `IOcrService` by forwarding images to the Python PaddleOCR sidecar via a named `HttpClient` (30-second timeout). `OcrParserService` (in `RecipeAId.Core/Services/`) implements `IOcrParser` with pure string logic — no infra deps, fully unit-tested. Regex patterns use `[GeneratedRegex]` source generators for performance. Three ingredient patterns are tried in order: `amount unit name` ("2 cups flour"), `name amount unit` ("Flour 200 g"), and `name amount` ("Eggs 2"). German section headers are supported ("Zutaten", "Zubereitung"). Run-on ingredient lines (OCR with no newlines) are split at quantity+unit boundaries and case transitions before parsing. The sidecar uses PaddleOCR's `predict()` with bounding-box y-coordinate grouping to reconstruct proper line breaks from the image layout (text blocks on the same visual line are merged, separate lines get `\n`). PIL images are converted to numpy arrays via `np.array()` before passing to PaddleOCR. The `lang="de"` setting loads the latin PP-OCRv5 model which covers both German and English (45 Latin-script languages). The sidecar URL is configurable via `OcrService:BaseUrl` in `appsettings.json` (default: `http://localhost:8001`). Image uploads are limited to 10 MB.
 
-**Frontend image handling:** `useOcrCapture.ts` converts all captured images to JPEG via Canvas before uploading. This handles iPhone HEIC format (which Pillow cannot read natively) and downscales images larger than 2048px for faster uploads. No images are stored — they are disposed after text extraction.
+**Frontend image handling:** After capture, a `CropModal` (fullscreen overlay using `react-image-crop`) lets the user draw a rectangle around the text area. On confirm, the cropped region is enhanced for OCR via `imageEnhance.ts` (grayscale → auto-contrast with histogram stretching → unsharp-mask sharpening), then converted to JPEG and downscaled to max 2048px via `toJpeg` in `useOcrCapture.ts`. This pipeline handles iPhone HEIC format, poor lighting, and background noise. No images are stored — they are disposed after text extraction. Both `OcrCaptureButton` (used in AddRecipePage steps) and `UploadPage` (which has its own file input) share the same crop modal.
 
 **Frontend API client (`src/api/client.ts`):** uses `VITE_API_BASE_URL` to toggle between real fetch calls and mock data. All endpoints — including OCR — fall back to mock data when `VITE_API_BASE_URL` is not set.
 

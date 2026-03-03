@@ -30,15 +30,15 @@ export default function PlannerPage() {
   const shoppingList = aggregateIngredients(plannedRecipes);
 
   const inputCls =
-    "w-full bg-spruce-mid border border-border rounded-lg px-3 py-3 text-text text-base placeholder-muted focus:outline-none focus:border-olive transition-colors";
+    "w-full bg-card border border-edge rounded-lg px-3 py-3 text-ink text-base placeholder-ghost focus:outline-none focus:border-sage transition-colors";
 
   return (
     <div className="max-w-sm mx-auto px-4 pt-6 space-y-6">
-      <h1 className="text-2xl font-bold text-text">Weekly Planner</h1>
+      <h1 className="text-2xl font-bold text-ink">Weekly Planner</h1>
 
       {/* ── Recipe Browser ── */}
-      <section className="bg-spruce rounded-xl border border-border p-4 space-y-3">
-        <h2 className="text-xs font-semibold uppercase tracking-widest text-olive">
+      <section className="bg-card shadow-sm rounded-xl border border-edge p-4 space-y-3">
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-sage">
           Browse Recipes
         </h2>
         <input
@@ -49,21 +49,21 @@ export default function PlannerPage() {
         />
         <div className="max-h-56 overflow-y-auto -mx-1 px-1 space-y-1">
           {isLoading && (
-            <p className="text-muted text-sm py-2">Loading…</p>
+            <p className="text-ghost text-sm py-2">Loading…</p>
           )}
           {!isLoading && allRecipes.length === 0 && (
-            <p className="text-muted text-sm py-2">No recipes found.</p>
+            <p className="text-ghost text-sm py-2">No recipes found.</p>
           )}
           {allRecipes.map((recipe) => {
             const inPlan = planIds.includes(recipe.id);
             return (
               <div
                 key={recipe.id}
-                className="flex items-center justify-between py-2 border-b border-border last:border-0"
+                className="flex items-center justify-between py-2 border-b border-edge last:border-0"
               >
                 <Link
                   to={`/recipes/${recipe.id}`}
-                  className="text-text text-sm flex-1 mr-2 leading-snug hover:text-olive transition-colors"
+                  className="text-ink text-sm flex-1 mr-2 leading-snug hover:text-sage transition-colors"
                 >
                   {recipe.title}
                 </Link>
@@ -74,8 +74,8 @@ export default function PlannerPage() {
                   className={[
                     "shrink-0 text-xs px-3 py-1.5 rounded-full border transition-all",
                     inPlan
-                      ? "border-border text-muted opacity-40 cursor-not-allowed"
-                      : "border-olive text-olive hover:bg-olive hover:text-spruce-dark",
+                      ? "border-edge text-ghost opacity-40 cursor-not-allowed"
+                      : "border-sage text-sage hover:bg-sage hover:text-card",
                   ].join(" ")}
                 >
                   {inPlan ? "Added" : "+ Add"}
@@ -87,12 +87,12 @@ export default function PlannerPage() {
       </section>
 
       {/* ── This Week's Plan ── */}
-      <section className="bg-spruce rounded-xl border border-border p-4 space-y-3">
+      <section className="bg-card shadow-sm rounded-xl border border-edge p-4 space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-xs font-semibold uppercase tracking-widest text-olive">
+          <h2 className="text-xs font-semibold uppercase tracking-widest text-sage">
             This Week
             {planIds.length > 0 && (
-              <span className="ml-2 bg-spruce-mid text-olive-light rounded-full px-2 py-0.5 text-[0.6rem] font-normal">
+              <span className="ml-2 bg-tint text-sage-light rounded-full px-2 py-0.5 text-[0.6rem] font-normal">
                 {planIds.length}
               </span>
             )}
@@ -101,7 +101,7 @@ export default function PlannerPage() {
             <button
               type="button"
               onClick={clearPlan}
-              className="text-walnut-light text-xs border border-walnut rounded-md px-2 py-1 hover:bg-walnut hover:text-text transition-colors"
+              className="text-rose text-xs border border-rose rounded-md px-2 py-1 hover:bg-rose hover:text-card transition-colors"
             >
               Clear all
             </button>
@@ -109,7 +109,7 @@ export default function PlannerPage() {
         </div>
 
         {planIds.length === 0 ? (
-          <p className="text-muted text-sm py-1">
+          <p className="text-ghost text-sm py-1">
             No recipes added yet. Browse above and tap "+ Add".
           </p>
         ) : (
@@ -117,18 +117,18 @@ export default function PlannerPage() {
             {plannedRecipes.map((recipe) => (
               <li
                 key={recipe.id}
-                className="flex items-center justify-between bg-spruce-mid rounded-lg px-3 py-2"
+                className="flex items-center justify-between bg-tint rounded-lg px-3 py-2"
               >
                 <Link
                   to={`/recipes/${recipe.id}`}
-                  className="text-text text-sm flex-1 mr-2 leading-snug hover:text-olive transition-colors"
+                  className="text-ink text-sm flex-1 mr-2 leading-snug hover:text-sage transition-colors"
                 >
                   {recipe.title}
                 </Link>
                 <button
                   type="button"
                   onClick={() => removeFromPlan(recipe.id)}
-                  className="text-muted hover:text-walnut-light text-xl leading-none w-7 h-7 flex items-center justify-center shrink-0 transition-colors"
+                  className="text-ghost hover:text-rose text-xl leading-none w-7 h-7 flex items-center justify-center shrink-0 transition-colors"
                   aria-label={`Remove ${recipe.title} from plan`}
                 >
                   ×
@@ -141,22 +141,22 @@ export default function PlannerPage() {
 
       {/* ── Shopping List ── */}
       {planIds.length > 0 && (
-        <section className="bg-spruce rounded-xl border border-border p-4 space-y-3">
-          <h2 className="text-xs font-semibold uppercase tracking-widest text-olive">
+        <section className="bg-card shadow-sm rounded-xl border border-edge p-4 space-y-3">
+          <h2 className="text-xs font-semibold uppercase tracking-widest text-sage">
             Shopping List
           </h2>
           {shoppingList.length === 0 ? (
-            <p className="text-muted text-sm">No ingredients found in selected recipes.</p>
+            <p className="text-ghost text-sm">No ingredients found in selected recipes.</p>
           ) : (
             <ul className="space-y-1.5">
               {shoppingList.map(({ name, quantity }) => (
                 <li
                   key={name}
-                  className="flex items-baseline justify-between bg-spruce-mid rounded-lg px-3 py-2"
+                  className="flex items-baseline justify-between bg-tint rounded-lg px-3 py-2"
                 >
-                  <span className="text-text text-sm capitalize">{name}</span>
+                  <span className="text-ink text-sm capitalize">{name}</span>
                   {quantity && (
-                    <span className="text-muted text-xs ml-3 shrink-0">{quantity}</span>
+                    <span className="text-ghost text-xs ml-3 shrink-0">{quantity}</span>
                   )}
                 </li>
               ))}

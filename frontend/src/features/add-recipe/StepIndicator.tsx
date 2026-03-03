@@ -13,10 +13,10 @@ export default function StepIndicator({ step }: { step: Step }) {
             className={[
               "w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 transition-colors",
               stepNumber < step
-                ? "bg-spruce-mid border-2 border-olive text-olive-light"
+                ? "bg-tint border-2 border-sage text-sage"
                 : stepNumber === step
-                ? "bg-olive text-spruce-dark"
-                : "border-2 border-border text-muted",
+                ? "bg-sage text-card"
+                : "border-2 border-edge text-ghost",
             ].join(" ")}
           >
             {stepNumber < step ? "✓" : stepNumber}
@@ -24,7 +24,7 @@ export default function StepIndicator({ step }: { step: Step }) {
           <span
             className={[
               "ml-1 text-[0.6rem] leading-tight",
-              stepNumber === step ? "text-olive font-semibold" : "text-muted",
+              stepNumber === step ? "text-sage font-semibold" : "text-ghost",
             ].join(" ")}
           >
             {STEP_LABELS[stepNumber - 1]}
@@ -33,7 +33,7 @@ export default function StepIndicator({ step }: { step: Step }) {
             <div
               className={[
                 "flex-1 h-px mx-2",
-                stepNumber < step ? "bg-olive" : "bg-border",
+                stepNumber < step ? "bg-sage" : "bg-edge",
               ].join(" ")}
             />
           )}

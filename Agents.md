@@ -100,8 +100,10 @@ recipeaid/
 - [x] Weekly planner at `/planner`: recipe browser with search, this-week list, aggregated shopping list
 - [x] `src/features/planner/quantityAggregator.ts` — same-unit quantities summed; mixed/unparseable quantities concatenated (uses Amount + Unit fields)
 - [x] `src/features/planner/usePlanner.ts` — localStorage-backed (`recipeaid_planner_v1`), lazy-initialised
-- [x] `src/hooks/useOcrCapture.ts` — programmatic file-input OCR trigger, returns `RecipeOcrDraftDto` (shared); converts all images to JPEG via Canvas before upload (fixes iPhone HEIC format; downscales to max 2048px)
-- [x] `src/components/OcrCaptureButton.tsx` — camera icon button with spinner and inline error display (shared)
+- [x] `src/hooks/useOcrCapture.ts` — programmatic file-input OCR trigger, returns `RecipeOcrDraftDto` (shared); opens crop modal after capture, then converts to JPEG + downscales to max 2048px
+- [x] `src/components/OcrCaptureButton.tsx` — camera icon button with spinner and inline error display; renders `CropModal` (shared)
+- [x] `src/components/CropModal.tsx` — fullscreen crop overlay (`react-image-crop`); applies automatic image enhancement (grayscale + auto-contrast + sharpen via `imageEnhance.ts`) before OCR upload
+- [x] `src/utils/imageEnhance.ts` — Canvas-based image preprocessing pipeline: BT.601 grayscale, histogram-stretch auto-contrast (1% percentile clipping), unsharp-mask sharpening
 - [x] `src/features/add-recipe/StepIndicator.tsx` — 4-step progress indicator (extracted from AddRecipePage)
 - [x] `src/features/add-recipe/UnitCombobox.tsx` — datalist-based unit picker (extracted from AddRecipePage)
 - [x] Feature-based folder structure: `src/features/{recipes,search,upload,add-recipe,planner}/`

@@ -1,5 +1,6 @@
 import { useOcrCapture } from "../hooks/useOcrCapture";
 import type { RecipeOcrDraftDto } from "../api/types";
+import CropModal from "./CropModal";
 
 interface Props {
   onResult: (draft: RecipeOcrDraftDto) => void;
@@ -8,7 +9,7 @@ interface Props {
 }
 
 export default function OcrCaptureButton({ onResult, label = "Scan", className }: Props) {
-  const { capture, isLoading, error, clearError } = useOcrCapture();
+  const { capture, isLoading, error, clearError, pendingImageUrl, submitCroppedImage, cancelCrop } = useOcrCapture();
 
   return (
     <div className="relative">
@@ -20,8 +21,8 @@ export default function OcrCaptureButton({ onResult, label = "Scan", className }
         }}
         disabled={isLoading}
         className={[
-          "flex items-center gap-1.5 px-3 py-2 rounded-lg border border-olive text-olive text-sm font-medium transition-colors",
-          "hover:bg-olive hover:text-spruce-dark disabled:opacity-50 disabled:cursor-not-allowed",
+          "flex items-center gap-1.5 px-3 py-2 rounded-lg border border-sage text-sage text-sm font-medium transition-colors",
+          "hover:bg-sage hover:text-card disabled:opacity-50 disabled:cursor-not-allowed",
           className ?? "",
         ].join(" ")}
         aria-label="Scan with camera"
@@ -45,7 +46,15 @@ export default function OcrCaptureButton({ onResult, label = "Scan", className }
         )}
       </button>
       {error && (
-        <p className="mt-1 text-walnut-light text-xs">{error}</p>
+        <p className="mt-1 text-rose text-xs">{error}</p>
+      )}
+
+      {pendingImageUrl && (
+        <CropModal
+          imageUrl={pendingImageUrl}
+          onConfirm={submitCroppedImage}
+          onCancel={cancelCrop}
+        />
       )}
     </div>
   );

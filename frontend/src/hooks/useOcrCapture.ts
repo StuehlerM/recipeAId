@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { uploadRecipeImage } from "../api/client";
 import type { RecipeOcrDraftDto } from "../api/types";
 
@@ -48,8 +48,16 @@ function toJpeg(file: File): Promise<File> {
 export function useOcrCapture() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pendingImageUrl, setPendingImageUrl] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const callbackRef = useRef<((draft: RecipeOcrDraftDto) => void) | null>(null);
+
+  // Revoke pending object URL on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (pendingImageUrl) URL.revokeObjectURL(pendingImageUrl);
+    };
+  }, [pendingImageUrl]);
 
   function capture(onResult: (draft: RecipeOcrDraftDto) => void) {
     callbackRef.current = onResult;
@@ -69,13 +77,25 @@ export function useOcrCapture() {
     inputRef.current.click();
   }
 
-  async function handleChange(e: Event) {
+  function handleChange(e: Event) {
     const file = (e.target as HTMLInputElement).files?.[0];
     if (!file) return;
     setError(null);
+    // Show the crop modal instead of uploading immediately
+    const url = URL.createObjectURL(file);
+    setPendingImageUrl(url);
+  }
+
+  /** Called by CropModal after the user confirms the crop. */
+  async function submitCroppedImage(croppedFile: File) {
+    // Clean up the pending preview
+    if (pendingImageUrl) URL.revokeObjectURL(pendingImageUrl);
+    setPendingImageUrl(null);
+
     setIsLoading(true);
     try {
-      const jpeg = await toJpeg(file);
+      // toJpeg handles downscaling if the cropped region is still large
+      const jpeg = await toJpeg(croppedFile);
       const draft = await uploadRecipeImage(jpeg);
       callbackRef.current?.(draft);
     } catch {
@@ -85,9 +105,15 @@ export function useOcrCapture() {
     }
   }
 
+  /** Called when the user cancels the crop modal. */
+  function cancelCrop() {
+    if (pendingImageUrl) URL.revokeObjectURL(pendingImageUrl);
+    setPendingImageUrl(null);
+  }
+
   function clearError() {
     setError(null);
   }
 
-  return { capture, isLoading, error, clearError };
+  return { capture, isLoading, error, clearError, pendingImageUrl, submitCroppedImage, cancelCrop };
 }
