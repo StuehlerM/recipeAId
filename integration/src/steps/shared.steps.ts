@@ -13,8 +13,7 @@ Given(
       body: JSON.stringify({
         title,
         instructions: null,
-        imagePath: null,
-        rawOcrText: null,
+        bookTitle: null,
         ingredients: [],
       }),
     });
@@ -29,9 +28,11 @@ Given(
   async function (this: RecipeAIdWorld, title: string, dataTable: DataTable) {
     const ingredients = dataTable
       .hashes()
-      .map((row: Record<string, string>) => ({
+      .map((row: Record<string, string>, idx: number) => ({
         name: row["name"],
-        quantity: row["quantity"] || null,
+        amount: row["amount"] || null,
+        unit: row["unit"] || null,
+        sortOrder: idx,
       }));
 
     const res = await fetch(`${this.backendUrl}/api/v1/recipes`, {
@@ -40,8 +41,7 @@ Given(
       body: JSON.stringify({
         title,
         instructions: null,
-        imagePath: null,
-        rawOcrText: null,
+        bookTitle: null,
         ingredients,
       }),
     });
@@ -68,6 +68,16 @@ When(
 
 When("I navigate to the upload page", async function (this: RecipeAIdWorld) {
   await this.goto("/upload");
+  await this.page.waitForSelector("h1");
+});
+
+When("I navigate to the add recipe page", async function (this: RecipeAIdWorld) {
+  await this.goto("/add");
+  await this.page.waitForSelector("h1");
+});
+
+When("I navigate to the planner page", async function (this: RecipeAIdWorld) {
+  await this.goto("/planner");
   await this.page.waitForSelector("h1");
 });
 

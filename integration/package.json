@@ -2,10 +2,11 @@
   "name": "recipeaid-integration",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "test": "cucumber-js",
-    "test:headed": "cross-env PWDEBUG=1 cucumber-js",
-    "test:feature": "cucumber-js --",
+    "test": "cucumber-js --config cucumber.config.cjs",
+    "test:headed": "cross-env PWDEBUG=1 cucumber-js --config cucumber.config.cjs",
+    "test:feature": "cucumber-js --config cucumber.config.cjs --",
     "install:browsers": "playwright install chromium"
   },
   "devDependencies": {

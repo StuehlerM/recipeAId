@@ -17,20 +17,27 @@ recipeaid/
 │   │   └── RecipeAId.Api/    # Controllers, OCR services, middleware, Program.cs
 │   └── tests/
 │       └── RecipeAId.Tests/  # xUnit + Moq — references Core only
-└── frontend/          # React 19 + Vite 7 + TypeScript + Tailwind CSS v4
-    └── src/
-        ├── api/            # client.ts, mockData.ts, types.ts
-        ├── components/     # Shared: NavBar (bottom tab bar), OcrCaptureButton, CropModal
-        ├── hooks/          # Shared: useOcrCapture.ts
-        ├── utils/          # imageEnhance.ts (Canvas-based OCR image preprocessing)
-        └── features/       # Feature-based modules
-            ├── recipes/    # RecipeListPage, RecipeDetailPage (+ CSS modules)
-            ├── search/     # IngredientSearchPage (+ CSS module)
-            ├── upload/     # UploadPage (+ CSS module)
-            ├── add-recipe/ # AddRecipePage (4-step wizard), StepIndicator, UnitCombobox
-            │               # Step components: StepTitle, StepIngredients, StepInstructions, StepBook
-            │               # types.ts — shared IngredientRow type { name, amount, unit }
-            └── planner/    # PlannerPage, usePlanner.ts, quantityAggregator.ts
+├── frontend/          # React 19 + Vite 7 + TypeScript + Tailwind CSS v4
+│   └── src/
+│       ├── api/            # client.ts, mockData.ts, types.ts
+│       ├── components/     # Shared: NavBar (bottom tab bar), OcrCaptureButton, CropModal
+│       ├── hooks/          # Shared: useOcrCapture.ts
+│       ├── utils/          # imageEnhance.ts (Canvas-based OCR image preprocessing)
+│       └── features/       # Feature-based modules
+│           ├── recipes/    # RecipeListPage, RecipeDetailPage (+ CSS modules)
+│           ├── search/     # IngredientSearchPage (+ CSS module)
+│           ├── upload/     # UploadPage (+ CSS module)
+│           ├── add-recipe/ # AddRecipePage (4-step wizard), StepIndicator, UnitCombobox
+│           │               # Step components: StepTitle, StepIngredients, StepInstructions, StepBook
+│           │               # types.ts — shared IngredientRow type { name, amount, unit }
+│           └── planner/    # PlannerPage, usePlanner.ts, quantityAggregator.ts
+└── integration/       # BDD integration tests (Cucumber.js + Playwright)
+    ├── features/          # Gherkin .feature files (recipes, detail, create, search, planner)
+    ├── src/steps/         # Step definitions (TypeScript)
+    ├── src/support/       # World class, hooks (server lifecycle, DB cleanup)
+    ├── cucumber.config.cjs # Cucumber.js config (ESM via tsx/esm)
+    ├── nginx-integration.conf # Plain HTTP nginx override for Docker tests
+    └── Dockerfile
 ```
 
 ## Backend commands
@@ -83,7 +90,7 @@ To point the frontend at a real backend, set `VITE_API_BASE_URL=http://localhost
 
 New pages use Tailwind classes; existing pages keep their CSS Modules.
 
-**Frontend dependencies:** sonner (toast notifications), lucide-react (SVG icons), react-image-crop (crop modal), @tailwindcss/vite, TanStack Query v5, React Router v6.
+**Frontend dependencies:** sonner (toast notifications), react-image-crop (crop modal), @tailwindcss/vite, TanStack Query v5, React Router v6. NavBar uses flat inline SVG icons.
 
 ## OCR sidecar commands
 
@@ -134,6 +141,33 @@ Services after `docker compose up`:
 ```
 
 **Note:** The frontend Docker image generates a self-signed TLS cert at build time using `openssl`. nginx serves HTTP on port 80 (redirect only) and HTTPS on port 443. Host mappings: `3000:80` and `3443:443`. The `/api/` proxy block sets `client_max_body_size 10m` (matching the backend limit) and `proxy_read_timeout 35s` (covering OCR's 30-second processing).
+
+## Integration tests (BDD)
+
+BDD integration tests use Cucumber.js + Playwright (headless Chromium). Run from the repo root:
+
+```bash
+# Docker (recommended) — builds backend, frontend (plain HTTP), and test container
+docker compose -f docker-compose.integration.yml up --build
+
+# Clean up after
+docker compose -f docker-compose.integration.yml down -v
+```
+
+```bash
+# Local (from integration/) — auto-starts backend + frontend
+cd integration
+npm install
+npm run install:browsers   # one-time Chromium download
+npm test
+```
+
+**Key details:**
+- Config: `integration/cucumber.config.cjs` — ESM module loading via `tsx/esm` (package.json has `"type": "module"`)
+- Each scenario cleans all recipes via API `Before` hook — no manual DB reset needed
+- Docker uses `nginx-integration.conf` (plain HTTP on port 80, no HTTPS redirect) mounted into the frontend container
+- Feature files: `recipes`, `recipe-detail`, `create-recipe`, `ingredient-search`, `planner` (14 scenarios, 90 steps)
+- HTML report: `integration/reports/report.html` (mounted out of Docker)
 
 ## Architecture
 

@@ -21,7 +21,8 @@ recipeaid/
 │       ├── RecipeAId.Data/     # EF Core, SQLite, repositories, migrations
 │       └── RecipeAId.Api/      # Controllers, OCR services, DI host
 ├── ocr-service/                # Python FastAPI + PaddleOCR (port 8001)
-└── frontend/                   # React (Vite + TypeScript, feature-based folder structure)
+├── frontend/                   # React (Vite + TypeScript, feature-based folder structure)
+└── integration/                # BDD tests (Cucumber.js + Playwright, headless Chromium)
 ```
 
 **Tech stack:**
@@ -113,6 +114,16 @@ recipeaid/
 - [x] OCR `main.py` docstring updated for English + German language support
 - [x] Error & success notifications: sonner toast library (top-center); error toasts on save/delete/OCR failures, success toast on save/delete
 - [x] Navigation icons: replaced emoji with lucide-react icons (BookOpen, Search, Plus, Camera, CalendarDays)
+
+## Phase 8: Integration Tests (BDD)
+- [x] Cucumber.js v11 + Playwright test suite in `integration/`
+- [x] ESM module loading via `tsx/esm` (`"type": "module"` in package.json, `cucumber.config.cjs`)
+- [x] Docker Compose setup (`docker-compose.integration.yml`): backend + frontend (plain HTTP) + test container
+- [x] `nginx-integration.conf` — plain HTTP nginx config override for Docker tests (no HTTPS redirect)
+- [x] Per-scenario DB cleanup via `Before` hook (deletes all recipes via API)
+- [x] Feature files: `recipes.feature` (list + search), `recipe-detail.feature` (view + delete), `create-recipe.feature` (4-step wizard), `ingredient-search.feature` (chip search + ranking), `planner.feature` (add/remove plan items + shopping list)
+- [x] 14 scenarios, 90 steps — all passing
+- [x] HTML report at `integration/reports/report.html` (volume-mounted from Docker)
 
 ---
 

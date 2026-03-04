@@ -1,8 +1,8 @@
 module.exports = {
   default: {
     paths: ["features/**/*.feature"],
-    requireModule: ["tsx/cjs"],
-    require: [
+    import: [
+      "tsx/esm",
       "src/support/world.ts",
       "src/support/hooks.ts",
       "src/steps/**/*.steps.ts",

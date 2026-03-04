@@ -5,10 +5,10 @@ Feature: Recipe detail view
 
   Background:
     Given a recipe exists with title "Lemon Garlic Chicken" and ingredients:
-      | name         | quantity |
-      | whole chicken| 1.5kg    |
-      | lemon        | 2        |
-      | garlic       | 6 cloves |
+      | name          | amount | unit   |
+      | whole chicken | 1.5    | kg     |
+      | lemon         | 2      |        |
+      | garlic        | 6      | cloves |
 
   Scenario: Viewing recipe ingredients
     When I navigate to the detail page for "Lemon Garlic Chicken"

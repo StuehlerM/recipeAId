@@ -3,7 +3,8 @@ import { chromium } from "playwright";
 import type { Browser } from "playwright";
 import { spawn } from "node:child_process";
 import type { ChildProcess } from "node:child_process";
-import { resolve } from "node:path";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { existsSync, rmSync } from "node:fs";
 import type { RecipeAIdWorld } from "./world";
 
@@ -19,7 +20,8 @@ const SPAWN_SERVERS = process.env.SPAWN_SERVERS !== "false";
 
 // ── Paths (only used when SPAWN_SERVERS=true) ─────────────────────────────────
 
-// __dirname is available natively in CommonJS
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 const ROOT = resolve(__dirname, "../../../");
 const BACKEND_DIR = resolve(ROOT, "backend");
 const FRONTEND_DIR = resolve(ROOT, "frontend");
@@ -125,6 +127,17 @@ AfterAll(async function () {
 // ── Per-scenario lifecycle ────────────────────────────────────────────────────
 
 Before(async function (this: RecipeAIdWorld) {
+  // Clean all recipes from the DB so each scenario starts fresh
+  const listRes = await fetch(`${BACKEND_URL}/api/v1/recipes`);
+  if (listRes.ok) {
+    const recipes: { id: number }[] = await listRes.json();
+    await Promise.all(
+      recipes.map((r) =>
+        fetch(`${BACKEND_URL}/api/v1/recipes/${r.id}`, { method: "DELETE" })
+      )
+    );
+  }
+
   this.browser = sharedBrowser!;
   this.context = await this.browser.newContext({
     baseURL: FRONTEND_URL,

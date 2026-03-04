@@ -135,7 +135,8 @@ recipeaid/
     │   ├── steps/             # Step definitions (TypeScript)
     │   └── support/           # World, hooks, server lifecycle
     ├── reports/               # HTML test report (generated, gitignored)
-    ├── cucumber.config.js
+    ├── cucumber.config.cjs
+    ├── nginx-integration.conf   # Plain HTTP nginx config for Docker tests
     └── Dockerfile
 ```
 
@@ -181,8 +182,9 @@ integration/
 ├── features/                  # Human-readable scenarios
 │   ├── recipes.feature        # Recipe list + title search
 │   ├── recipe-detail.feature  # Detail view + delete
-│   ├── create-recipe.feature  # Manual recipe creation form
-│   └── ingredient-search.feature
+│   ├── create-recipe.feature  # 4-step wizard recipe creation
+│   ├── ingredient-search.feature
+│   └── planner.feature        # Weekly planner + shopping list
 ├── src/
 │   ├── steps/                 # Cucumber step definitions (TypeScript)
 │   └── support/               # World, global hooks, server lifecycle
@@ -191,35 +193,22 @@ integration/
 
 > **Note:** The integration tests cover the frontend UI and backend API only. The OCR upload scenario is excluded because it requires the PaddleOCR model; use the unit tests in `RecipeAId.Tests` for OCR parsing logic.
 
-### Option A — Docker Compose profile (recommended)
+### Option A — Docker Compose (recommended)
 
-The integration tests are defined as a Docker Compose profile. The normal `docker compose up` starts only frontend + backend + OCR. Adding `--profile integration` also builds and runs the test container.
-
-```bash
-# Normal stack only
-docker compose up --build
-
-# Stack + integration tests (exits when tests finish)
-docker compose --profile integration up --build
-```
-
-Use `docker compose --profile integration down -v` to clean up and wipe the test database between runs.
+Integration tests have a dedicated `docker-compose.integration.yml` that spins up backend, frontend (plain HTTP via `nginx-integration.conf`), and the Playwright test container.
 
 ```bash
-# First run (or after changes): build all images
-docker compose -f docker-compose.integration.yml build
-
-# Run the tests — exits with the integration container's exit code
-docker compose -f docker-compose.integration.yml up --exit-code-from integration
+# Build and run all integration tests
+docker compose -f docker-compose.integration.yml up --build
 
 # View the HTML report (written to integration/reports/report.html)
 # Open the file in your browser after the run.
 
-# Clean up containers AND the isolated test database when done
+# Clean up containers and the isolated test database
 docker compose -f docker-compose.integration.yml down -v
 ```
 
-Always run `down -v` between test runs to start from a clean database. Without `-v`, data seeded by a previous run persists and can cause false failures in scenarios that assert a record is absent.
+Each scenario automatically cleans all recipes via the API before running, so no manual database reset is needed between runs.
 
 ### Option B — Local (no Docker)
 
@@ -259,9 +248,9 @@ npm run test:headed
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | React 19, Vite 7, TypeScript, Tailwind CSS v4, TanStack Query v5, React Router v6, sonner (toasts), lucide-react (icons) |
+| Frontend | React 19, Vite 7, TypeScript, Tailwind CSS v4, TanStack Query v5, React Router v6, sonner (toasts) |
 | PWA | vite-plugin-pwa (installable, standalone, theme-color) |
 | Backend | ASP.NET Core 9, Entity Framework Core 9, SQLite |
 | OCR | Python 3.11, PaddleOCR PP-OCRv5 (English + German), FastAPI, uvicorn |
-| Container | Docker Compose (three services + optional integration profile) |
+| Container | Docker Compose (three services); dedicated `docker-compose.integration.yml` for BDD tests |
 | TLS | Self-signed cert (nginx, generated at image build time); `@vitejs/plugin-basic-ssl` for the Vite dev server |

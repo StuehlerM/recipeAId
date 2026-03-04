@@ -32,8 +32,11 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+    volumes:
+      # Override HTTPS nginx config with plain HTTP for integration tests
+      - ./integration/nginx-integration.conf:/etc/nginx/conf.d/default.conf:ro
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:80 > /dev/null || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:80 > /dev/null || exit 1"]
       interval: 5s
       timeout: 5s
       retries: 10

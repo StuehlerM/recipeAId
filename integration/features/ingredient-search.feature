@@ -5,13 +5,13 @@ Feature: Ingredient-based recipe search
 
   Background:
     Given a recipe exists with title "Garlic Pasta" and ingredients:
-      | name   | quantity |
-      | garlic | 3 cloves |
-      | pasta  | 400g     |
+      | name   | amount | unit   |
+      | garlic | 3      | cloves |
+      | pasta  | 400    | g      |
     And a recipe exists with title "Garlic Bread" and ingredients:
-      | name   | quantity |
-      | garlic | 2 cloves |
-      | bread  | 1 loaf   |
+      | name   | amount | unit   |
+      | garlic | 2      | cloves |
+      | bread  | 1      | loaf   |
 
   Scenario: Finding recipes by one ingredient
     When I navigate to the ingredient search page

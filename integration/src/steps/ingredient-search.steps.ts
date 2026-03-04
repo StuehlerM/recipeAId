@@ -18,6 +18,7 @@ Then(
     await this.page
       .locator('a[href*="/recipes/"]')
       .filter({ hasText: title })
+      .first()
       .waitFor({ state: "visible" });
   }
 );
