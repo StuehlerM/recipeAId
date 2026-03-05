@@ -205,22 +205,22 @@ npm test
 When starting any implementation task, always use a git worktree:
 
 ```bash
-# 1. Create a worktree with a new branch
-git worktree add .worktrees/<feature-name> -b <feature-name>
+# 1. Create a worktree with a new branch (sibling to main repo, not nested inside)
+git worktree add ../<feature-name> -b <feature-name>
 
 # 2. Do all work and commits inside the worktree directory
-cd .worktrees/<feature-name>
+cd ../<feature-name>
 
 # 3. Once done, go back to main and merge
-cd ../..
+cd ../recipeaid
 git merge <feature-name>
 
 # 4. Clean up the worktree and branch
-git worktree remove .worktrees/<feature-name>
+git worktree remove ../<feature-name>
 git branch -d <feature-name>
 ```
 
-This keeps main clean and all in-progress work isolated.
+This keeps main clean and all in-progress work isolated. Worktrees are created as sibling directories to the main repo, not nested inside it.
 
 ## Before committing and pushing
 
