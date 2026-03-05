@@ -68,7 +68,7 @@ export default function CropModal({ imageUrl, onConfirm, onCancel }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col bg-canvas">
+    <div className="fixed inset-0 z-60 flex flex-col bg-canvas">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-edge">
         <h2 className="text-lg font-semibold text-ink">Crop Image</h2>
