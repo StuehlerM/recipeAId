@@ -8,13 +8,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 recipeaid/
 ├── Agents.md          # Phase tracker and full API reference
 ├── build-ocr.ps1      # PowerShell helper — builds ocr-service image with BuildKit caching
+├── build-ingredient-parser.ps1  # PowerShell helper — builds ingredient-parser image
 ├── ocr-service/       # Python PaddleOCR sidecar (FastAPI, port 8001)
+├── ingredient-parser/ # Python Ministral 3B sidecar (FastAPI, port 8002, internal only)
 ├── backend/           # ASP.NET Core 9 Web API
 │   ├── RecipeAId.sln
 │   ├── src/
 │   │   ├── RecipeAId.Core/   # Entities, interfaces, DTOs, services (no infra deps)
 │   │   ├── RecipeAId.Data/   # EF Core + SQLite, repositories, migrations
-│   │   └── RecipeAId.Api/    # Controllers, OCR services, middleware, Program.cs
+│   │   └── RecipeAId.Api/    # Controllers, OCR services, parser services, middleware, Program.cs
 │   └── tests/
 │       └── RecipeAId.Tests/  # xUnit + Moq — references Core only
 ├── frontend/          # React 19 + Vite 7 + TypeScript + Tailwind CSS v4
@@ -129,6 +131,7 @@ Services after `docker compose up`:
 - Frontend: https://localhost:3443 (HTTP on :3000 redirects automatically; self-signed cert — accept the browser warning once)
 - Backend API: http://localhost:8080
 - OCR sidecar: http://localhost:8001 (Swagger UI at `/docs`)
+- Ingredient-parser sidecar: internal only (no host port) — accessible only from within the Docker network
 
 **Note:** The first `docker compose build` for `ocr-service` downloads PaddleOCR and PaddlePaddle wheels. Subsequent builds use the Docker cache and are fast.
 
@@ -182,6 +185,8 @@ npm test
 **Service layer consistency:** all controllers depend on service interfaces, not repositories directly. `IIngredientService` / `IngredientService` handles ingredient queries; `IRecipeService` / `RecipeService` handles recipe CRUD. `RecipeService` uses a private `BuildIngredientsAsync` helper to avoid duplicating ingredient normalization logic between create and update.
 
 **Key architectural decision — `IRecipeRepository.UpdateAsync`:** takes an explicit `newIngredients` list. The repository deletes all existing `RecipeIngredient` rows and re-inserts to avoid EF Core change-tracking conflicts.
+
+**Ingredient parser architecture:** `LlmIngredientParserService` (in `RecipeAId.Api/ParserServices/`) implements `IIngredientParserService` by calling the Ministral 3B sidecar at `IngredientParser:BaseUrl` (default `http://localhost:8002`, 60-second timeout). The `FromImage` endpoint chains it after regex parsing: raw OCR text → `OcrParserService.Parse()` → draft ingredients joined as text → `IIngredientParserService.ParseAsync()` → LLM-refined `IngredientLineDto` list replaces the regex draft (falls back to regex on any failure). `IIngredientParserService.ParseAsync` is also exposed standalone via `POST /api/v1/ingredients/parse`. The Python sidecar applies 4-layer prompt injection defense: (1) `sanitizer.py` strips control chars, truncates to 2000 chars, removes role markers and injection phrases; (2) `prompt.py` wraps user text in `<ingredients>` XML delimiters with a hardcoded system prompt; (3) Pydantic schema validation of LLM output (name/value/unit only); (4) semantic sanity bounds: value clamped 0–5000, unit cleared if not in allow-list, name truncated at 100 chars, max 50 items. Model weights (~4 GB) stored in `ollama-models` Docker volume. `POST /parse`, `GET /health` endpoints.
 
 **OCR architecture:** `PythonOcrService` (in `RecipeAId.Api/OcrServices/`) implements `IOcrService` by forwarding images to the Python PaddleOCR sidecar via a named `HttpClient` (30-second timeout). `OcrParserService` (in `RecipeAId.Core/Services/`) implements `IOcrParser` with pure string logic — no infra deps, fully unit-tested. Regex patterns use `[GeneratedRegex]` source generators for performance. Three ingredient patterns are tried in order: `amount unit name` ("2 cups flour"), `name amount unit` ("Flour 200 g"), and `name amount` ("Eggs 2"). German section headers are supported ("Zutaten", "Zubereitung"). Run-on ingredient lines (OCR with no newlines) are split at quantity+unit boundaries and case transitions before parsing. The sidecar uses PaddleOCR's `predict()` with bounding-box y-coordinate grouping to reconstruct proper line breaks from the image layout (text blocks on the same visual line are merged, separate lines get `\n`). PIL images are converted to numpy arrays via `np.array()` before passing to PaddleOCR. The `lang="de"` setting loads the latin PP-OCRv5 model which covers both German and English (45 Latin-script languages). The sidecar URL is configurable via `OcrService:BaseUrl` in `appsettings.json` (default: `http://localhost:8001`). Image uploads are limited to 10 MB. **Sidecar preprocessing pipeline** (applied before PaddleOCR): (1) perspective correction via Canny edge detection + largest-quadrilateral contour + `getPerspectiveTransform`; (2) median blur denoising (3×3) to remove paper-texture noise; (3) deskewing via `HoughLinesP` dominant angle rotation; (4) Gaussian adaptive thresholding with resolution-relative block size. Each step falls back to the unmodified image when no usable geometry is found. Requires `opencv-python-headless`.
 

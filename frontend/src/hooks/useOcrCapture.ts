@@ -80,7 +80,7 @@ export function useOcrCapture() {
   async function capture(onResult: (draft: RecipeOcrDraftDto) => void) {
     callbackRef.current = onResult;
     setError(null);
-    if (await navigator.mediaDevices?.getUserMedia()) {
+    if ((navigator.mediaDevices as MediaDevices | undefined)?.getUserMedia) {
       setShowCamera(true);
     } else {
       openFileInput();

@@ -21,6 +21,7 @@ recipeaid/
 │       ├── RecipeAId.Data/     # EF Core, SQLite, repositories, migrations
 │       └── RecipeAId.Api/      # Controllers, OCR services, DI host
 ├── ocr-service/                # Python FastAPI + PaddleOCR (port 8001)
+├── ingredient-parser/          # Python FastAPI + Ministral 3B/Ollama (port 8002, internal)
 ├── frontend/                   # React (Vite + TypeScript, feature-based folder structure)
 └── integration/                # BDD tests (Cucumber.js + Playwright, headless Chromium)
 ```
@@ -28,6 +29,7 @@ recipeaid/
 **Tech stack:**
 - Backend: ASP.NET Core 9, Entity Framework Core 9, SQLite
 - OCR: Python PaddleOCR sidecar (FastAPI, :8001), English + German (latin PP-OCRv5 model)
+- Ingredient parser: Python Ministral 3B/Ollama sidecar (FastAPI, :8002, Docker-internal), 4-layer prompt injection defense
 - Frontend: React 19, Vite 7, TypeScript, Tailwind CSS v4, TanStack Query v5, React Router v6
 - PWA: `vite-plugin-pwa` (installable, standalone)
 
@@ -127,6 +129,23 @@ recipeaid/
 - [x] 14 scenarios, 90 steps — all passing
 - [x] HTML report at `integration/reports/report.html` (volume-mounted from Docker)
 
+## Phase 9: LLM Ingredient Parser Sidecar
+- [x] `ingredient-parser/` Python sidecar: FastAPI, Ministral 3B via Ollama, port 8002 (Docker-internal)
+- [x] `sanitizer.py` — 4-layer prompt injection defense: strip control chars, truncate 2000 chars, remove role markers/injection phrases, collapse whitespace
+- [x] `prompt.py` — hardcoded system prompt, user text wrapped in `<ingredients>` XML delimiters
+- [x] `main.py` — `POST /parse` (sanitize → prompt → Ollama → Pydantic validate → sanity bounds → return); `GET /health`
+- [x] `Dockerfile` — multi-stage: borrows Ollama binary from `ollama/ollama:latest`, python:3.11-slim; BuildKit pip cache
+- [x] `entrypoint.sh` — starts Ollama daemon, waits for readiness, pulls `mistral:latest` (no-op if cached), starts uvicorn
+- [x] `ingredient-parser/tests/test_sanitizer.py` + `tests/test_main.py` — pytest, mocked Ollama
+- [x] `build-ingredient-parser.ps1` — mirrors `build-ocr.ps1`; sets `DOCKER_BUILDKIT=1`
+- [x] `Core/DTOs/IngredientParseRequest.cs` + `IngredientParseResult.cs`
+- [x] `Core/Interfaces/IIngredientParserService.cs`
+- [x] `Api/ParserServices/LlmIngredientParserService.cs` — named HttpClient "IngredientParser", 60s timeout, float→string conversion, graceful fallback
+- [x] `RecipesController.FromImage` — chains LLM after regex; falls back to regex on failure
+- [x] `IngredientsController` — added `POST /api/v1/ingredients/parse` standalone endpoint
+- [x] `docker-compose.yml` — `ingredient-parser` service (no host port, `ollama-models` volume, 120s start period), backend `depends_on` it
+- [x] `appsettings.json` — `IngredientParser:BaseUrl` default `http://localhost:8002`
+
 ---
 
 ## API Reference
@@ -138,9 +157,10 @@ recipeaid/
 | POST | `/api/v1/recipes` | Create recipe (JSON) |
 | PUT | `/api/v1/recipes/{id}` | Update recipe |
 | DELETE | `/api/v1/recipes/{id}` | Delete recipe |
-| POST | `/api/v1/recipes/from-image` | Upload image → return OCR draft |
+| POST | `/api/v1/recipes/from-image` | Upload image → OCR → LLM refine → return draft |
 | GET | `/api/v1/recipes/search/by-ingredients` | Ranked ingredient search |
 | GET | `/api/v1/ingredients` | All known ingredients |
+| POST | `/api/v1/ingredients/parse` | Parse raw ingredient text via LLM sidecar |
 | POST | `/api/v1/convert` | Convert a quantity between unit systems |
 
 ---

@@ -6,7 +6,7 @@ A recipe management app that reads physical recipe cards with your camera. Point
 
 ## Features
 
-- **Scan recipe cards** — a custom fullscreen camera overlay provides a live viewfinder with a recipe-card guide frame; real-time indicators warn you about blur and shadow while a bubble level helps you hold the phone steady; tap the capture button to snap, then crop to just the text area; automatic image enhancement (grayscale, contrast stretch, sharpening) improves OCR accuracy even in poor lighting; extracts title, ingredients (supports both "2 cups flour" and "Flour 200 g" formats), and instructions automatically (English + German section headers); falls back to the OS file picker on desktop or when camera permission is denied
+- **Scan recipe cards** — a custom fullscreen camera overlay provides a live viewfinder with a recipe-card guide frame; real-time indicators warn you about blur and shadow while a bubble level helps you hold the phone steady; tap the capture button to snap, then crop to just the text area; OCR pipeline extracts title, ingredients (supports both "2 cups flour" and "Flour 200 g" formats), and instructions automatically (English + German section headers); a Ministral 3B LLM then normalizes the extracted ingredients into clean structured data; falls back to the OS file picker on desktop or when camera permission is denied
 - **Review before saving** — the OCR result comes back as a draft you can edit before confirming
 - **4-step recipe wizard** — add recipes manually in four focused steps: Title → Ingredients → Instructions → Book; OCR capture available at every step
 - **Browse & search** — filter recipes by title or by cookbook/book title; search by the ingredients you have on hand (ranked by match count)
@@ -26,17 +26,18 @@ cd recipeAId
 docker compose up --build
 ```
 
-> **First build takes a few minutes** — the OCR image downloads PaddlePaddle and PaddleOCR. Subsequent builds are fast thanks to Docker's layer cache and the BuildKit pip cache. The backend waits for the OCR sidecar's health check before starting.
+> **First build takes a few minutes** — the OCR image downloads PaddlePaddle and PaddleOCR; the ingredient-parser image downloads Ministral 3B (~4 GB) on first container startup into the `ollama-models` Docker volume. Subsequent builds and starts are fast. The backend waits for both sidecars' health checks before starting.
 >
 > **Rebuilding only the OCR image:** Use `.\build-ocr.ps1` (PowerShell) instead of `docker compose up --build`. It sets `DOCKER_BUILDKIT=1` so the pip cache is active and wheels are not re-downloaded on every build.
 
 Once running:
 
-| Service  | URL                                                                 |
-|----------|---------------------------------------------------------------------|
-| Frontend | https://localhost:3443 (HTTP on :3000 redirects automatically)      |
-| Backend  | http://localhost:8080                                               |
-| OCR      | http://localhost:8001 (Swagger UI at `/docs`)                       |
+| Service           | URL                                                                 |
+|-------------------|---------------------------------------------------------------------|
+| Frontend          | https://localhost:3443 (HTTP on :3000 redirects automatically)      |
+| Backend           | http://localhost:8080                                               |
+| OCR               | http://localhost:8001 (Swagger UI at `/docs`)                       |
+| Ingredient parser | Docker-internal only (port 8002, no host mapping)                   |
 
 > **Self-signed certificate:** Your browser will show a security warning on first visit. Click **Advanced → Proceed to localhost** to continue. On iOS Safari, tap **Show Details → visit this website**. You only need to do this once per browser/device.
 
@@ -107,12 +108,20 @@ recipeaid/
 │   ├── main.py
 │   ├── requirements.txt
 │   └── Dockerfile
+├── ingredient-parser/     # Python FastAPI + Ministral 3B/Ollama (port 8002, Docker-internal)
+│   ├── main.py            #   POST /parse, GET /health
+│   ├── sanitizer.py       #   4-layer prompt injection defense
+│   ├── prompt.py          #   hardcoded system prompt + XML delimiters
+│   ├── requirements.txt
+│   ├── entrypoint.sh      #   starts Ollama, pulls model, starts uvicorn
+│   ├── Dockerfile
+│   └── tests/
 ├── backend/               # ASP.NET Core 9 Web API
 │   ├── RecipeAId.sln
 │   ├── src/
 │   │   ├── RecipeAId.Core/    # Entities, interfaces, DTOs (one per file), services
 │   │   ├── RecipeAId.Data/    # EF Core + SQLite, repositories, migrations
-│   │   └── RecipeAId.Api/     # Controllers, OCR services, middleware
+│   │   └── RecipeAId.Api/     # Controllers, OCR + parser services, middleware
 │   ├── tests/
 │   │   └── RecipeAId.Tests/   # xUnit + Moq
 │   └── Dockerfile
@@ -151,9 +160,10 @@ recipeaid/
 | `POST` | `/api/v1/recipes` | Create recipe (JSON body) |
 | `PUT` | `/api/v1/recipes/{id}` | Update recipe |
 | `DELETE` | `/api/v1/recipes/{id}` | Delete recipe |
-| `POST` | `/api/v1/recipes/from-image` | Upload image → returns OCR draft (does **not** save) |
+| `POST` | `/api/v1/recipes/from-image` | Upload image → OCR → LLM refine → returns draft (does **not** save) |
 | `GET` | `/api/v1/recipes/search/by-ingredients` | Ranked search by ingredients (`?ingredients=egg,flour&minMatch=1`) |
 | `GET` | `/api/v1/ingredients` | All known ingredients (for autocomplete) |
+| `POST` | `/api/v1/ingredients/parse` | Parse raw ingredient text via LLM sidecar |
 | `POST` | `/api/v1/convert` | Convert a quantity (`{ "value": "2 cups", "toUnit": "ml" }`) |
 
 All error responses use the [RFC 7807 ProblemDetails](https://datatracker.ietf.org/doc/html/rfc7807) format. Image uploads are limited to 10 MB (enforced by both the backend and the nginx proxy).
@@ -252,5 +262,6 @@ npm run test:headed
 | PWA | vite-plugin-pwa (installable, standalone, theme-color) |
 | Backend | ASP.NET Core 9, Entity Framework Core 9, SQLite |
 | OCR | Python 3.11, PaddleOCR PP-OCRv5 (English + German), FastAPI, uvicorn |
+| Ingredient parser | Python 3.11, Ollama + Ministral 3B, FastAPI, uvicorn; 4-layer prompt injection defense |
 | Container | Docker Compose (three services); dedicated `docker-compose.integration.yml` for BDD tests |
 | TLS | Self-signed cert (nginx, generated at image build time); `@vitejs/plugin-basic-ssl` for the Vite dev server |

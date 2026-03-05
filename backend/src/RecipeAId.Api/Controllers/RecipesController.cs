@@ -10,7 +10,8 @@ public class RecipesController(
     IRecipeService recipeService,
     IRecipeMatchingService matchingService,
     IOcrService ocrService,
-    IOcrParser ocrParser) : ControllerBase
+    IOcrParser ocrParser,
+    IIngredientParserService ingredientParserService) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IEnumerable<RecipeSummaryDto>>> GetAll(
@@ -100,6 +101,20 @@ public class RecipesController(
             return UnprocessableEntity(new ProblemDetails { Title = "OCR processing failed.", Detail = ocrResult.ErrorMessage });
 
         var draft = ocrParser.Parse(ocrResult.RawText);
+
+        // LLM refinement — send regex-parsed ingredient text to Ministral 3B for normalization
+        var ingredientText = string.Join("\n", draft.DetectedIngredients
+            .Select(i => string.Join(" ",
+                new[] { i.Amount, i.Unit, i.Name }.Where(s => !string.IsNullOrEmpty(s)))));
+
+        if (!string.IsNullOrWhiteSpace(ingredientText))
+        {
+            var llmResult = await ingredientParserService.ParseAsync(ingredientText, "de", ct);
+            if (llmResult.Success && llmResult.Ingredients.Count > 0)
+                draft = draft with { DetectedIngredients = llmResult.Ingredients };
+            // else: silently fall back to regex-parsed ingredients
+        }
+
         return Ok(draft);
     }
 }
