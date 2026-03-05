@@ -1,7 +1,6 @@
 import { useRef, useState, useCallback } from "react";
 import ReactCrop, { type Crop, type PixelCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
-import { enhanceForOcr } from "../utils/imageEnhance";
 
 interface Props {
   imageUrl: string;
@@ -11,8 +10,9 @@ interface Props {
 
 /**
  * Fullscreen overlay that lets the user crop a captured image
- * before sending it to OCR. Applies automatic image enhancement
- * (grayscale + contrast + sharpen) to the cropped region.
+ * before sending it to OCR. Image enhancement (denoising, deskewing,
+ * adaptive thresholding, perspective correction) is handled server-side
+ * by the OCR sidecar — the frontend only crops and compresses.
  */
 export default function CropModal({ imageUrl, onConfirm, onCancel }: Props) {
   const imgRef = useRef<HTMLImageElement | null>(null);
@@ -52,15 +52,12 @@ export default function CropModal({ imageUrl, onConfirm, onCancel }: Props) {
       const ctx = canvas.getContext("2d")!;
       ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
 
-      // Enhance for OCR
-      const enhanced = enhanceForOcr(canvas);
-
-      // Convert to JPEG
+      // Convert to JPEG — resizing to max 2048px happens in useOcrCapture (toJpeg)
       const blob = await new Promise<Blob>((resolve, reject) => {
-        enhanced.toBlob(
+        canvas.toBlob(
           (b) => (b ? resolve(b) : reject(new Error("JPEG conversion failed"))),
           "image/jpeg",
-          0.85,
+          0.92,
         );
       });
 
