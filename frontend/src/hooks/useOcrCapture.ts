@@ -49,6 +49,7 @@ export function useOcrCapture() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pendingImageUrl, setPendingImageUrl] = useState<string | null>(null);
+  const [showCamera, setShowCamera] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const callbackRef = useRef<((draft: RecipeOcrDraftDto) => void) | null>(null);
 
@@ -59,8 +60,7 @@ export function useOcrCapture() {
     };
   }, [pendingImageUrl]);
 
-  function capture(onResult: (draft: RecipeOcrDraftDto) => void) {
-    callbackRef.current = onResult;
+  function openFileInput() {
     // Create a hidden file input on demand, or reuse the existing ref
     if (!inputRef.current) {
       const el = document.createElement("input");
@@ -77,6 +77,16 @@ export function useOcrCapture() {
     inputRef.current.click();
   }
 
+  function capture(onResult: (draft: RecipeOcrDraftDto) => void) {
+    callbackRef.current = onResult;
+    setError(null);
+    if (navigator.mediaDevices?.getUserMedia) {
+      setShowCamera(true);
+    } else {
+      openFileInput();
+    }
+  }
+
   function handleChange(e: Event) {
     const file = (e.target as HTMLInputElement).files?.[0];
     if (!file) return;
@@ -86,8 +96,21 @@ export function useOcrCapture() {
     setPendingImageUrl(url);
   }
 
+  /** Called by CameraCapture.onCapture — sets pendingImageUrl to open CropModal. */
+  function handleCameraCapture(file: File) {
+    const url = URL.createObjectURL(file);
+    setPendingImageUrl(url);
+    // Keep showCamera=true (hidden prop) so stream stays alive under CropModal
+  }
+
+  /** Called when user explicitly closes the camera overlay. */
+  function handleCameraClose() {
+    setShowCamera(false);
+  }
+
   /** Called by CropModal after the user confirms the crop. */
   async function submitCroppedImage(croppedFile: File) {
+    setShowCamera(false);
     // Clean up the pending preview
     if (pendingImageUrl) URL.revokeObjectURL(pendingImageUrl);
     setPendingImageUrl(null);
@@ -107,6 +130,7 @@ export function useOcrCapture() {
 
   /** Called when the user cancels the crop modal. */
   function cancelCrop() {
+    setShowCamera(false);
     if (pendingImageUrl) URL.revokeObjectURL(pendingImageUrl);
     setPendingImageUrl(null);
   }
@@ -115,5 +139,16 @@ export function useOcrCapture() {
     setError(null);
   }
 
-  return { capture, isLoading, error, clearError, pendingImageUrl, submitCroppedImage, cancelCrop };
+  return {
+    capture,
+    isLoading,
+    error,
+    clearError,
+    pendingImageUrl,
+    submitCroppedImage,
+    cancelCrop,
+    showCamera,
+    handleCameraCapture,
+    handleCameraClose,
+  };
 }

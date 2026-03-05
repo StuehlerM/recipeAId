@@ -101,8 +101,10 @@ recipeaid/
 - [x] Weekly planner at `/planner`: recipe browser with search, this-week list, aggregated shopping list
 - [x] `src/features/planner/quantityAggregator.ts` — same-unit quantities summed; mixed/unparseable quantities concatenated (uses Amount + Unit fields)
 - [x] `src/features/planner/usePlanner.ts` — localStorage-backed (`recipeaid_planner_v1`), lazy-initialised
-- [x] `src/hooks/useOcrCapture.ts` — programmatic file-input OCR trigger, returns `RecipeOcrDraftDto` (shared); opens crop modal after capture, then converts to JPEG + downscales to max 2048px
-- [x] `src/components/OcrCaptureButton.tsx` — camera icon button with spinner and inline error display; renders `CropModal` (shared)
+- [x] `src/hooks/useOcrCapture.ts` — opens `CameraCapture` when `getUserMedia` available, falls back to hidden file-input; `handleCameraCapture`/`handleCameraClose` wired to camera state; `submitCroppedImage`/`cancelCrop` stop stream via `setShowCamera(false)`
+- [x] `src/components/OcrCaptureButton.tsx` — camera icon button with spinner and inline error display; renders `CameraCapture` (z-[70]) and `CropModal` (z-[60])
+- [x] `src/components/CameraCapture.tsx` — fullscreen live camera overlay: `getUserMedia` video stream, guide frame with corner accents + scrim, `LevelIndicator` sub-component (DeviceOrientationEvent bubble, iOS 13+ permission-gated), shadow badge, blur badge + capture button disabled when blurry, torch toggle (capability-gated), `hidden` prop keeps stream alive under CropModal
+- [x] `src/utils/imageAnalysis.ts` — `computeSharpnessVariance` (Laplacian variance, center 50% of frame) + `detectShadow` (mean luma + dark/bright pixel ratio); exported `SHARPNESS_THRESHOLD=30`, `ANALYSIS_WIDTH/HEIGHT=320×240`
 - [x] `src/components/CropModal.tsx` — fullscreen crop overlay (`react-image-crop`); applies automatic image enhancement (grayscale + auto-contrast + sharpen via `imageEnhance.ts`) before OCR upload
 - [x] `src/utils/imageEnhance.ts` — Canvas-based image preprocessing pipeline: BT.601 grayscale, histogram-stretch auto-contrast (1% percentile clipping), unsharp-mask sharpening
 - [x] `src/features/add-recipe/StepIndicator.tsx` — 4-step progress indicator (clickable for completed/current steps to enable backwards navigation; title required before forward navigation from step 1)

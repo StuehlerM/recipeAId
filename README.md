@@ -6,7 +6,7 @@ A recipe management app that reads physical recipe cards with your camera. Point
 
 ## Features
 
-- **Scan recipe cards** — upload a photo or use your phone camera (iPhone HEIC supported); crop the image to just the text area, then automatic image enhancement (grayscale, contrast stretch, sharpening) improves OCR accuracy even in poor lighting; extracts title, ingredients (supports both "2 cups flour" and "Flour 200 g" formats), and instructions automatically (English + German section headers)
+- **Scan recipe cards** — a custom fullscreen camera overlay provides a live viewfinder with a recipe-card guide frame; real-time indicators warn you about blur and shadow while a bubble level helps you hold the phone steady; tap the capture button to snap, then crop to just the text area; automatic image enhancement (grayscale, contrast stretch, sharpening) improves OCR accuracy even in poor lighting; extracts title, ingredients (supports both "2 cups flour" and "Flour 200 g" formats), and instructions automatically (English + German section headers); falls back to the OS file picker on desktop or when camera permission is denied
 - **Review before saving** — the OCR result comes back as a draft you can edit before confirming
 - **4-step recipe wizard** — add recipes manually in four focused steps: Title → Ingredients → Instructions → Book; OCR capture available at every step
 - **Browse & search** — filter recipes by title or by cookbook/book title; search by the ingredients you have on hand (ranked by match count)
@@ -119,9 +119,9 @@ recipeaid/
 ├── frontend/              # React 19 + Vite 7 + TypeScript
 │   ├── src/
 │   │   ├── api/               # client.ts, types.ts, mockData.ts
-│   │   ├── components/        # Shared: NavBar, OcrCaptureButton, CropModal
+│   │   ├── components/        # Shared: NavBar, OcrCaptureButton, CropModal, CameraCapture
 │   │   ├── hooks/             # Shared: useOcrCapture.ts
-│   │   ├── utils/             # imageEnhance.ts (OCR image preprocessing)
+│   │   ├── utils/             # imageEnhance.ts (OCR preprocessing), imageAnalysis.ts (blur/shadow)
 │   │   └── features/          # Feature-based modules
 │   │       ├── recipes/       # RecipeListPage, RecipeDetailPage
 │   │       ├── search/        # IngredientSearchPage

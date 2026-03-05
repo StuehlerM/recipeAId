@@ -1,6 +1,7 @@
 import { useOcrCapture } from "../hooks/useOcrCapture";
 import type { RecipeOcrDraftDto } from "../api/types";
 import CropModal from "./CropModal";
+import CameraCapture from "./CameraCapture";
 
 interface Props {
   onResult: (draft: RecipeOcrDraftDto) => void;
@@ -9,7 +10,18 @@ interface Props {
 }
 
 export default function OcrCaptureButton({ onResult, label = "Scan", className }: Props) {
-  const { capture, isLoading, error, clearError, pendingImageUrl, submitCroppedImage, cancelCrop } = useOcrCapture();
+  const {
+    capture,
+    isLoading,
+    error,
+    clearError,
+    pendingImageUrl,
+    submitCroppedImage,
+    cancelCrop,
+    showCamera,
+    handleCameraCapture,
+    handleCameraClose,
+  } = useOcrCapture();
 
   return (
     <div className="relative">
@@ -47,6 +59,14 @@ export default function OcrCaptureButton({ onResult, label = "Scan", className }
       </button>
       {error && (
         <p className="mt-1 text-rose text-xs">{error}</p>
+      )}
+
+      {showCamera && (
+        <CameraCapture
+          onCapture={handleCameraCapture}
+          onClose={handleCameraClose}
+          hidden={pendingImageUrl !== null}
+        />
       )}
 
       {pendingImageUrl && (

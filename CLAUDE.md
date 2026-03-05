@@ -20,9 +20,10 @@ recipeaid/
 ├── frontend/          # React 19 + Vite 7 + TypeScript + Tailwind CSS v4
 │   └── src/
 │       ├── api/            # client.ts, mockData.ts, types.ts
-│       ├── components/     # Shared: NavBar (bottom tab bar), OcrCaptureButton, CropModal
+│       ├── components/     # Shared: NavBar (bottom tab bar), OcrCaptureButton, CropModal, CameraCapture
 │       ├── hooks/          # Shared: useOcrCapture.ts
 │       ├── utils/          # imageEnhance.ts (Canvas-based OCR image preprocessing)
+│       │                   # imageAnalysis.ts (sharpness variance + shadow detection for live camera)
 │       └── features/       # Feature-based modules
 │           ├── recipes/    # RecipeListPage, RecipeDetailPage (+ CSS modules)
 │           ├── search/     # IngredientSearchPage (+ CSS module)
@@ -185,7 +186,7 @@ npm test
 
 **OCR architecture:** `PythonOcrService` (in `RecipeAId.Api/OcrServices/`) implements `IOcrService` by forwarding images to the Python PaddleOCR sidecar via a named `HttpClient` (30-second timeout). `OcrParserService` (in `RecipeAId.Core/Services/`) implements `IOcrParser` with pure string logic — no infra deps, fully unit-tested. Regex patterns use `[GeneratedRegex]` source generators for performance. Three ingredient patterns are tried in order: `amount unit name` ("2 cups flour"), `name amount unit` ("Flour 200 g"), and `name amount` ("Eggs 2"). German section headers are supported ("Zutaten", "Zubereitung"). Run-on ingredient lines (OCR with no newlines) are split at quantity+unit boundaries and case transitions before parsing. The sidecar uses PaddleOCR's `predict()` with bounding-box y-coordinate grouping to reconstruct proper line breaks from the image layout (text blocks on the same visual line are merged, separate lines get `\n`). PIL images are converted to numpy arrays via `np.array()` before passing to PaddleOCR. The `lang="de"` setting loads the latin PP-OCRv5 model which covers both German and English (45 Latin-script languages). The sidecar URL is configurable via `OcrService:BaseUrl` in `appsettings.json` (default: `http://localhost:8001`). Image uploads are limited to 10 MB.
 
-**Frontend image handling:** After capture, a `CropModal` (fullscreen overlay using `react-image-crop`) lets the user draw a rectangle around the text area. On confirm, the cropped region is enhanced for OCR via `imageEnhance.ts` (grayscale → auto-contrast with histogram stretching → unsharp-mask sharpening), then converted to JPEG and downscaled to max 2048px via `toJpeg` in `useOcrCapture.ts`. This pipeline handles iPhone HEIC format, poor lighting, and background noise. No images are stored — they are disposed after text extraction. Both `OcrCaptureButton` (used in AddRecipePage steps) and `UploadPage` (which has its own file input) share the same crop modal.
+**Frontend image handling:** When `getUserMedia` is available, tapping Scan opens `CameraCapture` — a fullscreen `z-[70]` overlay with a live `getUserMedia` video stream (environment-facing, 1080p ideal). It provides four overlays: (1) a guide frame with corner accents and scrim, (2) a `LevelIndicator` sub-component with a bubble that moves with device tilt (DeviceOrientationEvent, iOS 13+ permission-gated), (3) shadow detection badge (high-contrast lighting heuristic via `imageAnalysis.ts`), (4) blur detection badge (Laplacian variance — capture button disabled when blurry). Torch toggle is shown when `track.getCapabilities()?.torch` is present. On capture, a full-res canvas JPEG is passed to `handleCameraCapture` → `CropModal` opens while the camera stream stays alive (`hidden` prop instead of unmount, z-[60]). After crop confirm or cancel, `setShowCamera(false)` stops the stream. If `getUserMedia` is unavailable (desktop without webcam, permission denied), `useOcrCapture` falls back to a hidden `<input type="file" capture="environment">` (existing OS picker flow). `imageAnalysis.ts` exports `computeSharpnessVariance` (Laplacian variance over center 50% of frame) and `detectShadow` (mean luma + dark/bright pixel ratio heuristic). The crop → `imageEnhance.ts` → `toJpeg` → upload pipeline is unchanged. No images are stored — they are disposed after text extraction. Both `OcrCaptureButton` (used in AddRecipePage steps) and `UploadPage` (which has its own file input) share the same crop modal.
 
 **Frontend API client (`src/api/client.ts`):** uses `VITE_API_BASE_URL` to toggle between real fetch calls and mock data. All endpoints — including OCR — fall back to mock data when `VITE_API_BASE_URL` is not set.
 
@@ -194,6 +195,28 @@ npm test
 **Database indexes:** `Ingredient.Name` (unique), `Recipe.Title` (non-unique, for title filter queries).
 
 **CORS:** `DevPolicy` is applied globally (not environment-gated). Origins are configured via `Cors:AllowedOrigins` — defaulting to `["http://localhost:5173", "https://localhost:5173"]` in Development (`appsettings.Development.json`) and `https://localhost:3443` in Docker (`docker-compose.yml`). Since nginx proxies `/api/` to the backend on the same origin, CORS is not exercised in the Docker setup anyway.
+
+## Implementation workflow
+
+When starting any implementation task, always use a git worktree:
+
+```bash
+# 1. Create a worktree with a new branch
+git worktree add .worktrees/<feature-name> -b <feature-name>
+
+# 2. Do all work and commits inside the worktree directory
+cd .worktrees/<feature-name>
+
+# 3. Once done, go back to main and merge
+cd ../..
+git merge <feature-name>
+
+# 4. Clean up the worktree and branch
+git worktree remove .worktrees/<feature-name>
+git branch -d <feature-name>
+```
+
+This keeps main clean and all in-progress work isolated.
 
 ## Before committing and pushing
 
