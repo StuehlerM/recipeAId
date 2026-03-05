@@ -151,26 +151,6 @@ recipeaid/
 
 ---
 
-## API reference
-
-| Method | Route | Description |
-|--------|-------|-------------|
-| `GET` | `/api/v1/recipes` | List recipes; optional `?q=` title filter |
-| `GET` | `/api/v1/recipes/{id}` | Single recipe with ingredients |
-| `POST` | `/api/v1/recipes` | Create recipe (JSON body) |
-| `PUT` | `/api/v1/recipes/{id}` | Update recipe |
-| `DELETE` | `/api/v1/recipes/{id}` | Delete recipe |
-| `POST` | `/api/v1/recipes/from-image` | Upload image → OCR → LLM refine → returns draft (does **not** save) |
-| `GET` | `/api/v1/recipes/search/by-ingredients` | Ranked search by ingredients (`?ingredients=egg,flour&minMatch=1`) |
-| `GET` | `/api/v1/ingredients` | All known ingredients (for autocomplete) |
-| `POST` | `/api/v1/ingredients/parse` | Parse raw ingredient text via LLM sidecar |
-| `POST` | `/api/v1/convert` | Convert a quantity (`{ "value": "2 cups", "toUnit": "ml" }`) |
-
-All error responses use the [RFC 7807 ProblemDetails](https://datatracker.ietf.org/doc/html/rfc7807) format. Image uploads are limited to 10 MB (enforced by both the backend and the nginx proxy).
-
-The interactive Scalar explorer (`/scalar/v1`) is available in Development mode and lets you try every endpoint in the browser. The OCR sidecar has its own Swagger UI at `http://localhost:8001/docs` for testing image uploads directly.
-
----
 
 ## Running tests
 
@@ -219,38 +199,6 @@ docker compose -f docker-compose.integration.yml down -v
 ```
 
 Each scenario automatically cleans all recipes via the API before running, so no manual database reset is needed between runs.
-
-### Option B — Local (no Docker)
-
-When you want faster feedback during development the test runner can start the backend and frontend for you automatically (set by `SPAWN_SERVERS`, which defaults to `true`).
-
-**Prerequisites:** .NET 9 SDK, Node.js 24+, npm.
-
-```bash
-cd integration
-npm install
-npm run install:browsers   # download Playwright's Chromium (one-time)
-npm test                   # starts backend + frontend, runs all scenarios
-```
-
-The runner:
-1. Deletes any leftover `recipeaid-test.db` from the previous run.
-2. Starts the ASP.NET backend (`dotnet run`) with `ASPNETCORE_ENVIRONMENT=Development` pointing at the isolated test DB, then waits until `/openapi/v1.json` responds.
-3. Starts the Vite dev server (`npm run dev`) and waits until it responds.
-4. Runs all Cucumber scenarios in series (one browser context per scenario).
-5. Shuts both servers down and writes `reports/report.html`.
-
-To run a single feature file:
-
-```bash
-npm run test:feature -- features/recipes.feature
-```
-
-To run with a visible browser window (useful for debugging):
-
-```bash
-npm run test:headed
-```
 
 ---
 
