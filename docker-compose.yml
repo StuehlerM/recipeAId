@@ -27,6 +27,12 @@ services:
     networks:
       - internal
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 6g      # hard cap — container is OOM-killed if exceeded
+        reservations:
+          memory: 6g      # Docker will refuse to start this service if 6 GB RAM cannot be reserved
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/health')"]
       interval: 15s
