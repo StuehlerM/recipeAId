@@ -97,11 +97,14 @@ async def _call_ollama(prompt: str) -> str:
         "stream": False,
         "options": {"temperature": 0.1},
     }
+    logger.info("LLM INPUT:\n%s", prompt)
     async with httpx.AsyncClient(timeout=OLLAMA_TIMEOUT) as client:
         resp = await client.post(f"{OLLAMA_URL}/api/generate", json=payload)
         resp.raise_for_status()
         data = resp.json()
-        return data.get("response", "")
+        raw = data.get("response", "")
+    logger.info("LLM OUTPUT:\n%s", raw)
+    return raw
 
 
 def _parse_llm_output(raw: str) -> list[IngredientItem]:
