@@ -54,6 +54,7 @@ services:
       - OcrService__BaseUrl=http://ocr-service:8001
       - IngredientParser__BaseUrl=http://ingredient-parser:8002
       - Cors__AllowedOrigins__0=https://localhost
+      - Cors__AllowedOrigins__1=https://172.205.220.46
     networks:
       - internal
     depends_on:
@@ -67,6 +68,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VM_HOST: "172.205.220.46"
       # No VITE_API_BASE_URL: nginx proxies /api/ → backend internally,
       # so the browser always talks to the same origin.
       # This means any device on the local network can use https://<host-ip>.

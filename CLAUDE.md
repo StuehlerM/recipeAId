@@ -143,7 +143,7 @@ Services after `docker compose up`:
 .\build-ocr.ps1 -Pull      # also refresh the python:3.11-slim base image
 ```
 
-**Note:** The frontend Docker image generates a self-signed TLS cert at build time using `openssl`. nginx serves HTTP on port 80 (redirect only) and HTTPS on port 443. Host mappings: `80:80` and `443:443`. The `/api/` proxy block sets `client_max_body_size 10m` (matching the backend limit) and `proxy_read_timeout 210s` (covering OCR + LLM ingredient parser on CPU).
+**Note:** The frontend Docker image generates a self-signed TLS cert at build time using `openssl`. nginx serves HTTP on port 80 (redirect only) and HTTPS on port 443. Host mappings: `80:80` and `443:443`. The cert always includes `localhost`/`127.0.0.1` as SANs; the `VM_HOST` build arg (set in `docker-compose.yml`) adds the VM's IP so browsers skip the cert warning when accessing via that address. The `/api/` proxy block sets `client_max_body_size 10m` (matching the backend limit) and `proxy_read_timeout 210s` (covering OCR + LLM ingredient parser on CPU).
 
 ## Integration tests (BDD)
 
