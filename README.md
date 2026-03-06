@@ -34,7 +34,7 @@ Once running:
 
 | Service           | URL                                                                 |
 |-------------------|---------------------------------------------------------------------|
-| Frontend          | https://localhost:3443 (HTTP on :3000 redirects automatically)      |
+| Frontend          | https://localhost (HTTP on :80 redirects automatically)              |
 | Backend           | http://localhost:8080                                               |
 | OCR               | http://localhost:8001 (Swagger UI at `/docs`)                       |
 | Ingredient parser | Docker-internal only (port 8002, no host mapping)                   |

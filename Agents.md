@@ -204,11 +204,11 @@ recipeaid/
 - [x] `build-ocr.ps1` — PowerShell helper script; sets `DOCKER_BUILDKIT=1` so the pip cache mount is active (avoids re-downloading PaddlePaddle wheels on every requirements change); supports `-NoCache` and `-Pull` flags
 - [x] `docker-compose.yml` — all three services wired together:
   - `ocr-service` exposes :8001
-  - `backend` depends on `ocr-service` with `condition: service_healthy` (health check on `/health`, 60s start period); `OcrService__BaseUrl=http://ocr-service:8001`; CORS allows `https://localhost:3443`
-  - `frontend` depends on `backend`; HTTP :3000 redirects to HTTPS :3443; self-signed cert generated at image build time; nginx `/api/` proxy: `client_max_body_size 10m`, `proxy_read_timeout 35s`
+  - `backend` depends on `ocr-service` with `condition: service_healthy` (health check on `/health`, 60s start period); `OcrService__BaseUrl=http://ocr-service:8001`; CORS allows `https://localhost`
+  - `frontend` depends on `backend`; HTTP :80 redirects to HTTPS :443; self-signed cert generated at image build time; nginx `/api/` proxy: `client_max_body_size 10m`, `proxy_read_timeout 35s`
 - [x] HTTPS support:
   - Dev server: `@vitejs/plugin-basic-ssl` → `https://localhost:5173`; `appsettings.Development.json` adds `https://localhost:5173` to CORS
-  - Docker: nginx serves HTTP on :80 (redirects to HTTPS) and HTTPS on :443 with a self-signed cert; host ports `3000:80` and `3443:443`
+  - Docker: nginx serves HTTP on :80 (redirects to HTTPS) and HTTPS on :443 with a self-signed cert; host ports `80:80` and `443:443`
 
 ---
 

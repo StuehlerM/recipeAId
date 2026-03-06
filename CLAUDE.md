@@ -128,7 +128,7 @@ docker compose down -v
 ```
 
 Services after `docker compose up`:
-- Frontend: https://localhost:3443 (HTTP on :3000 redirects automatically; self-signed cert — accept the browser warning once)
+- Frontend: https://localhost (HTTP on :80 redirects automatically; self-signed cert — accept the browser warning once)
 - Backend API: http://localhost:8080
 - OCR sidecar: http://localhost:8001 (Swagger UI at `/docs`)
 - Ingredient-parser sidecar: internal only (no host port) — accessible only from within the Docker network
@@ -143,7 +143,7 @@ Services after `docker compose up`:
 .\build-ocr.ps1 -Pull      # also refresh the python:3.11-slim base image
 ```
 
-**Note:** The frontend Docker image generates a self-signed TLS cert at build time using `openssl`. nginx serves HTTP on port 80 (redirect only) and HTTPS on port 443. Host mappings: `3000:80` and `3443:443`. The `/api/` proxy block sets `client_max_body_size 10m` (matching the backend limit) and `proxy_read_timeout 35s` (covering OCR's 30-second processing).
+**Note:** The frontend Docker image generates a self-signed TLS cert at build time using `openssl`. nginx serves HTTP on port 80 (redirect only) and HTTPS on port 443. Host mappings: `80:80` and `443:443`. The `/api/` proxy block sets `client_max_body_size 10m` (matching the backend limit) and `proxy_read_timeout 35s` (covering OCR's 30-second processing).
 
 ## Integration tests (BDD)
 
@@ -198,7 +198,7 @@ npm test
 
 **Database indexes:** `Ingredient.Name` (unique), `Recipe.Title` (non-unique, for title filter queries).
 
-**CORS:** `DevPolicy` is applied globally (not environment-gated). Origins are configured via `Cors:AllowedOrigins` — defaulting to `["http://localhost:5173", "https://localhost:5173"]` in Development (`appsettings.Development.json`) and `https://localhost:3443` in Docker (`docker-compose.yml`). Since nginx proxies `/api/` to the backend on the same origin, CORS is not exercised in the Docker setup anyway.
+**CORS:** `DevPolicy` is applied globally (not environment-gated). Origins are configured via `Cors:AllowedOrigins` — defaulting to `["http://localhost:5173", "https://localhost:5173"]` in Development (`appsettings.Development.json`) and `https://localhost` in Docker (`docker-compose.yml`). Since nginx proxies `/api/` to the backend on the same origin, CORS is not exercised in the Docker setup anyway.
 
 ## Implementation workflow
 
