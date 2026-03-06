@@ -140,7 +140,7 @@ recipeaid/
 - [x] `build-ingredient-parser.ps1` — mirrors `build-ocr.ps1`; sets `DOCKER_BUILDKIT=1`
 - [x] `Core/DTOs/IngredientParseRequest.cs` + `IngredientParseResult.cs`
 - [x] `Core/Interfaces/IIngredientParserService.cs`
-- [x] `Api/ParserServices/LlmIngredientParserService.cs` — named HttpClient "IngredientParser", 60s timeout, float→string conversion, graceful fallback
+- [x] `Api/ParserServices/LlmIngredientParserService.cs` — named HttpClient "IngredientParser", 200s timeout, float→string conversion, graceful fallback
 - [x] `RecipesController.FromImage` — chains LLM after regex; falls back to regex on failure
 - [x] `IngredientsController` — added `POST /api/v1/ingredients/parse` standalone endpoint
 - [x] `docker-compose.yml` — `ingredient-parser` service (no host port, `ollama-models` volume, 120s start period), backend `depends_on` it
@@ -205,7 +205,7 @@ recipeaid/
 - [x] `docker-compose.yml` — all three services wired together:
   - `ocr-service` exposes :8001
   - `backend` depends on `ocr-service` with `condition: service_healthy` (health check on `/health`, 60s start period); `OcrService__BaseUrl=http://ocr-service:8001`; CORS allows `https://localhost`
-  - `frontend` depends on `backend`; HTTP :80 redirects to HTTPS :443; self-signed cert generated at image build time; nginx `/api/` proxy: `client_max_body_size 10m`, `proxy_read_timeout 35s`
+  - `frontend` depends on `backend`; HTTP :80 redirects to HTTPS :443; self-signed cert generated at image build time; nginx `/api/` proxy: `client_max_body_size 10m`, `proxy_read_timeout 210s`
 - [x] HTTPS support:
   - Dev server: `@vitejs/plugin-basic-ssl` → `https://localhost:5173`; `appsettings.Development.json` adds `https://localhost:5173` to CORS
   - Docker: nginx serves HTTP on :80 (redirects to HTTPS) and HTTPS on :443 with a self-signed cert; host ports `80:80` and `443:443`

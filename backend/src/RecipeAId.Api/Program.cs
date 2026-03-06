@@ -41,7 +41,7 @@ var parserBaseUrl = builder.Configuration["IngredientParser:BaseUrl"] ?? "http:/
 builder.Services.AddHttpClient("IngredientParser", c =>
 {
     c.BaseAddress = new Uri(parserBaseUrl);
-    c.Timeout = TimeSpan.FromSeconds(60);
+    c.Timeout = TimeSpan.FromSeconds(200);
 });
 builder.Services.AddScoped<IIngredientParserService, LlmIngredientParserService>();
 
