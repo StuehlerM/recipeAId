@@ -29,6 +29,7 @@ export interface RecipeOcrDraftDto {
   detectedIngredients: { name: string; amount: string | null; unit: string | null }[];
   rawOcrText: string;
   imagePath: string | null;
+  sessionId: string | null;
 }
 
 export interface IngredientSearchResultDto {

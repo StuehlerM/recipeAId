@@ -246,3 +246,41 @@ export async function uploadRecipeImage(file: File): Promise<RecipeOcrDraftDto> 
   );
   return res.json() as Promise<RecipeOcrDraftDto>;
 }
+
+/**
+ * Opens an SSE connection to receive the LLM-refined ingredient list.
+ * Returns a cleanup function that closes the EventSource.
+ *
+ * onDone   — called with the LLM-refined ingredient array when the session completes
+ * onFailed — called when the session fails or times out (caller should use regex fallback)
+ */
+export function subscribeToOcrSession(
+  sessionId: string,
+  onDone: (ingredients: RecipeOcrDraftDto["detectedIngredients"]) => void,
+  onFailed: () => void,
+): () => void {
+  const url = BASE === "" ? `/api/v1/ocr-sessions/${sessionId}/events` : `${BASE}/api/v1/ocr-sessions/${sessionId}/events`;
+  const es = new EventSource(url);
+
+  es.onmessage = (e: MessageEvent<string>) => {
+    const data = JSON.parse(e.data) as {
+      status: string;
+      ingredients?: RecipeOcrDraftDto["detectedIngredients"];
+    };
+    if (data.status === "done" && data.ingredients) {
+      onDone(data.ingredients);
+      es.close();
+    } else if (data.status === "failed") {
+      onFailed();
+      es.close();
+    }
+    // "processing" events are ignored — just heartbeat
+  };
+
+  es.onerror = () => {
+    onFailed();
+    es.close();
+  };
+
+  return () => es.close();
+}

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using RecipeAId.Api.Middleware;
 using RecipeAId.Api.OcrServices;
+using RecipeAId.Api.OcrSessions;
 using RecipeAId.Api.ParserServices;
 using RecipeAId.Core.Interfaces;
 using RecipeAId.Core.Services;
@@ -57,6 +58,10 @@ builder.Services.AddHttpClient("IngredientParser", c =>
     c.Timeout = TimeSpan.FromSeconds(200);
 });
 builder.Services.AddScoped<IIngredientParserService, LlmIngredientParserService>();
+
+// OCR session store (SSE async pipeline)
+builder.Services.AddSingleton<OcrSessionStore>();
+builder.Services.AddHostedService<OcrSessionCleanupService>();
 
 // Controllers + OpenAPI
 builder.Services.AddControllers();

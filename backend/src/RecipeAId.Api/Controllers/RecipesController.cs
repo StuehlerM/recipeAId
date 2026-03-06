@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using RecipeAId.Api.OcrSessions;
 using RecipeAId.Core.DTOs;
 using RecipeAId.Core.Interfaces;
 
@@ -12,7 +13,8 @@ public class RecipesController(
     IRecipeMatchingService matchingService,
     IOcrService ocrService,
     IOcrParser ocrParser,
-    IIngredientParserService ingredientParserService,
+    IServiceScopeFactory scopeFactory,
+    OcrSessionStore sessionStore,
     ILogger<RecipesController> logger) : ControllerBase
 {
     [HttpGet]
@@ -112,25 +114,33 @@ public class RecipesController(
         logger.LogInformation("Regex parse: title={Title} ingredients={Count}",
             draft.DetectedTitle ?? "(none)", draft.DetectedIngredients.Count);
 
-        // LLM refinement — send regex-parsed ingredient text to Ministral 3B for normalization
+        // Build ingredient text for LLM refinement
         var ingredientText = string.Join("\n", draft.DetectedIngredients
             .Select(i => string.Join(" ",
                 new[] { i.Amount, i.Unit, i.Name }.Where(s => !string.IsNullOrEmpty(s)))));
 
+        // Fire LLM in background and return immediately with the regex draft + sessionId.
+        // The frontend connects to GET /api/v1/ocr-sessions/{sessionId}/events and waits for
+        // the LLM result via SSE, keeping the user at Step 2 with a "Translating..." message.
+        string? sessionId = null;
         if (!string.IsNullOrWhiteSpace(ingredientText))
         {
-            sw.Restart();
-            var llmResult = await ingredientParserService.ParseAsync(ingredientText, "de", ct);
-            logger.LogInformation("LLM parse completed in {ElapsedMs}ms — success={Success} ingredients={Count} fallback={Fallback}",
-                sw.ElapsedMilliseconds, llmResult.Success, llmResult.Ingredients.Count, !llmResult.Success);
+            sessionId = sessionStore.CreateSession();
+            logger.LogInformation("LLM background task started, session {SessionId}", sessionId);
 
-            if (llmResult.Success && llmResult.Ingredients.Count > 0)
-                draft = draft with { DetectedIngredients = llmResult.Ingredients };
-            else
-                logger.LogWarning("LLM parse failed or returned no ingredients — using regex fallback. Error: {Error}",
-                    llmResult.ErrorMessage);
+            _ = Task.Run(async () =>
+            {
+                await using var scope = scopeFactory.CreateAsyncScope();
+                var parser = scope.ServiceProvider.GetRequiredService<IIngredientParserService>();
+                var sw2 = Stopwatch.StartNew();
+                var result = await parser.ParseAsync(ingredientText, "de", CancellationToken.None);
+                logger.LogInformation(
+                    "LLM background completed in {ElapsedMs}ms — success={Success} ingredients={Count}",
+                    sw2.ElapsedMilliseconds, result.Success, result.Ingredients.Count);
+                sessionStore.Complete(sessionId, result);
+            });
         }
 
-        return Ok(draft);
+        return Ok(draft with { SessionId = sessionId });
     }
 }
