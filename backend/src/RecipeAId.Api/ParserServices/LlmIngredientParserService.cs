@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using RecipeAId.Core.DTOs;
@@ -23,6 +24,9 @@ public sealed class LlmIngredientParserService(
     {
         var client = httpClientFactory.CreateClient("IngredientParser");
 
+        logger.LogInformation("Sending {Chars} chars to LLM ingredient parser (lang={Lang})", text.Length, lang);
+        var sw = Stopwatch.StartNew();
+
         var requestBody = new { text, lang };
         HttpResponseMessage response;
         try
@@ -31,7 +35,8 @@ public sealed class LlmIngredientParserService(
         }
         catch (HttpRequestException ex)
         {
-            logger.LogWarning(ex, "Ingredient parser sidecar is unreachable — falling back to regex");
+            logger.LogWarning(ex, "Ingredient parser sidecar unreachable after {ElapsedMs}ms — falling back to regex",
+                sw.ElapsedMilliseconds);
             return new IngredientParseResult([], false, "Ingredient parser unavailable");
         }
 
@@ -66,6 +71,8 @@ public sealed class LlmIngredientParserService(
                 Unit: item.Unit))
             .ToList();
 
+        logger.LogInformation("LLM parser returned {Count} ingredients in {ElapsedMs}ms",
+            ingredients.Count, sw.ElapsedMilliseconds);
         return new IngredientParseResult(ingredients, true, null);
     }
 

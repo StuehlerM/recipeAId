@@ -119,9 +119,13 @@ export function useOcrCapture() {
     try {
       // toJpeg handles downscaling if the cropped region is still large
       const jpeg = await toJpeg(croppedFile);
+      console.info("[OCR] Uploading image:", jpeg.name, jpeg.size, "bytes", jpeg.type);
       const draft = await uploadRecipeImage(jpeg);
+      console.info("[OCR] Draft received: title=%s ingredients=%d",
+        draft.detectedTitle ?? "(none)", draft.detectedIngredients?.length ?? 0);
       callbackRef.current?.(draft);
-    } catch {
+    } catch (err) {
+      console.error("[OCR] Upload failed:", err);
       setError("OCR failed. Make sure the text is well-lit and in focus, then try again.");
     } finally {
       setIsLoading(false);

@@ -131,8 +131,14 @@ export default function CameraCapture({ onCapture, onClose, hidden }: Props) {
         }
 
         rafIdRef.current = requestAnimationFrame(analyzeFrame);
-      } catch {
+      } catch (err) {
         if (!cancelled) {
+          const name = err instanceof Error ? err.name : String(err);
+          if (name === "NotAllowedError" || name === "PermissionDeniedError") {
+            console.warn("[Camera] Permission denied — falling back to file picker");
+          } else {
+            console.error("[Camera] Failed to start camera:", err);
+          }
           onClose();
         }
       }

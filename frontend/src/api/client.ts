@@ -88,7 +88,17 @@ function summaryToRecipeDto(s: BackendRecipeSummary): RecipeDto {
 }
 
 async function checkOk(res: Response, label: string): Promise<Response> {
-  if (!res.ok) throw new Error(`${label} failed: ${res.status}`);
+  if (!res.ok) {
+    let detail = "";
+    try {
+      const body = await res.clone().json();
+      detail = body?.detail ?? body?.title ?? "";
+    } catch {
+      // ignore — body may not be JSON
+    }
+    console.error("[API]", label, "→", res.status, res.statusText, detail ? `(${detail})` : "");
+    throw new Error(`${label} failed: ${res.status}`);
+  }
   return res;
 }
 

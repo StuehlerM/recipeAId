@@ -15,6 +15,7 @@ First run will download the PaddleOCR models (~50 MB).
 import io
 import logging
 import math
+import time
 
 import cv2
 import numpy as np
@@ -54,7 +55,9 @@ logger = logging.getLogger(__name__)
 @app.post("/ocr", response_model=OcrResponse)
 async def extract_text(file: UploadFile = File(...)) -> OcrResponse:
     """Extract text from an uploaded image."""
-    logger.info("Request received: %s (%s)", file.filename, file.content_type)
+    t_start = time.monotonic()
+    logger.info("Request received: %s (%s) %d bytes",
+                file.filename, file.content_type, file.size or 0)
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=415, detail="File must be an image")
 
@@ -68,10 +71,17 @@ async def extract_text(file: UploadFile = File(...)) -> OcrResponse:
         logger.warning("Failed to open image: %s", exc)
         raise HTTPException(status_code=422, detail="Cannot read image file") from exc
 
+    logger.info("Image dimensions: %dx%d", image.width, image.height)
+
     try:
         img_bgr = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+        t_preprocess = time.monotonic()
         img_preprocessed = preprocess(img_bgr)
+        logger.info("Preprocessing took %.0fms", (time.monotonic() - t_preprocess) * 1000)
+
+        t_ocr = time.monotonic()
         results = list(ocr.predict(img_preprocessed))
+        logger.info("PaddleOCR inference took %.0fms", (time.monotonic() - t_ocr) * 1000)
     except Exception as exc:
         logger.error("PaddleOCR failed: %s", exc)
         raise HTTPException(status_code=500, detail="OCR processing failed") from exc
@@ -84,18 +94,21 @@ async def extract_text(file: UploadFile = File(...)) -> OcrResponse:
     # which loses the top-level rec_texts/rec_polys keys.
     result = results[0]
     texts = result.get("rec_texts", [])
+    scores = result.get("rec_scores", [])
     if not texts:
         logger.info("OCR found no text in %s", file.filename)
         return OcrResponse(raw_text="")
 
+    if scores:
+        avg_conf = sum(scores) / len(scores)
+        min_conf = min(scores)
+        logger.info("OCR confidence: avg=%.2f min=%.2f blocks=%d", avg_conf, min_conf, len(texts))
+
     raw_text = "\n".join(
-        _group_into_lines(
-            texts,
-            result.get("rec_scores", []),
-            result.get("rec_polys", []),
-        )
+        _group_into_lines(texts, scores, result.get("rec_polys", []))
     )
-    logger.info("OCR extracted %d chars from %s", len(raw_text), file.filename)
+    total_ms = (time.monotonic() - t_start) * 1000
+    logger.info("OCR pipeline done in %.0fms — %d chars extracted", total_ms, len(raw_text))
     return OcrResponse(raw_text=raw_text)
 
 

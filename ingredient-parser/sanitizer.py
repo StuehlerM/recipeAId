@@ -3,7 +3,10 @@ Input sanitization for ingredient text before it is included in an LLM prompt.
 Provides defense-in-depth against prompt injection attacks.
 """
 
+import logging
 import re
+
+logger = logging.getLogger("uvicorn.error")
 
 # Maximum characters of raw text sent to the LLM
 MAX_INPUT_LENGTH = 2000
@@ -30,19 +33,34 @@ _CONTROL_CHARS = re.compile(r"[\x00-\x08\x0b-\x1f\x7f]")
 
 def sanitize(text: str) -> str:
     """Return a sanitized copy of *text* safe for inclusion in an LLM prompt."""
+    original_len = len(text)
+
     # 1. Strip control characters (keep \t and \n)
     text = _CONTROL_CHARS.sub("", text)
 
     # 2. Truncate to cap max length
+    truncated = len(text) > MAX_INPUT_LENGTH
     text = text[:MAX_INPUT_LENGTH]
 
     # 3. Remove LLM role markers
+    role_marker_matches = _ROLE_MARKERS.findall(text)
     text = _ROLE_MARKERS.sub("", text)
 
     # 4. Remove injection phrases
+    injection_matches = _INJECTION_PHRASES.findall(text)
     text = _INJECTION_PHRASES.sub("", text)
 
     # 5. Collapse excessive whitespace (preserve newlines)
     text = _EXCESS_SPACES.sub(" ", text)
 
-    return text.strip()
+    text = text.strip()
+
+    if truncated:
+        logger.warning("Sanitizer truncated input from %d to %d chars", original_len, MAX_INPUT_LENGTH)
+    if role_marker_matches:
+        logger.warning("Sanitizer removed role markers: %s", role_marker_matches)
+    if injection_matches:
+        logger.warning("Sanitizer removed injection phrases: %s", injection_matches)
+    logger.info("Sanitizer: %d chars in → %d chars out", original_len, len(text))
+
+    return text

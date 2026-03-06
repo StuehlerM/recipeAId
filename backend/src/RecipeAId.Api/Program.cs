@@ -7,8 +7,21 @@ using RecipeAId.Core.Services;
 using RecipeAId.Data;
 using RecipeAId.Data.Repositories;
 using Scalar.AspNetCore;
+using Serilog;
+using Serilog.Formatting.Compact;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Serilog — compact JSON in Production (easy to grep/pipe), readable text in Development
+builder.Host.UseSerilog((ctx, config) =>
+{
+    if (ctx.HostingEnvironment.IsProduction())
+        config.WriteTo.Console(new CompactJsonFormatter());
+    else
+        config.WriteTo.Console();
+
+    config.ReadFrom.Configuration(ctx.Configuration);
+});
 
 // Database
 var dbPath = builder.Configuration.GetConnectionString("DefaultConnection")

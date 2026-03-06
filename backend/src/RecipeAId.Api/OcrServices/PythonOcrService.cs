@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json.Serialization;
 using RecipeAId.Core.DTOs;
 using RecipeAId.Core.Interfaces;
@@ -20,6 +21,9 @@ public sealed class PythonOcrService(IHttpClientFactory httpClientFactory, ILogg
         streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(mimeType);
         content.Add(streamContent, "file", "image");
 
+        logger.LogInformation("Forwarding image to OCR sidecar ({MimeType})", mimeType);
+        var sw = Stopwatch.StartNew();
+
         HttpResponseMessage response;
         try
         {
@@ -27,14 +31,15 @@ public sealed class PythonOcrService(IHttpClientFactory httpClientFactory, ILogg
         }
         catch (HttpRequestException ex)
         {
-            logger.LogError(ex, "OCR service is unreachable");
+            logger.LogError(ex, "OCR sidecar unreachable after {ElapsedMs}ms", sw.ElapsedMilliseconds);
             return new OcrResult(string.Empty, false, "OCR service is unavailable. Is the Python sidecar running?");
         }
 
         if (!response.IsSuccessStatusCode)
         {
             var body = await response.Content.ReadAsStringAsync(ct);
-            logger.LogWarning("OCR service returned {Status}: {Body}", (int)response.StatusCode, body);
+            logger.LogWarning("OCR sidecar returned {Status} after {ElapsedMs}ms: {Body}",
+                (int)response.StatusCode, sw.ElapsedMilliseconds, body);
             return new OcrResult(string.Empty, false, $"OCR service error ({(int)response.StatusCode})");
         }
 
@@ -42,6 +47,8 @@ public sealed class PythonOcrService(IHttpClientFactory httpClientFactory, ILogg
         if (result is null || result.RawText is null)
             return new OcrResult(string.Empty, false, "OCR service returned an unexpected response");
 
+        logger.LogInformation("OCR sidecar responded in {ElapsedMs}ms — {Chars} chars extracted",
+            sw.ElapsedMilliseconds, result.RawText.Length);
         return new OcrResult(result.RawText, true, null);
     }
 

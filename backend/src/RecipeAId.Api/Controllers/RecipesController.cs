@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using RecipeAId.Core.DTOs;
 using RecipeAId.Core.Interfaces;
@@ -11,7 +12,8 @@ public class RecipesController(
     IRecipeMatchingService matchingService,
     IOcrService ocrService,
     IOcrParser ocrParser,
-    IIngredientParserService ingredientParserService) : ControllerBase
+    IIngredientParserService ingredientParserService,
+    ILogger<RecipesController> logger) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IEnumerable<RecipeSummaryDto>>> GetAll(
@@ -94,13 +96,21 @@ public class RecipesController(
         if (image.Length > maxSizeBytes)
             return BadRequest(new ProblemDetails { Title = "Image must be smaller than 10 MB." });
 
+        logger.LogInformation("OCR pipeline started: {FileName} {ContentType} {SizeBytes}B",
+            image.FileName, image.ContentType, image.Length);
+
+        var sw = Stopwatch.StartNew();
         await using var stream = image.OpenReadStream();
         var ocrResult = await ocrService.ExtractTextAsync(stream, image.ContentType, ct);
+        logger.LogInformation("OCR completed in {ElapsedMs}ms — success={Success} chars={Chars}",
+            sw.ElapsedMilliseconds, ocrResult.Success, ocrResult.RawText.Length);
 
         if (!ocrResult.Success)
             return UnprocessableEntity(new ProblemDetails { Title = "OCR processing failed.", Detail = ocrResult.ErrorMessage });
 
         var draft = ocrParser.Parse(ocrResult.RawText);
+        logger.LogInformation("Regex parse: title={Title} ingredients={Count}",
+            draft.DetectedTitle ?? "(none)", draft.DetectedIngredients.Count);
 
         // LLM refinement — send regex-parsed ingredient text to Ministral 3B for normalization
         var ingredientText = string.Join("\n", draft.DetectedIngredients
@@ -109,10 +119,16 @@ public class RecipesController(
 
         if (!string.IsNullOrWhiteSpace(ingredientText))
         {
+            sw.Restart();
             var llmResult = await ingredientParserService.ParseAsync(ingredientText, "de", ct);
+            logger.LogInformation("LLM parse completed in {ElapsedMs}ms — success={Success} ingredients={Count} fallback={Fallback}",
+                sw.ElapsedMilliseconds, llmResult.Success, llmResult.Ingredients.Count, !llmResult.Success);
+
             if (llmResult.Success && llmResult.Ingredients.Count > 0)
                 draft = draft with { DetectedIngredients = llmResult.Ingredients };
-            // else: silently fall back to regex-parsed ingredients
+            else
+                logger.LogWarning("LLM parse failed or returned no ingredients — using regex fallback. Error: {Error}",
+                    llmResult.ErrorMessage);
         }
 
         return Ok(draft);
