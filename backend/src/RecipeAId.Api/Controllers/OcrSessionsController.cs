@@ -28,7 +28,7 @@ public class OcrSessionsController(
             if (!resp.IsSuccessStatusCode)
                 return null;
 
-            var json = await resp.Content.ReadAsAsync<IngredientParserStatus>(ct);
+            var json = await resp.Content.ReadFromJsonAsync<IngredientParserStatus>(ct);
             return json;
         }
         catch
@@ -87,9 +87,9 @@ public class OcrSessionsController(
             while (true)
             {
                 // Check if result is ready (non-blocking with 5s timeout)
-                if (tcs.Task.IsCompleted ||
-                    await tcs.Task.WaitAsync(TimeSpan.FromSeconds(5), hardTimeoutCts.Token).ConfigureAwait(false))
+                try
                 {
+                    await tcs.Task.WaitAsync(TimeSpan.FromSeconds(5), hardTimeoutCts.Token).ConfigureAwait(false);
                     var result = await tcs.Task.ConfigureAwait(false);
                     string payload;
                     if (result.Success && result.Ingredients.Count > 0)
@@ -115,6 +115,10 @@ public class OcrSessionsController(
                         logger.LogDebug("Failed to send result for SSE session {SessionId}", sessionId);
                     }
                     return;
+                }
+                catch (TimeoutException)
+                {
+                    // 5s timeout expired; continue polling
                 }
 
                 // Periodically check if ingredient-parser is reachable and processing

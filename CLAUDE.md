@@ -143,6 +143,14 @@ Services after `docker compose up`:
 .\build-ocr.ps1 -Pull      # also refresh the python:3.11-slim base image
 ```
 
+**Rebuilding only the ingredient-parser image (faster):** Use `build-ingredient-parser.ps1` similarly. It also activates the pip cache so Ollama/Ministral model weights are not re-downloaded when requirements change.
+
+```powershell
+.\build-ingredient-parser.ps1            # normal build (uses layer + pip cache)
+.\build-ingredient-parser.ps1 -NoCache   # fully clean rebuild
+.\build-ingredient-parser.ps1 -Pull      # also refresh the python:3.11-slim base image
+```
+
 **Note:** The frontend Docker image generates a self-signed TLS cert at build time using `openssl`. nginx serves HTTP on port 80 (redirect only) and HTTPS on port 443. Host mappings: `80:80` and `443:443`. The cert always includes `localhost`/`127.0.0.1` as SANs; the `VM_HOST` build arg (set in `docker-compose.yml`) adds the VM's IP so browsers skip the cert warning when accessing via that address. The `/api/` proxy block sets `client_max_body_size 10m` (matching the backend limit) and `proxy_read_timeout 210s`. A separate `/api/v1/ocr-sessions/` location block with `proxy_buffering off` and `proxy_read_timeout 220s` handles the SSE stream for LLM ingredient refinement (the backend's SSE handler uses adaptive health polling, so slow LLM requests are supported).
 
 ## Integration tests (BDD)
