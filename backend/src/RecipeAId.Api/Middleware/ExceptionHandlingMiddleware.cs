@@ -14,6 +14,12 @@ public class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Exception
         {
             logger.LogError(ex, "Unhandled exception on {Method} {Path}", context.Request.Method, context.Request.Path);
 
+            // If headers have already been sent (e.g., SSE stream), we can't modify them
+            if (context.Response.HasStarted)
+            {
+                return;
+            }
+
             context.Response.ContentType = "application/problem+json";
             context.Response.StatusCode  = StatusCodes.Status500InternalServerError;
 

@@ -133,7 +133,9 @@ recipeaid/
 - [x] `ingredient-parser/` Python sidecar: FastAPI, Ministral 3B via Ollama, port 8002 (Docker-internal)
 - [x] `sanitizer.py` — 4-layer prompt injection defense: strip control chars, truncate 2000 chars, remove role markers/injection phrases, collapse whitespace
 - [x] `prompt.py` — hardcoded system prompt, user text wrapped in `<ingredients>` XML delimiters
-- [x] `main.py` — `POST /parse` (sanitize → prompt → Ollama → Pydantic validate → sanity bounds → return); `GET /health`
+- [x] `main.py` — `POST /parse` (sanitize → prompt → Ollama → Pydantic validate → sanity bounds → return); `GET /health` (includes `active_requests` count); `GET /status` (detailed state: `ollama_reachable`, `active_requests`, `processing` boolean)
+- [x] **Transient failure handling:** `_call_ollama` retries up to 3 times with exponential backoff (1s, 2s, 4s) on `httpx.HTTPError`; handles brief Ollama unavailability gracefully
+- [x] **Request tracking:** `_active_requests` counter tracks concurrent LLM parses; incremented on `/parse` entry, decremented in `finally` block; exposed via `/health` and `/status` endpoints for backend health monitoring
 - [x] `Dockerfile` — multi-stage: borrows Ollama binary from `ollama/ollama:latest`, python:3.11-slim; BuildKit pip cache
 - [x] `entrypoint.sh` — starts Ollama daemon, waits for readiness, pulls `mistral:latest` (no-op if cached), starts uvicorn
 - [x] `ingredient-parser/tests/test_sanitizer.py` + `tests/test_main.py` — pytest, mocked Ollama
@@ -151,7 +153,7 @@ recipeaid/
 - [x] **Solution:** LLM moved to a background `Task`; OCR+regex draft returned immediately; LLM result delivered via Server-Sent Events
 - [x] `Api/OcrSessions/OcrSessionStore.cs` — singleton `ConcurrentDictionary<string, Session>` keyed by GUID; holds `TaskCompletionSource<IngredientParseResult>` per active scan; `CreateSession()`, `TryGetTcs()`, `Complete()`, `Remove()`, `CleanupStale(maxAge)`
 - [x] `Api/OcrSessions/OcrSessionCleanupService.cs` — `BackgroundService` that runs every 60s, removes sessions older than 5 minutes (calls `TrySetCanceled()` on stale TCS)
-- [x] `Api/Controllers/OcrSessionsController.cs` — `GET /api/v1/ocr-sessions/{sessionId}/events` SSE endpoint: sends `{"status":"processing"}` immediately, awaits TCS up to 215s, sends `{"status":"done","ingredients":[...]}` on success or `{"status":"failed"}` on error/timeout; removes session in `finally`
+- [x] `Api/Controllers/OcrSessionsController.cs` — `GET /api/v1/ocr-sessions/{sessionId}/events` SSE endpoint: sends `{"status":"processing"}` immediately, then polls ingredient-parser every 30s via `/status` endpoint; awaits TCS with 5s polling intervals; sends `{"status":"done","ingredients":[...]}` on success or `{"status":"failed"}` on error; hard 15-minute (900s) timeout as safety net; fails with `"error":"ingredient parser lost"` if parser becomes unreachable after initially reachable; removes session in `finally`
 - [x] `RecipesController.FromImage` — added `[FromQuery] bool refine = true`; when `refine=false` (Steps 1 & 3), LLM is skipped entirely; when `refine=true` (Step 2), LLM runs in fire-and-forget `Task.Run` via `IServiceScopeFactory` scope; returns draft with `SessionId` set; removed `IIngredientParserService` from controller constructor
 - [x] `Core/DTOs/RecipeOcrDraftDto.cs` — added `string? SessionId = null` as optional last parameter (all existing callers unaffected)
 - [x] `Program.cs` — registered `OcrSessionStore` (singleton) and `OcrSessionCleanupService` (hosted service)
@@ -162,6 +164,7 @@ recipeaid/
 - [x] `frontend/src/components/OcrCaptureButton.tsx` — accepts `refine?: boolean` prop (default true); stage-specific loading labels: "Reading image…" (ocr), "Translating…" (llm), "Scanning…" (otherwise)
 - [x] `StepTitle.tsx` + `StepInstructions.tsx` — `refine={false}` on `OcrCaptureButton` (LLM not needed for title or instructions steps)
 - [x] UX: user stays blocked at Step 2 (Ingredients) with meaningful status messages; regex gibberish never shown; silent regex fallback on LLM failure
+- [x] **SSE health polling fix:** `OcrSessionsController` now calls ingredient-parser's `/status` every 30s instead of hard-timeout at 215s; allows slow LLM requests (180+ seconds) to complete as long as Ollama is reachable; `ExceptionHandlingMiddleware` checks `Response.HasStarted` to avoid "Headers are read-only" errors on SSE client disconnects
 
 ---
 
@@ -175,7 +178,7 @@ recipeaid/
 | PUT | `/api/v1/recipes/{id}` | Update recipe |
 | DELETE | `/api/v1/recipes/{id}` | Delete recipe |
 | POST | `/api/v1/recipes/from-image` | Upload image → OCR → regex draft returned immediately; `?refine=false` skips LLM entirely; `?refine=true` (default) starts background LLM task and returns `sessionId` |
-| GET | `/api/v1/ocr-sessions/{sessionId}/events` | SSE stream — sends `processing` immediately, then `done` with LLM-refined ingredients or `failed` on error/timeout |
+| GET | `/api/v1/ocr-sessions/{sessionId}/events` | SSE stream — sends `processing` immediately, polls ingredient-parser health every 30s, then `done` with LLM-refined ingredients or `failed` on error; hard 15-min timeout |
 | GET | `/api/v1/recipes/search/by-ingredients` | Ranked ingredient search |
 | GET | `/api/v1/ingredients` | All known ingredients |
 | POST | `/api/v1/ingredients/parse` | Parse raw ingredient text via LLM sidecar |

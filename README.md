@@ -6,7 +6,7 @@ A recipe management app that reads physical recipe cards with your camera. Point
 
 ## Features
 
-- **Scan recipe cards** — a custom fullscreen camera overlay provides a live viewfinder with a recipe-card guide frame; real-time indicators warn you about blur and shadow while a bubble level helps you hold the phone steady; tap the capture button to snap, then crop to just the text area; OCR pipeline extracts title, ingredients (supports both "2 cups flour" and "Flour 200 g" formats), and instructions automatically (English + German section headers); for the ingredients step, a Ministral 3B LLM normalizes the raw OCR text into clean structured data via an async SSE pipeline — the UI shows "Reading image…" during OCR and "Translating ingredients…" while the LLM runs in the background, then populates the ingredient rows only with the final result (silently falls back to regex on LLM failure); falls back to the OS file picker on desktop or when camera permission is denied
+- **Scan recipe cards** — a custom fullscreen camera overlay provides a live viewfinder with a recipe-card guide frame; real-time indicators warn you about blur and shadow while a bubble level helps you hold the phone steady; tap the capture button to snap, then crop to just the text area; OCR pipeline extracts title, ingredients (supports both "2 cups flour" and "Flour 200 g" formats), and instructions automatically (English + German section headers); for the ingredients step, a Ministral 3B LLM normalizes the raw OCR text into clean structured data via an async Server-Sent Events (SSE) pipeline — the UI shows "Reading image…" during OCR and "Translating ingredients…" while the LLM runs in the background, then populates the ingredient rows only with the final result (silently falls back to regex on LLM failure); the backend polls the ingredient-parser's health every 30s so slow LLM requests (180+ seconds) complete without timeout; falls back to the OS file picker on desktop or when camera permission is denied
 - **Review before saving** — the OCR result comes back as a draft you can edit before confirming
 - **4-step recipe wizard** — add recipes manually in four focused steps: Title → Ingredients → Instructions → Book; OCR capture available at every step
 - **Browse & search** — filter recipes by title or by cookbook/book title; search by the ingredients you have on hand (ranked by match count)
@@ -109,7 +109,7 @@ recipeaid/
 │   ├── requirements.txt
 │   └── Dockerfile
 ├── ingredient-parser/     # Python FastAPI + Ministral 3B/Ollama (port 8002, Docker-internal)
-│   ├── main.py            #   POST /parse, GET /health
+│   ├── main.py            #   POST /parse, GET /health (+ active_requests count), GET /status
 │   ├── sanitizer.py       #   4-layer prompt injection defense
 │   ├── prompt.py          #   hardcoded system prompt + XML delimiters
 │   ├── requirements.txt
@@ -211,6 +211,6 @@ Each scenario automatically cleans all recipes via the API before running, so no
 | PWA | vite-plugin-pwa (installable, standalone, theme-color) |
 | Backend | ASP.NET Core 9, Entity Framework Core 9, SQLite |
 | OCR | Python 3.11, PaddleOCR PP-OCRv5 (English + German), FastAPI, uvicorn |
-| Ingredient parser | Python 3.11, Ollama + Ministral 3B, FastAPI, uvicorn; 4-layer prompt injection defense |
+| Ingredient parser | Python 3.11, Ollama + Ministral 3B, FastAPI, uvicorn; 4-layer prompt injection defense; transient-failure retry logic (3 attempts, exponential backoff); request tracking for health monitoring |
 | Container | Docker Compose (three services); dedicated `docker-compose.integration.yml` for BDD tests |
 | TLS | Self-signed cert (nginx, generated at image build time); `@vitejs/plugin-basic-ssl` for the Vite dev server |
