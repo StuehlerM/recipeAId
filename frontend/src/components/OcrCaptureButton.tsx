@@ -13,6 +13,7 @@ export default function OcrCaptureButton({ onResult, label = "Scan", className }
   const {
     capture,
     isLoading,
+    loadingStage,
     error,
     clearError,
     pendingImageUrl,
@@ -22,6 +23,11 @@ export default function OcrCaptureButton({ onResult, label = "Scan", className }
     handleCameraCapture,
     handleCameraClose,
   } = useOcrCapture();
+
+  const loadingLabel =
+    loadingStage === "ocr" ? "Reading image…" :
+    loadingStage === "llm" ? "Translating…" :
+    "Scanning…";
 
   return (
     <div className="relative">
@@ -45,7 +51,7 @@ export default function OcrCaptureButton({ onResult, label = "Scan", className }
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z" />
             </svg>
-            Scanning…
+            {loadingLabel}
           </>
         ) : (
           <>

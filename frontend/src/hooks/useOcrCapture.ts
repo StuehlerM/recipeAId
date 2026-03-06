@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from "react";
-import { uploadRecipeImage } from "../api/client";
+import { uploadRecipeImage, subscribeToOcrSession } from "../api/client";
 import type { RecipeOcrDraftDto } from "../api/types";
 
 /** Max dimension (px) for the longest side — keeps uploads fast for OCR. */
@@ -47,16 +47,19 @@ function toJpeg(file: File): Promise<File> {
 
 export function useOcrCapture() {
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingStage, setLoadingStage] = useState<"ocr" | "llm" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pendingImageUrl, setPendingImageUrl] = useState<string | null>(null);
   const [showCamera, setShowCamera] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const callbackRef = useRef<((draft: RecipeOcrDraftDto) => void) | null>(null);
+  const esCleanupRef = useRef<(() => void) | null>(null);
 
-  // Revoke pending object URL on unmount to prevent memory leaks
+  // Revoke pending object URL and close any open SSE connection on unmount
   useEffect(() => {
     return () => {
       if (pendingImageUrl) URL.revokeObjectURL(pendingImageUrl);
+      esCleanupRef.current?.();
     };
   }, [pendingImageUrl]);
 
@@ -116,20 +119,51 @@ export function useOcrCapture() {
     setPendingImageUrl(null);
 
     setIsLoading(true);
+    setLoadingStage("ocr");
     try {
       // toJpeg handles downscaling if the cropped region is still large
       const jpeg = await toJpeg(croppedFile);
       console.info("[OCR] Uploading image:", jpeg.name, jpeg.size, "bytes", jpeg.type);
+
+      // POST returns immediately with OCR + regex draft + sessionId
       const draft = await uploadRecipeImage(jpeg);
-      console.info("[OCR] Draft received: title=%s ingredients=%d",
-        draft.detectedTitle ?? "(none)", draft.detectedIngredients?.length ?? 0);
-      callbackRef.current?.(draft);
+      console.info("[OCR] OCR done: title=%s ingredients=%d sessionId=%s",
+        draft.detectedTitle ?? "(none)", draft.detectedIngredients?.length ?? 0, draft.sessionId ?? "none");
+
+      if (draft.sessionId) {
+        // LLM is running in the background — wait for SSE result before calling the callback
+        setLoadingStage("llm");
+        esCleanupRef.current = subscribeToOcrSession(
+          draft.sessionId,
+          (ingredients) => {
+            // LLM succeeded — populate with refined ingredients
+            console.info("[OCR] LLM refinement done: %d ingredients", ingredients.length);
+            setIsLoading(false);
+            setLoadingStage(null);
+            callbackRef.current?.({ ...draft, detectedIngredients: ingredients });
+          },
+          () => {
+            // LLM failed — silently use regex draft as fallback
+            console.info("[OCR] LLM refinement failed, using regex fallback");
+            setIsLoading(false);
+            setLoadingStage(null);
+            callbackRef.current?.(draft);
+          },
+        );
+        // isLoading stays true — the SSE handlers above will clear it
+      } else {
+        // No ingredients to refine (empty recipe body) — return regex draft directly
+        setIsLoading(false);
+        setLoadingStage(null);
+        callbackRef.current?.(draft);
+      }
     } catch (err) {
       console.error("[OCR] Upload failed:", err);
       setError("OCR failed. Make sure the text is well-lit and in focus, then try again.");
-    } finally {
       setIsLoading(false);
+      setLoadingStage(null);
     }
+    // Note: no finally block for setIsLoading — SSE keeps it true until resolved
   }
 
   /** Called when the user cancels the crop modal. */
@@ -146,6 +180,7 @@ export function useOcrCapture() {
   return {
     capture,
     isLoading,
+    loadingStage,
     error,
     clearError,
     pendingImageUrl,
