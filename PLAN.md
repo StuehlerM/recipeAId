@@ -2,29 +2,6 @@
 
 This document outlines potential improvements and features for RecipeAId. These are not prioritized — consider them a backlog of ideas for future work.
 
-## Logging Capabilities
-
-**Goal:** Improve observability and debugging across all services.
-
-- Add structured logging (e.g., Serilog) to the backend API
-  - Log key operations: OCR requests, ingredient parsing, recipe CRUD
-  - Include request/response metadata (timing, payload sizes)
-  - Structured logs (JSON) for easier parsing in production
-
-- Add logging to the OCR sidecar (Python PaddleOCR service)
-  - Log preprocessing steps (perspective correction, deskewing, etc.)
-  - Log OCR confidence scores and any fallbacks
-  - Timing data for performance monitoring
-
-- Add logging to the ingredient-parser sidecar (Ministral 3B/Ollama)
-  - Log LLM parsing results and any prompt injection defense triggers
-  - Log sanitizer output (truncation, role marker removal, etc.)
-  - Track fallback to regex parsing frequency
-
-- Frontend error logging
-  - Capture and log API errors, camera failures, permission denials
-  - Optional: remote error reporting (Sentry or similar)
-
 ## Database Improvements
 
 **Goal:** Better schema design, performance, and data integrity.
