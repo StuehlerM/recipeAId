@@ -205,7 +205,7 @@ export default function UploadPage() {
         <button
           className={styles.manualBtn}
           onClick={() => {
-            setDraft({ detectedTitle: "", detectedInstructions: null, detectedIngredients: [], rawOcrText: "", imagePath: null });
+            setDraft({ detectedTitle: "", detectedInstructions: null, detectedIngredients: [], rawOcrText: "", imagePath: null, sessionId: null });
             setTitle("");
             setInstructions("");
             setIngredients([{ name: "", amount: "", unit: "" }]);
