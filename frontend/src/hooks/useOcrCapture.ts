@@ -45,7 +45,7 @@ function toJpeg(file: File): Promise<File> {
   });
 }
 
-export function useOcrCapture() {
+export function useOcrCapture({ refine = true }: { refine?: boolean } = {}) {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingStage, setLoadingStage] = useState<"ocr" | "llm" | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -125,8 +125,8 @@ export function useOcrCapture() {
       const jpeg = await toJpeg(croppedFile);
       console.info("[OCR] Uploading image:", jpeg.name, jpeg.size, "bytes", jpeg.type);
 
-      // POST returns immediately with OCR + regex draft + sessionId
-      const draft = await uploadRecipeImage(jpeg);
+      // POST returns immediately with OCR + regex draft (+ sessionId when refine=true)
+      const draft = await uploadRecipeImage(jpeg, refine);
       console.info("[OCR] OCR done: title=%s ingredients=%d sessionId=%s",
         draft.detectedTitle ?? "(none)", draft.detectedIngredients?.length ?? 0, draft.sessionId ?? "none");
 

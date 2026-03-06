@@ -86,7 +86,8 @@ public class RecipesController(
     [Consumes("multipart/form-data")]
     public async Task<ActionResult<RecipeOcrDraftDto>> FromImage(
         IFormFile image,
-        CancellationToken ct)
+        [FromQuery] bool refine = true,
+        CancellationToken ct = default)
     {
         if (image is null || image.Length == 0)
             return BadRequest(new ProblemDetails { Title = "An image file is required." });
@@ -119,11 +120,10 @@ public class RecipesController(
             .Select(i => string.Join(" ",
                 new[] { i.Amount, i.Unit, i.Name }.Where(s => !string.IsNullOrEmpty(s)))));
 
-        // Fire LLM in background and return immediately with the regex draft + sessionId.
-        // The frontend connects to GET /api/v1/ocr-sessions/{sessionId}/events and waits for
-        // the LLM result via SSE, keeping the user at Step 2 with a "Translating..." message.
+        // Fire LLM in background only when the caller requests refinement (Step 2 - Ingredients).
+        // Steps 1 and 3 pass refine=false, so they get the regex draft immediately with no LLM.
         string? sessionId = null;
-        if (!string.IsNullOrWhiteSpace(ingredientText))
+        if (refine && !string.IsNullOrWhiteSpace(ingredientText))
         {
             sessionId = sessionStore.CreateSession();
             logger.LogInformation("LLM background task started, session {SessionId}", sessionId);

@@ -13,7 +13,7 @@ export default function StepInstructions({ instructions, onChange, onScan, input
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <p className="text-ghost text-sm">Describe how to make it. (Optional)</p>
-        <OcrCaptureButton onResult={onScan} label="Scan" />
+        <OcrCaptureButton onResult={onScan} label="Scan" refine={false} />
       </div>
       <textarea
         className={`${inputCls} resize-none`}

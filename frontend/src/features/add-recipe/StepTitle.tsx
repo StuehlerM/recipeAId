@@ -15,7 +15,7 @@ export default function StepTitle({ title, onChange, onNext, touched, onScan, in
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-ghost text-sm">What's the name of this recipe?</p>
-        <OcrCaptureButton onResult={onScan} label="Scan" />
+        <OcrCaptureButton onResult={onScan} label="Scan" refine={false} />
       </div>
       <input
         className={inputCls}

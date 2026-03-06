@@ -232,7 +232,7 @@ export async function getIngredients(): Promise<Ingredient[]> {
 
 // ── OCR ──────────────────────────────────────────────────────────────────────
 
-export async function uploadRecipeImage(file: File): Promise<RecipeOcrDraftDto> {
+export async function uploadRecipeImage(file: File, refine = true): Promise<RecipeOcrDraftDto> {
   if (USE_MOCK) {
     await delay(1500);
     return MOCK_OCR_DRAFT;
@@ -240,8 +240,11 @@ export async function uploadRecipeImage(file: File): Promise<RecipeOcrDraftDto> 
 
   const body = new FormData();
   body.append("image", file);
+  const url = refine
+    ? `${BASE}/api/v1/recipes/from-image`
+    : `${BASE}/api/v1/recipes/from-image?refine=false`;
   const res = await checkOk(
-    await fetch(`${BASE}/api/v1/recipes/from-image`, { method: "POST", body }),
+    await fetch(url, { method: "POST", body }),
     "POST /api/v1/recipes/from-image"
   );
   return res.json() as Promise<RecipeOcrDraftDto>;

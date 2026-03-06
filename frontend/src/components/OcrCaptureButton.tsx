@@ -7,9 +7,11 @@ interface Props {
   onResult: (draft: RecipeOcrDraftDto) => void;
   label?: string;
   className?: string;
+  /** When false, skips LLM refinement — use for Title and Instructions steps. Default true. */
+  refine?: boolean;
 }
 
-export default function OcrCaptureButton({ onResult, label = "Scan", className }: Props) {
+export default function OcrCaptureButton({ onResult, label = "Scan", className, refine = true }: Props) {
   const {
     capture,
     isLoading,
@@ -22,7 +24,7 @@ export default function OcrCaptureButton({ onResult, label = "Scan", className }
     showCamera,
     handleCameraCapture,
     handleCameraClose,
-  } = useOcrCapture();
+  } = useOcrCapture({ refine });
 
   const loadingLabel =
     loadingStage === "ocr" ? "Reading image…" :
