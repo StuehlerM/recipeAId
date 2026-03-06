@@ -146,6 +146,23 @@ recipeaid/
 - [x] `docker-compose.yml` — `ingredient-parser` service (no host port, `ollama-models` volume, 120s start period), backend `depends_on` it
 - [x] `appsettings.json` — `IngredientParser:BaseUrl` default `http://localhost:8002`
 
+## Phase 10: Async SSE OCR+LLM Pipeline
+- [x] **Problem:** `POST /from-image` was blocking for OCR (~5–30s) + LLM (~60–200s) synchronously; Ollama OOM caused 503s and request timeouts
+- [x] **Solution:** LLM moved to a background `Task`; OCR+regex draft returned immediately; LLM result delivered via Server-Sent Events
+- [x] `Api/OcrSessions/OcrSessionStore.cs` — singleton `ConcurrentDictionary<string, Session>` keyed by GUID; holds `TaskCompletionSource<IngredientParseResult>` per active scan; `CreateSession()`, `TryGetTcs()`, `Complete()`, `Remove()`, `CleanupStale(maxAge)`
+- [x] `Api/OcrSessions/OcrSessionCleanupService.cs` — `BackgroundService` that runs every 60s, removes sessions older than 5 minutes (calls `TrySetCanceled()` on stale TCS)
+- [x] `Api/Controllers/OcrSessionsController.cs` — `GET /api/v1/ocr-sessions/{sessionId}/events` SSE endpoint: sends `{"status":"processing"}` immediately, awaits TCS up to 215s, sends `{"status":"done","ingredients":[...]}` on success or `{"status":"failed"}` on error/timeout; removes session in `finally`
+- [x] `RecipesController.FromImage` — added `[FromQuery] bool refine = true`; when `refine=false` (Steps 1 & 3), LLM is skipped entirely; when `refine=true` (Step 2), LLM runs in fire-and-forget `Task.Run` via `IServiceScopeFactory` scope; returns draft with `SessionId` set; removed `IIngredientParserService` from controller constructor
+- [x] `Core/DTOs/RecipeOcrDraftDto.cs` — added `string? SessionId = null` as optional last parameter (all existing callers unaffected)
+- [x] `Program.cs` — registered `OcrSessionStore` (singleton) and `OcrSessionCleanupService` (hosted service)
+- [x] `frontend/nginx.conf` — added dedicated SSE location block (`/api/v1/ocr-sessions/`) **before** the generic `/api/` block; `proxy_buffering off`, `proxy_cache off`, `proxy_read_timeout 220s`, `proxy_http_version 1.1`
+- [x] `frontend/src/api/types.ts` — added `sessionId: string | null` to `RecipeOcrDraftDto`
+- [x] `frontend/src/api/client.ts` — `uploadRecipeImage(file, refine=true)` appends `?refine=false` when needed; added `subscribeToOcrSession(sessionId, onDone, onFailed)` using `EventSource`; returns cleanup function; mock mode: EventSource fails → `onFailed()` → regex draft used
+- [x] `frontend/src/hooks/useOcrCapture.ts` — accepts `{ refine?: boolean }` option; added `loadingStage: 'ocr' | 'llm' | null` state; added `esCleanupRef` for EventSource cleanup; `isLoading` stays true until SSE resolves; callback fires only once with final LLM result (or regex draft as silent fallback on `failed`)
+- [x] `frontend/src/components/OcrCaptureButton.tsx` — accepts `refine?: boolean` prop (default true); stage-specific loading labels: "Reading image…" (ocr), "Translating…" (llm), "Scanning…" (otherwise)
+- [x] `StepTitle.tsx` + `StepInstructions.tsx` — `refine={false}` on `OcrCaptureButton` (LLM not needed for title or instructions steps)
+- [x] UX: user stays blocked at Step 2 (Ingredients) with meaningful status messages; regex gibberish never shown; silent regex fallback on LLM failure
+
 ---
 
 ## API Reference
@@ -157,7 +174,8 @@ recipeaid/
 | POST | `/api/v1/recipes` | Create recipe (JSON) |
 | PUT | `/api/v1/recipes/{id}` | Update recipe |
 | DELETE | `/api/v1/recipes/{id}` | Delete recipe |
-| POST | `/api/v1/recipes/from-image` | Upload image → OCR → LLM refine → return draft |
+| POST | `/api/v1/recipes/from-image` | Upload image → OCR → regex draft returned immediately; `?refine=false` skips LLM entirely; `?refine=true` (default) starts background LLM task and returns `sessionId` |
+| GET | `/api/v1/ocr-sessions/{sessionId}/events` | SSE stream — sends `processing` immediately, then `done` with LLM-refined ingredients or `failed` on error/timeout |
 | GET | `/api/v1/recipes/search/by-ingredients` | Ranked ingredient search |
 | GET | `/api/v1/ingredients` | All known ingredients |
 | POST | `/api/v1/ingredients/parse` | Parse raw ingredient text via LLM sidecar |
@@ -205,7 +223,7 @@ recipeaid/
 - [x] `docker-compose.yml` — all three services wired together:
   - `ocr-service` exposes :8001
   - `backend` depends on `ocr-service` with `condition: service_healthy` (health check on `/health`, 60s start period); `OcrService__BaseUrl=http://ocr-service:8001`; CORS allows `https://localhost`
-  - `frontend` depends on `backend`; HTTP :80 redirects to HTTPS :443; self-signed cert generated at image build time; nginx `/api/` proxy: `client_max_body_size 10m`, `proxy_read_timeout 210s`
+  - `frontend` depends on `backend`; HTTP :80 redirects to HTTPS :443; self-signed cert generated at image build time; nginx has a dedicated SSE location block for `/api/v1/ocr-sessions/` (`proxy_buffering off`, `proxy_read_timeout 220s`) before the generic `/api/` proxy block (`client_max_body_size 10m`, `proxy_read_timeout 210s`)
 - [x] HTTPS support:
   - Dev server: `@vitejs/plugin-basic-ssl` → `https://localhost:5173`; `appsettings.Development.json` adds `https://localhost:5173` to CORS
   - Docker: nginx serves HTTP on :80 (redirects to HTTPS) and HTTPS on :443 with a self-signed cert; host ports `80:80` and `443:443`
