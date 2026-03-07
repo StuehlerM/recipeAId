@@ -211,7 +211,7 @@ npm test
 
 ## Implementation workflow
 
-When starting any implementation task, always use a git worktree:
+When starting any implementation task, always use a git worktree and open a pull request — never merge directly to main:
 
 ```bash
 # 1. Create a worktree with a new branch (sibling to main repo, not nested inside)
@@ -220,16 +220,18 @@ git worktree add ../<feature-name> -b <feature-name>
 # 2. Do all work and commits inside the worktree directory
 cd ../<feature-name>
 
-# 3. Once done, go back to main and merge
-cd ../recipeaid
-git merge <feature-name>
+# 3. Push the feature branch and open a PR (CI runs automatically)
+git push -u origin <feature-name>
+gh pr create --title "<title>" --body "<summary>"
 
-# 4. Clean up the worktree and branch
+# 4. After the PR is merged on GitHub, clean up locally
+cd ../recipeaid
+git pull origin main
 git worktree remove ../<feature-name>
 git branch -d <feature-name>
 ```
 
-This keeps main clean and all in-progress work isolated. Worktrees are created as sibling directories to the main repo, not nested inside it.
+This keeps main clean, triggers the GitHub Actions integration tests automatically on every PR, and prevents pushing workflow files without the correct PAT scope. Worktrees are created as sibling directories to the main repo, not nested inside it.
 
 ## Before committing and pushing
 
