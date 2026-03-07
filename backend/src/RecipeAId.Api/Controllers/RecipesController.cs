@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using RecipeAId.Api.OcrSessions;
 using RecipeAId.Core.DTOs;
 using RecipeAId.Core.Interfaces;
 
@@ -12,6 +13,8 @@ public class RecipesController(
     IRecipeMatchingService matchingService,
     IOcrService ocrService,
     IOcrParser ocrParser,
+    OcrSessionStore sessionStore,
+    IServiceScopeFactory scopeFactory,
     ILogger<RecipesController> logger) : ControllerBase
 {
     [HttpGet]
@@ -83,6 +86,7 @@ public class RecipesController(
     [Consumes("multipart/form-data")]
     public async Task<ActionResult<RecipeOcrDraftDto>> FromImage(
         IFormFile image,
+        [FromQuery] bool refine = true,
         CancellationToken ct = default)
     {
         if (image is null || image.Length == 0)
@@ -95,8 +99,8 @@ public class RecipesController(
         if (image.Length > maxSizeBytes)
             return BadRequest(new ProblemDetails { Title = "Image must be smaller than 10 MB." });
 
-        logger.LogInformation("OCR pipeline started: {FileName} {ContentType} {SizeBytes}B",
-            image.FileName, image.ContentType, image.Length);
+        logger.LogInformation("OCR pipeline started: {FileName} {ContentType} {SizeBytes}B refine={Refine}",
+            image.FileName, image.ContentType, image.Length, refine);
 
         var sw = Stopwatch.StartNew();
         await using var stream = image.OpenReadStream();
@@ -111,8 +115,22 @@ public class RecipesController(
         logger.LogInformation("Regex parse: title={Title} ingredients={Count}",
             draft.DetectedTitle ?? "(none)", draft.DetectedIngredients.Count);
 
-        // LLM refinement is temporarily disabled — regex draft is returned directly.
-        // TODO: re-enable once LLM sidecar is stable (set sessionId and fire background task).
-        return Ok(draft with { SessionId = null });
+        if (!refine || draft.DetectedIngredients.Count == 0)
+            return Ok(draft with { SessionId = null });
+
+        // Fire LLM refinement in the background; return the regex draft immediately with a sessionId.
+        // The frontend opens GET /api/v1/ocr-sessions/{sessionId}/events (SSE) and waits for the result.
+        var sessionId = sessionStore.CreateSession();
+        var rawText = ocrResult.RawText;
+        _ = Task.Run(async () =>
+        {
+            using var scope = scopeFactory.CreateScope();
+            var parserService = scope.ServiceProvider.GetRequiredService<IIngredientParserService>();
+            var result = await parserService.ParseAsync(rawText, "en");
+            sessionStore.Complete(sessionId, result);
+        });
+
+        logger.LogInformation("LLM refinement started in background — sessionId={SessionId}", sessionId);
+        return Ok(draft with { SessionId = sessionId });
     }
 }
