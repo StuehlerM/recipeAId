@@ -190,7 +190,7 @@ cd frontend && npm run build
 For the Python layers, install the test dependencies once:
 ```bash
 pip install -r ocr-service/requirements-test.txt
-pip install pytest pytest-asyncio httpx   # ingredient-parser test deps
+pip install fastapi pydantic python-multipart pytest pytest-asyncio httpx
 ```
 
 ### Pre-push hook (automatic unit tests)
