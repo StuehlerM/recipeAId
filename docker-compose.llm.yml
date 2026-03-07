@@ -13,8 +13,6 @@ services:
       - ollama-models:/root/.ollama
     deploy:
       resources:
-        limits:
-          memory: 6g
         reservations:
           memory: 6g
     restart: unless-stopped
