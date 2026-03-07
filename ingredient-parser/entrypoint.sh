@@ -12,8 +12,8 @@ done
 echo "Ollama is ready."
 
 # 3. Pull the model (no-op if already present in the ollama-models volume)
-echo "Pulling model ministral:3b (skipped if already cached)..."
-ollama pull ministral:3b
+echo "Pulling model ministral-3:3b (skipped if already cached)..."
+ollama pull ministral-3:3b
 
 # 4. Start the FastAPI service
 echo "Starting ingredient-parser on port 8002..."
