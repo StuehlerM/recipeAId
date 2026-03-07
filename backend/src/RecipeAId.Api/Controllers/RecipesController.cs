@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using RecipeAId.Api.OcrSessions;
 using RecipeAId.Core.DTOs;
 using RecipeAId.Core.Interfaces;
 
@@ -13,8 +12,6 @@ public class RecipesController(
     IRecipeMatchingService matchingService,
     IOcrService ocrService,
     IOcrParser ocrParser,
-    IServiceScopeFactory scopeFactory,
-    OcrSessionStore sessionStore,
     ILogger<RecipesController> logger) : ControllerBase
 {
     [HttpGet]
@@ -86,7 +83,6 @@ public class RecipesController(
     [Consumes("multipart/form-data")]
     public async Task<ActionResult<RecipeOcrDraftDto>> FromImage(
         IFormFile image,
-        [FromQuery] bool refine = true,
         CancellationToken ct = default)
     {
         if (image is null || image.Length == 0)
@@ -115,32 +111,8 @@ public class RecipesController(
         logger.LogInformation("Regex parse: title={Title} ingredients={Count}",
             draft.DetectedTitle ?? "(none)", draft.DetectedIngredients.Count);
 
-        // Build ingredient text for LLM refinement
-        var ingredientText = string.Join("\n", draft.DetectedIngredients
-            .Select(i => string.Join(" ",
-                new[] { i.Amount, i.Unit, i.Name }.Where(s => !string.IsNullOrEmpty(s)))));
-
-        // Fire LLM in background only when the caller requests refinement (Step 2 - Ingredients).
-        // Steps 1 and 3 pass refine=false, so they get the regex draft immediately with no LLM.
-        string? sessionId = null;
-        if (refine && !string.IsNullOrWhiteSpace(ingredientText))
-        {
-            sessionId = sessionStore.CreateSession();
-            logger.LogInformation("LLM background task started, session {SessionId}", sessionId);
-
-            _ = Task.Run(async () =>
-            {
-                await using var scope = scopeFactory.CreateAsyncScope();
-                var parser = scope.ServiceProvider.GetRequiredService<IIngredientParserService>();
-                var sw2 = Stopwatch.StartNew();
-                var result = await parser.ParseAsync(ingredientText, "de", CancellationToken.None);
-                logger.LogInformation(
-                    "LLM background completed in {ElapsedMs}ms — success={Success} ingredients={Count}",
-                    sw2.ElapsedMilliseconds, result.Success, result.Ingredients.Count);
-                sessionStore.Complete(sessionId, result);
-            });
-        }
-
-        return Ok(draft with { SessionId = sessionId });
+        // LLM refinement is temporarily disabled — regex draft is returned directly.
+        // TODO: re-enable once LLM sidecar is stable (set sessionId and fire background task).
+        return Ok(draft with { SessionId = null });
     }
 }

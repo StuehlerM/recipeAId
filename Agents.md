@@ -40,8 +40,8 @@ recipeaid/
 ## Phase 1: Foundation
 - [x] Solution and project scaffolding (`dotnet new sln`, `classlib`, `webapi`)
 - [x] Core entities: `Recipe`, `Ingredient`, `RecipeIngredient`
-- [x] Core interfaces: `IRecipeRepository`, `IIngredientRepository`, `IRecipeService`, `IIngredientService`, `IRecipeMatchingService`, `IUnitConversionService`, `IOcrService`, `IOcrParser`, `IRecipeSuggestionService` (stub)
-- [x] Core DTOs (one record per file): `CreateRecipeRequest` (with `BookTitle`), `UpdateRecipeRequest` (with `BookTitle`), `RecipeDto`, `RecipeIngredientDto` (Amount + Unit), `RecipeSummaryDto` (with `BookTitle`), `RecipeOcrDraftDto`, `OcrResult`, `IngredientSearchResultDto`, `IngredientLineDto(Name, Amount, Unit)`, `IngredientDto`, `ConvertRequest`, `ConvertResult`
+- [x] Core interfaces: `IRecipeRepository`, `IIngredientRepository`, `IRecipeService`, `IIngredientService`, `IRecipeMatchingService`, `IOcrService`, `IOcrParser`, `IRecipeSuggestionService` (stub)
+- [x] Core DTOs (one record per file): `CreateRecipeRequest` (with `BookTitle`), `UpdateRecipeRequest` (with `BookTitle`), `RecipeDto`, `RecipeIngredientDto` (Amount + Unit), `RecipeSummaryDto` (with `BookTitle`), `RecipeOcrDraftDto`, `OcrResult`, `IngredientSearchResultDto`, `IngredientLineDto(Name, Amount, Unit)`, `IngredientDto`
 - [x] `AppDbContext` with EF Core fluent configuration
 - [x] EF Core initial migration + SQLite DB creation (auto-applied on startup)
 - [x] Repository implementations: `RecipeRepository`, `IngredientRepository`
@@ -55,16 +55,8 @@ recipeaid/
 - [x] Global error handling middleware (`ExceptionHandlingMiddleware`); all error responses use `ProblemDetails` (RFC 7807)
 - [ ] Manual tested via Swagger UI
 
-## Phase 3: Unit Conversion
-- [x] `IUnitConversionService` interface in Core (converts quantity strings between unit systems)
-- [x] `UnitConversionService` implementation in Core:
-  - Imperial → metric: cups, tbsp, tsp → mL; oz, lb → g/kg; °F → °C
-  - Metric → imperial (reverse mappings)
-  - Parse quantity string (e.g. `"2 cups"`) into value + unit, convert, return formatted string
-  - Ingredient-aware density table for volume↔mass conversions (e.g. `"1 cup flour"` → `"120 g"`)
-- [x] DI registration of `UnitConversionService`
-- [x] `POST /api/v1/convert` — accept `{ value, fromUnit, toUnit, ingredient? }`, return converted result
-- [x] Unit tests for `UnitConversionService` (imperial→metric, metric→imperial, edge cases, unknown units)
+## Phase 3: Unit Conversion *(removed)*
+- [x] ~~`UnitConversionService`, `IUnitConversionService`, `ConvertController`, unit tests — removed~~ The converter was never called by the frontend and has been deleted. `ConvertRequest`/`ConvertResult` DTOs also removed.
 
 ## Phase 4: Search API
 - [x] `RecipeMatchingService` (LINQ ranked by ingredient match count, then match ratio)
@@ -143,7 +135,7 @@ recipeaid/
 - [x] `Core/DTOs/IngredientParseRequest.cs` + `IngredientParseResult.cs`
 - [x] `Core/Interfaces/IIngredientParserService.cs`
 - [x] `Api/ParserServices/LlmIngredientParserService.cs` — named HttpClient "IngredientParser", 200s timeout, float→string conversion, graceful fallback
-- [x] `RecipesController.FromImage` — chains LLM after regex; falls back to regex on failure
+- [x] `RecipesController.FromImage` — LLM refinement **temporarily disabled**; always returns regex draft with `SessionId = null` (TODO: re-enable once LLM sidecar is stable)
 - [x] `IngredientsController` — added `POST /api/v1/ingredients/parse` standalone endpoint
 - [x] `docker-compose.yml` — `ingredient-parser` service (no host port, `ollama-models` volume, 120s start period), backend `depends_on` it
 - [x] `appsettings.json` — `IngredientParser:BaseUrl` default `http://localhost:8002`
@@ -154,7 +146,7 @@ recipeaid/
 - [x] `Api/OcrSessions/OcrSessionStore.cs` — singleton `ConcurrentDictionary<string, Session>` keyed by GUID; holds `TaskCompletionSource<IngredientParseResult>` per active scan; `CreateSession()`, `TryGetTcs()`, `Complete()`, `Remove()`, `CleanupStale(maxAge)`
 - [x] `Api/OcrSessions/OcrSessionCleanupService.cs` — `BackgroundService` that runs every 60s, removes sessions older than 5 minutes (calls `TrySetCanceled()` on stale TCS)
 - [x] `Api/Controllers/OcrSessionsController.cs` — `GET /api/v1/ocr-sessions/{sessionId}/events` SSE endpoint: sends `{"status":"processing"}` immediately, then polls ingredient-parser every 30s via `/status` endpoint; awaits TCS with 5s polling intervals; sends `{"status":"done","ingredients":[...]}` on success or `{"status":"failed"}` on error; hard 15-minute (900s) timeout as safety net; fails with `"error":"ingredient parser lost"` if parser becomes unreachable after initially reachable; removes session in `finally`
-- [x] `RecipesController.FromImage` — added `[FromQuery] bool refine = true`; when `refine=false` (Steps 1 & 3), LLM is skipped entirely; when `refine=true` (Step 2), LLM runs in fire-and-forget `Task.Run` via `IServiceScopeFactory` scope; returns draft with `SessionId` set; removed `IIngredientParserService` from controller constructor
+- [x] `RecipesController.FromImage` — `refine` query param removed; LLM background task disabled; always returns draft with `SessionId = null`; `scopeFactory` and `sessionStore` removed from constructor
 - [x] `Core/DTOs/RecipeOcrDraftDto.cs` — added `string? SessionId = null` as optional last parameter (all existing callers unaffected)
 - [x] `Program.cs` — registered `OcrSessionStore` (singleton) and `OcrSessionCleanupService` (hosted service)
 - [x] `frontend/nginx.conf` — added dedicated SSE location block (`/api/v1/ocr-sessions/`) **before** the generic `/api/` block; `proxy_buffering off`, `proxy_cache off`, `proxy_read_timeout 220s`, `proxy_http_version 1.1`
@@ -177,12 +169,11 @@ recipeaid/
 | POST | `/api/v1/recipes` | Create recipe (JSON) |
 | PUT | `/api/v1/recipes/{id}` | Update recipe |
 | DELETE | `/api/v1/recipes/{id}` | Delete recipe |
-| POST | `/api/v1/recipes/from-image` | Upload image → OCR → regex draft returned immediately; `?refine=false` skips LLM entirely; `?refine=true` (default) starts background LLM task and returns `sessionId` |
-| GET | `/api/v1/ocr-sessions/{sessionId}/events` | SSE stream — sends `processing` immediately, polls ingredient-parser health every 30s, then `done` with LLM-refined ingredients or `failed` on error; hard 15-min timeout |
+| POST | `/api/v1/recipes/from-image` | Upload image → OCR → regex draft returned immediately; LLM refinement currently disabled (`SessionId` always null) |
+| GET | `/api/v1/ocr-sessions/{sessionId}/events` | SSE stream (infrastructure in place; not triggered while LLM is disabled) |
 | GET | `/api/v1/recipes/search/by-ingredients` | Ranked ingredient search |
 | GET | `/api/v1/ingredients` | All known ingredients |
 | POST | `/api/v1/ingredients/parse` | Parse raw ingredient text via LLM sidecar |
-| POST | `/api/v1/convert` | Convert a quantity between unit systems |
 
 ---
 

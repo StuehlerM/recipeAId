@@ -38,8 +38,6 @@ builder.Services.AddScoped<IIngredientRepository, IngredientRepository>();
 builder.Services.AddScoped<IRecipeService, RecipeService>();
 builder.Services.AddScoped<IIngredientService, IngredientService>();
 builder.Services.AddScoped<IRecipeMatchingService, RecipeMatchingService>();
-builder.Services.AddSingleton<IUnitConversionService, UnitConversionService>();
-
 // OCR
 var ocrBaseUrl = builder.Configuration["OcrService:BaseUrl"] ?? "http://localhost:8001";
 builder.Services.AddHttpClient("OcrService", c =>

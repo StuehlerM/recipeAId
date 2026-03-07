@@ -6,12 +6,11 @@ A recipe management app that reads physical recipe cards with your camera. Point
 
 ## Features
 
-- **Scan recipe cards** — a custom fullscreen camera overlay provides a live viewfinder with a recipe-card guide frame; real-time indicators warn you about blur and shadow while a bubble level helps you hold the phone steady; tap the capture button to snap, then crop to just the text area; OCR pipeline extracts title, ingredients (supports both "2 cups flour" and "Flour 200 g" formats), and instructions automatically (English + German section headers); for the ingredients step, a Ministral 3B LLM normalizes the raw OCR text into clean structured data via an async Server-Sent Events (SSE) pipeline — the UI shows "Reading image…" during OCR and "Translating ingredients…" while the LLM runs in the background, then populates the ingredient rows only with the final result (silently falls back to regex on LLM failure); the backend polls the ingredient-parser's health every 30s so slow LLM requests (180+ seconds) complete without timeout; falls back to the OS file picker on desktop or when camera permission is denied
+- **Scan recipe cards** — a custom fullscreen camera overlay provides a live viewfinder with a recipe-card guide frame; real-time indicators warn you about blur and shadow while a bubble level helps you hold the phone steady; tap the capture button to snap, then crop to just the text area; OCR pipeline extracts title, ingredients (supports both "2 cups flour" and "Flour 200 g" formats), and instructions automatically (English + German section headers); falls back to the OS file picker on desktop or when camera permission is denied
 - **Review before saving** — the OCR result comes back as a draft you can edit before confirming
 - **4-step recipe wizard** — add recipes manually in four focused steps: Title → Ingredients → Instructions → Book; OCR capture available at every step
 - **Browse & search** — filter recipes by title or by cookbook/book title; search by the ingredients you have on hand (ranked by match count)
 - **Weekly planner** — select recipes for the week; a shopping list is generated automatically with ingredient quantities summed across recipes
-- **Unit conversion** — convert quantities between imperial and metric (cups → mL, oz → g, °F → °C, and more)
 - **PWA / mobile-first** — installable on iOS and Android; bottom tab bar navigation with safe-area support
 
 ---
