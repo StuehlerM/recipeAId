@@ -9,10 +9,6 @@ services:
       - "80:8002"
     environment:
       - OLLAMA_NUM_PARALLEL=1
-      # FORCE a specific thread count to bypass the "parsing max" error
-      - OLLAMA_NUM_THREADS=4 
-      # Disable GPU detection entirely to stop it searching for drivers
-      - CUDA_VISIBLE_DEVICES=-1
       # Add debug logs so we can see EXACTLY where it hangs
       - OLLAMA_DEBUG=1
     volumes:
@@ -20,14 +16,15 @@ services:
     deploy:
       resources:
         reservations:
-          memory: 8g 
+          memory: 4g 
         limits:
-          memory: 12g # should still be suffcient
+          memory: 5g # should still be suffcient
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/health')"]
       interval: 15s
       timeout: 10s
+      
       retries: 20
       start_period: 120s
 
