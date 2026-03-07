@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# .githooks/pre-push
+#
+# Runs all unit tests before every `git push`.
+# Push is blocked if any test layer fails.
+#
+# Bypass (for small/trivial changes):
+#   git push --no-verify
+#
+# This hook is activated by running ./scripts/install-hooks.sh once.
+
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+
+echo ""
+echo "Running unit tests before push…"
+echo "(skip with: git push --no-verify)"
+echo ""
+
+exec "$REPO_ROOT/scripts/run-unit-tests.sh"

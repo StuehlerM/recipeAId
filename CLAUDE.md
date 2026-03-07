@@ -241,9 +241,37 @@ This keeps main clean and all in-progress work isolated. Worktrees are created a
 
 Failing to update these before committing leaves the project documentation out of sync, which makes future work harder.
 
+**ALWAYS verify the build and tests before pushing.** Run the full unit test suite before every `git push`:
+
+```bash
+./scripts/run-unit-tests.sh
+```
+
+This runs all four layers in sequence and exits non-zero if any layer fails:
+
+| Layer | Command | What it covers |
+|-------|---------|---------------|
+| 1 | `dotnet test backend/` | OcrParserService, RecipeService, matching, unit conversion |
+| 2 | `pytest ocr-service/tests/` | OCR preprocessing pipeline + endpoint validation (PaddleOCR mocked) |
+| 3 | `pytest ingredient-parser/tests/` | Sanitizer, LLM parsing, sanity bounds (Ollama mocked) |
+| 4 | `cd frontend && npm run build` | TypeScript compilation — catches type errors before CI |
+
+The pre-push git hook runs this script automatically after `./scripts/install-hooks.sh` is run once. A failed layer **blocks the push**.
+
+Bypass for trivial/safe changes only:
+```bash
+git push --no-verify          # skip pre-push hook
+# add [skip ci] to commit msg  # skip GitHub Actions integration tests
+```
+
+**Integration tests (GitHub Actions):** The `.github/workflows/integration.yml` workflow runs the full BDD Docker stack automatically on every pull request to `main`. You never need to trigger this manually — open a PR and it runs.
+
 ## Testing conventions
 
 - Test project references `RecipeAId.Core` only — tests must not depend on `RecipeAId.Data` or `RecipeAId.Api`.
 - Services under test live in `RecipeAId.Core/Services/`; corresponding tests are in `tests/RecipeAId.Tests/Services/`.
 - Use xUnit + Moq. Mock `IRecipeRepository`/`IIngredientRepository` for service tests.
 - Unit tests are required for all service/business logic before marking a phase complete.
+- **OCR sidecar tests** live in `ocr-service/tests/`. PaddleOCR is mocked in `conftest.py` — tests run without the model. Install test deps with `pip install -r ocr-service/requirements-test.txt`.
+- **Ingredient parser tests** live in `ingredient-parser/tests/`. Ollama is mocked via `unittest.mock.patch`. Run with `pytest ingredient-parser/tests/`.
+- Heavy model dependencies (PaddleOCR, Ollama) are **never** exercised in unit tests — they are mocked. The integration Docker stack tests the real model behaviour end-to-end.

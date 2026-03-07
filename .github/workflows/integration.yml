@@ -1,0 +1,59 @@
+name: Integration tests
+
+# Runs the full Docker stack (backend + ocr-service + frontend) and executes
+# all Cucumber/Playwright BDD scenarios before any PR can be merged to main.
+#
+# ── How to bypass ────────────────────────────────────────────────────────────
+# Include "[skip ci]" anywhere in the commit message to skip this workflow.
+# Alternatively, repository admins can merge directly without a PR (see branch
+# protection bypass list in GitHub Settings → Branches).
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  integration:
+    name: BDD integration tests (Docker)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Cache Docker layers so repeated CI runs don't re-download PaddleOCR
+      # wheels or the Ollama model on every run.
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ hashFiles('**/Dockerfile', '**/requirements*.txt', '**/package-lock.json', '**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Run integration tests
+        run: |
+          docker compose -f docker-compose.integration.yml up --build --abort-on-container-exit --exit-code-from integration
+        env:
+          BUILDX_CACHE_FROM: type=local,src=/tmp/.buildx-cache
+          BUILDX_CACHE_TO: type=local,dest=/tmp/.buildx-cache-new,mode=max
+
+      # Rotate the cache so stale layers don't accumulate indefinitely.
+      - name: Rotate Docker layer cache
+        if: always()
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache 2>/dev/null || true
+
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cucumber-report
+          path: integration/reports/report.html
+          retention-days: 14

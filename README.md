@@ -101,36 +101,45 @@ Open https://localhost:5173 (the dev server uses a self-signed cert via `@vitejs
 
 ```
 recipeaid/
+├── .github/
+│   └── workflows/
+│       └── integration.yml    # CI: BDD integration tests on every PR to main
+├── .githooks/
+│   └── pre-push               # Local git hook: runs unit tests before every push
+├── scripts/
+│   ├── run-unit-tests.sh      # Runs all four unit-test layers (called by the hook)
+│   └── install-hooks.sh       # One-time setup: activates the pre-push hook
 ├── docker-compose.yml
 ├── docker-compose.integration.yml
-├── ocr-service/           # Python FastAPI + PaddleOCR (port 8001)
+├── ocr-service/               # Python FastAPI + PaddleOCR (port 8001)
 │   ├── main.py
 │   ├── requirements.txt
+│   ├── requirements-test.txt  # Test-only deps (pytest, httpx, pillow…)
+│   ├── tests/                 # Unit tests (PaddleOCR mocked)
 │   └── Dockerfile
-├── ingredient-parser/     # Python FastAPI + Ministral 3B/Ollama (port 8002, Docker-internal)
-│   ├── main.py            #   POST /parse, GET /health (+ active_requests count), GET /status
-│   ├── sanitizer.py       #   4-layer prompt injection defense
-│   ├── prompt.py          #   hardcoded system prompt + XML delimiters
+├── ingredient-parser/         # Python FastAPI + Ministral 3B/Ollama (port 8002, Docker-internal)
+│   ├── main.py                #   POST /parse, GET /health, GET /status
+│   ├── sanitizer.py           #   4-layer prompt injection defense
+│   ├── prompt.py              #   hardcoded system prompt + XML delimiters
 │   ├── requirements.txt
-│   ├── entrypoint.sh      #   starts Ollama, pulls model, starts uvicorn
+│   ├── entrypoint.sh          #   starts Ollama, pulls model, starts uvicorn
 │   ├── Dockerfile
-│   └── tests/
-├── backend/               # ASP.NET Core 9 Web API
+│   └── tests/                 # Unit tests (Ollama mocked)
+├── backend/                   # ASP.NET Core 9 Web API
 │   ├── RecipeAId.sln
 │   ├── src/
 │   │   ├── RecipeAId.Core/    # Entities, interfaces, DTOs (one per file), services
 │   │   ├── RecipeAId.Data/    # EF Core + SQLite, repositories, migrations
 │   │   └── RecipeAId.Api/     # Controllers, OCR + parser services, middleware
-│   │       └── OcrSessions/   # OcrSessionStore, OcrSessionCleanupService (async SSE pipeline)
 │   ├── tests/
 │   │   └── RecipeAId.Tests/   # xUnit + Moq
 │   └── Dockerfile
-├── frontend/              # React 19 + Vite 7 + TypeScript
+├── frontend/                  # React 19 + Vite 7 + TypeScript
 │   ├── src/
 │   │   ├── api/               # client.ts, types.ts, mockData.ts
 │   │   ├── components/        # Shared: NavBar, OcrCaptureButton, CropModal, CameraCapture
 │   │   ├── hooks/             # Shared: useOcrCapture.ts
-│   │   ├── utils/             # imageEnhance.ts (OCR preprocessing), imageAnalysis.ts (blur/shadow)
+│   │   ├── utils/             # imageAnalysis.ts (blur/shadow detection)
 │   │   └── features/          # Feature-based modules
 │   │       ├── recipes/       # RecipeListPage, RecipeDetailPage
 │   │       ├── search/        # IngredientSearchPage
@@ -138,67 +147,136 @@ recipeaid/
 │   │       ├── add-recipe/    # AddRecipePage wizard, StepIndicator, UnitCombobox
 │   │       └── planner/       # PlannerPage, usePlanner, quantityAggregator
 │   └── Dockerfile
-└── integration/           # BDD integration tests (Cucumber + Playwright)
+└── integration/               # BDD integration tests (Cucumber + Playwright)
     ├── features/              # Gherkin .feature files
     ├── src/
     │   ├── steps/             # Step definitions (TypeScript)
-    │   └── support/           # World, hooks, server lifecycle
+    │   └── support/           # World, global hooks, server lifecycle
     ├── reports/               # HTML test report (generated, gitignored)
     ├── cucumber.config.cjs
-    ├── nginx-integration.conf   # Plain HTTP nginx config for Docker tests
+    ├── nginx-integration.conf # Plain HTTP nginx config for Docker tests
     └── Dockerfile
 ```
 
 ---
 
+## Testing
 
-## Running tests
+The project uses a two-layer test strategy: **unit tests run locally before every push** (fast, ~45 s), and **integration tests run automatically on every pull request** via GitHub Actions (thorough, ~8-10 min).
+
+### Test layers
+
+| # | Layer | What it tests | How | Speed |
+|---|-------|--------------|-----|-------|
+| 1 | **Backend unit tests** | OcrParserService, RecipeService, RecipeMatchingService, UnitConversionService | `dotnet test` | ~5 s |
+| 2 | **OCR sidecar unit tests** | Preprocessing pipeline, line-grouping, endpoint validation (PaddleOCR mocked) | `pytest ocr-service/tests/` | ~3 s |
+| 3 | **Ingredient parser unit tests** | Sanitizer, LLM output parsing, sanity bounds, endpoint behaviour (Ollama mocked) | `pytest ingredient-parser/tests/` | ~3 s |
+| 4 | **Frontend build** | TypeScript compilation, no type errors, Vite bundle succeeds | `npm run build` | ~25 s |
+| 5 | **BDD integration tests** | Full stack end-to-end: browser UI, backend API, database, real Docker services | Cucumber + Playwright | ~8-10 min |
+
+### Running unit tests manually
 
 ```bash
-cd backend
-dotnet test
+# Run all four unit-test layers at once
+./scripts/run-unit-tests.sh
+
+# Or run each layer individually:
+dotnet test backend/
+python -m pytest ocr-service/tests/ -v
+python -m pytest ingredient-parser/tests/ -v
+cd frontend && npm run build
 ```
 
-Tests live in `RecipeAId.Tests` and cover all service and business logic. They reference `RecipeAId.Core` only — no database or HTTP required.
+For the Python layers, install the test dependencies once:
+```bash
+pip install -r ocr-service/requirements-test.txt
+pip install pytest pytest-asyncio httpx   # ingredient-parser test deps
+```
 
----
+### Pre-push hook (automatic unit tests)
 
-## Integration tests (BDD)
+After cloning, run the one-time setup to activate the git hook:
+
+```bash
+./scripts/install-hooks.sh
+```
+
+From that point on, `git push` automatically runs all unit tests first. A failed layer blocks the push and shows which layer failed. **The hook is never a surprise** — you always see what it is running.
+
+**Bypass (for trivial changes):**
+```bash
+git push --no-verify   # skip unit tests for this push only
+```
+
+Use `--no-verify` deliberately for small changes like tweaking a config value or fixing a typo. The integration tests in CI still run when you open a PR.
+
+### Integration tests (BDD)
 
 End-to-end tests are written in [Gherkin](https://cucumber.io/docs/gherkin/) and executed by [Cucumber.js](https://github.com/cucumber/cucumber-js) driving a headless Chromium browser via [Playwright](https://playwright.dev/).
 
-```
-integration/
-├── features/                  # Human-readable scenarios
-│   ├── recipes.feature        # Recipe list + title search
-│   ├── recipe-detail.feature  # Detail view + delete
-│   ├── create-recipe.feature  # 4-step wizard recipe creation
-│   ├── ingredient-search.feature
-│   └── planner.feature        # Weekly planner + shopping list
-├── src/
-│   ├── steps/                 # Cucumber step definitions (TypeScript)
-│   └── support/               # World, global hooks, server lifecycle
-└── reports/report.html        # Generated after each run (gitignored)
-```
+Feature files:
 
-> **Note:** The integration tests cover the frontend UI and backend API only. The OCR upload scenario is excluded because it requires the PaddleOCR model; use the unit tests in `RecipeAId.Tests` for OCR parsing logic.
+| File | Scenarios |
+|------|-----------|
+| `recipes.feature` | Recipe list, title search |
+| `recipe-detail.feature` | Detail view, delete |
+| `create-recipe.feature` | 4-step wizard |
+| `ingredient-search.feature` | Chip input, ranked results |
+| `planner.feature` | Weekly planner, shopping list |
 
-### Option A — Docker Compose (recommended)
-
-Integration tests have a dedicated `docker-compose.integration.yml` that spins up backend, frontend (plain HTTP via `nginx-integration.conf`), and the Playwright test container.
+**Run locally (Docker — recommended):**
 
 ```bash
 # Build and run all integration tests
 docker compose -f docker-compose.integration.yml up --build
 
-# View the HTML report (written to integration/reports/report.html)
-# Open the file in your browser after the run.
+# View the HTML report
+open integration/reports/report.html
 
-# Clean up containers and the isolated test database
+# Clean up
 docker compose -f docker-compose.integration.yml down -v
 ```
 
-Each scenario automatically cleans all recipes via the API before running, so no manual database reset is needed between runs.
+Each scenario automatically cleans all recipes via the API before running — no manual database reset needed.
+
+---
+
+## CI / CD (GitHub Actions)
+
+### What runs and when
+
+| Event | Workflow | What it does |
+|-------|----------|--------------|
+| Pull request to `main` | `integration.yml` | Builds the full Docker stack, runs all BDD scenarios |
+
+The integration workflow uploads an HTML test report as a build artifact (retained for 14 days) so you can inspect failures without re-running locally.
+
+**This is free** — the repository is public, so GitHub Actions usage is unlimited at no cost.
+
+### Branch protection (required setup)
+
+To enforce the PR-before-merge rule, configure branch protection in **GitHub → Settings → Branches → Add rule** for the `main` branch:
+
+| Setting | Value |
+|---------|-------|
+| Require a pull request before merging | ✅ enabled |
+| Require status checks to pass before merging | ✅ enabled |
+| Status check to require | `BDD integration tests (Docker)` |
+| Do not allow bypassing the above settings | ❌ **leave unchecked** — see bypass below |
+
+> **One-time setup:** The `BDD integration tests (Docker)` check only appears in the dropdown after the workflow has run at least once. Open a test PR, let CI run, then come back and add the check.
+
+### Bypass for small changes (admin only)
+
+Because "Do not allow bypassing" is **not** checked, repository admins (you) can push directly to `main` without opening a PR. This is the escape hatch for trivial changes:
+
+```bash
+# Small change: push directly to main, skip unit tests, skip CI
+git commit -m "tweak temperature parameter [skip ci]"
+git push --no-verify
+```
+
+Two explicit flags required — `--no-verify` skips the local pre-push hook, and `[skip ci]` in the commit message tells GitHub Actions to skip the integration workflow. Forgetting either one still provides a safety net.
 
 ---
 
@@ -210,6 +288,8 @@ Each scenario automatically cleans all recipes via the API before running, so no
 | PWA | vite-plugin-pwa (installable, standalone, theme-color) |
 | Backend | ASP.NET Core 9, Entity Framework Core 9, SQLite |
 | OCR | Python 3.11, PaddleOCR PP-OCRv5 (English + German), FastAPI, uvicorn |
-| Ingredient parser | Python 3.11, Ollama + Ministral 3B, FastAPI, uvicorn; 4-layer prompt injection defense; transient-failure retry logic (3 attempts, exponential backoff); request tracking for health monitoring |
-| Container | Docker Compose (three services); dedicated `docker-compose.integration.yml` for BDD tests |
+| Ingredient parser | Python 3.11, Ollama + Ministral 3B, FastAPI, uvicorn; 4-layer prompt injection defense; transient-failure retry logic (3 attempts, exponential backoff) |
+| Testing | xUnit + Moq (backend), pytest + httpx (Python sidecars), Cucumber.js + Playwright (BDD) |
+| CI | GitHub Actions (integration tests on every PR to main, free for public repos) |
+| Container | Docker Compose (four services); dedicated `docker-compose.integration.yml` for BDD tests |
 | TLS | Self-signed cert (nginx, generated at image build time); `@vitejs/plugin-basic-ssl` for the Vite dev server |
