@@ -18,7 +18,7 @@ services:
         reservations:
           memory: 4g 
         limits:
-          memory: 5g # should still be suffcient
+          memory: 10g 
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/health')"]
