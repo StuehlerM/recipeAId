@@ -24,7 +24,7 @@ app = FastAPI(title="Ingredient Parser", version="1.0.0")
 _active_requests = 0
 
 OLLAMA_URL = "http://localhost:11434"
-MODEL_NAME = "mistral:latest"
+MODEL_NAME = "gemma2:2b"
 OLLAMA_TIMEOUT = 720.0  # seconds — 3B on CPU can be slow
 
 # ── Known cooking units (EN + DE allow-list) ────────────────────────────────

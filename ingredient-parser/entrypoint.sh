@@ -12,8 +12,8 @@ done
 echo "Ollama is ready."
 
 # 3. Pull the model (no-op if already present in the ollama-models volume)
-echo "Pulling model mistral:latest (skipped if already cached)..."
-ollama pull mistral:latest
+echo "Pulling model gemma2:2b (skipped if already cached)..."
+ollama pull gemma2:2b
 
 # 4. Start the FastAPI service
 echo "Starting ingredient-parser on port 8002..."
