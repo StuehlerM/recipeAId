@@ -6,7 +6,7 @@ import type { RecipeAIdWorld } from "../support/world";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const TEST_IMAGES_DIR = resolve(__dirname, "../../../TestImages");
+const TEST_IMAGES_DIR = resolve(__dirname, "../../TestImages");
 
 // Module-level to carry status across When/Then steps
 let lastApiStatus = 0;
