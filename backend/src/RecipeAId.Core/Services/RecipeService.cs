@@ -4,7 +4,7 @@ using RecipeAId.Core.Interfaces;
 
 namespace RecipeAId.Core.Services;
 
-public class RecipeService(IRecipeRepository recipeRepo, IIngredientRepository ingredientRepo) : IRecipeService
+public class RecipeService(IRecipeRepository recipeRepo) : IRecipeService
 {
     public async Task<IEnumerable<RecipeSummaryDto>> GetAllAsync(string? titleFilter, CancellationToken ct = default)
     {
@@ -32,9 +32,8 @@ public class RecipeService(IRecipeRepository recipeRepo, IIngredientRepository i
             ImagePath = request.ImagePath,
             RawOcrText = request.RawOcrText,
             BookTitle = request.BookTitle?.Trim(),
+            RecipeIngredients = BuildIngredients(request.Ingredients),
         };
-
-        recipe.RecipeIngredients = await BuildIngredientsAsync(request.Ingredients, ct);
 
         await recipeRepo.AddAsync(recipe, ct);
         return MapToDto(recipe);
@@ -49,32 +48,26 @@ public class RecipeService(IRecipeRepository recipeRepo, IIngredientRepository i
         recipe.Instructions = request.Instructions;
         recipe.BookTitle = request.BookTitle?.Trim();
 
-        var newIngredients = await BuildIngredientsAsync(request.Ingredients, ct, recipe.Id);
+        var newIngredients = BuildIngredients(request.Ingredients);
 
         await recipeRepo.UpdateAsync(recipe, newIngredients, ct);
         recipe.RecipeIngredients = newIngredients;
         return MapToDto(recipe);
     }
 
-    private async Task<List<RecipeIngredient>> BuildIngredientsAsync(
-        List<IngredientLineDto> lines, CancellationToken ct, int? recipeId = null)
+    private static List<RecipeIngredient> BuildIngredients(List<IngredientLineDto> lines)
     {
         var result = new List<RecipeIngredient>(lines.Count);
         for (int i = 0; i < lines.Count; i++)
         {
             var line = lines[i];
-            var normalized = line.Name.Trim().ToLowerInvariant();
-            var ingredient = await ingredientRepo.GetOrCreateAsync(normalized, ct);
-            var ri = new RecipeIngredient
+            result.Add(new RecipeIngredient
             {
-                IngredientId = ingredient.Id,
-                Ingredient = ingredient,
+                Name = line.Name.Trim().ToLowerInvariant(),
                 Amount = line.Amount?.Trim(),
                 Unit = line.Unit?.Trim(),
                 SortOrder = i,
-            };
-            if (recipeId.HasValue) ri.RecipeId = recipeId.Value;
-            result.Add(ri);
+            });
         }
         return result;
     }
@@ -98,8 +91,8 @@ public class RecipeService(IRecipeRepository recipeRepo, IIngredientRepository i
         recipe.RecipeIngredients
             .OrderBy(ri => ri.SortOrder)
             .Select(ri => new RecipeIngredientDto(
-                ri.IngredientId,
-                ri.Ingredient.Name,
+                ri.SortOrder,
+                ri.Name,
                 ri.Amount,
                 ri.Unit,
                 ri.SortOrder))

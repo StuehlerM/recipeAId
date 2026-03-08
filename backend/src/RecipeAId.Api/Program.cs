@@ -1,11 +1,10 @@
-using Microsoft.EntityFrameworkCore;
+using LiteDB;
 using RecipeAId.Api.Middleware;
 using RecipeAId.Api.OcrServices;
 using RecipeAId.Api.OcrSessions;
 using RecipeAId.Api.ParserServices;
 using RecipeAId.Core.Interfaces;
 using RecipeAId.Core.Services;
-using RecipeAId.Data;
 using RecipeAId.Data.Repositories;
 using Scalar.AspNetCore;
 using Serilog;
@@ -24,11 +23,9 @@ builder.Host.UseSerilog((ctx, config) =>
     config.ReadFrom.Configuration(ctx.Configuration);
 });
 
-// Database
-var dbPath = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? "Data Source=recipeaid.db";
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite(dbPath));
+// Database — LiteDB (single file, no migrations)
+var dbPath = builder.Configuration.GetConnectionString("DefaultConnection") ?? "recipeaid.db";
+builder.Services.AddSingleton<ILiteDatabase>(_ => new LiteDatabase(dbPath));
 
 // Repositories
 builder.Services.AddScoped<IRecipeRepository, RecipeRepository>();
@@ -75,13 +72,6 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader()));
 
 var app = builder.Build();
-
-// Auto-apply migrations on startup
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
-}
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseCors("DevPolicy");

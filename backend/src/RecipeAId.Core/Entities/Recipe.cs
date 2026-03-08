@@ -11,5 +11,5 @@ public class Recipe
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 
-    public ICollection<RecipeIngredient> RecipeIngredients { get; set; } = new List<RecipeIngredient>();
+    public List<RecipeIngredient> RecipeIngredients { get; set; } = [];
 }

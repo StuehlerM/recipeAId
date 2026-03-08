@@ -12,7 +12,7 @@ Living document describing the current system architecture. Updated alongside co
 
 | Layer | Technology |
 |-------|-----------|
-| Backend | ASP.NET Core 9, Entity Framework Core 9, SQLite |
+| Backend | ASP.NET Core 9, LiteDB 5 (embedded document database) |
 | OCR sidecar | Python 3.11, PaddleOCR PP-OCRv5 (English + German), FastAPI, port 8001 |
 | Ingredient parser sidecar | Python 3.11, Ollama + Ministral 3B (`ministral-3:3b`), FastAPI, port 8002 (Docker-internal) |
 | Frontend | React 19, Vite 7, TypeScript, Tailwind CSS v4, TanStack Query v5, React Router v6 |
@@ -48,36 +48,30 @@ Core has zero infrastructure dependencies. All interfaces live in Core.
 
 ---
 
-## Database schema (SQLite + EF Core)
+## Data model (LiteDB)
 
-> **Note:** ADR 0001 (accepted) plans migration to LiteDB. Schema below reflects the current SQLite implementation.
+Recipes are stored as documents in a LiteDB collection (`"recipes"`). Ingredients are embedded inside each recipe document — there is no separate ingredient collection or join table.
 
-### Recipe
-| Column | Type | Notes |
-|--------|------|-------|
-| Id | INTEGER PK | |
-| Title | TEXT NOT NULL | Indexed (non-unique) |
-| Instructions | TEXT NULL | Free-form cooking steps |
-| ImagePath | TEXT NULL | Currently unused |
-| RawOcrText | TEXT NULL | Raw OCR output for reprocessing |
-| BookTitle | TEXT NULL | Source cookbook name |
-| CreatedAt | DATETIME | |
-| UpdatedAt | DATETIME | |
+```
+Recipe document
+├── Id             (int, auto-increment)
+├── Title          (string)
+├── Instructions   (string?)
+├── ImagePath      (string?)
+├── RawOcrText     (string?)
+├── BookTitle      (string?)
+├── CreatedAt      (DateTime, UTC)
+├── UpdatedAt      (DateTime, UTC)
+└── RecipeIngredients []
+    ├── Name       (string, normalized lowercase)
+    ├── Amount     (string?  e.g. "2")
+    ├── Unit       (string?  e.g. "cups")
+    └── SortOrder  (int)
+```
 
-### Ingredient
-| Column | Type | Notes |
-|--------|------|-------|
-| Id | INTEGER PK | |
-| Name | TEXT UNIQUE | Normalized lowercase |
+**Trade-off (accepted):** Ingredient search (`/search/by-ingredients`) requires a full collection scan because ingredients are embedded, not indexed separately. See ADR 0001 for full rationale.
 
-### RecipeIngredient (join)
-| Column | Type | Notes |
-|--------|------|-------|
-| RecipeId | FK → Recipe | CASCADE DELETE |
-| IngredientId | FK → Ingredient | |
-| Amount | TEXT NULL | e.g. "2" |
-| Unit | TEXT NULL | e.g. "cups" |
-| SortOrder | INTEGER | |
+**DB file:** `recipeaid.db` (path configurable via `ConnectionStrings:DefaultConnection`). No migrations — schema changes are applied in code.
 
 ---
 
@@ -119,13 +113,13 @@ All phases are complete.
 | 8 | Integration Tests (BDD) — Cucumber.js + Playwright, 14 scenarios |
 | 9 | LLM Ingredient Parser Sidecar — Ministral 3B, prompt injection defense |
 | 10 | Async SSE OCR+LLM Pipeline — background task, SSE delivery, health polling |
+| 11 | LiteDB Migration — replaced SQLite + EF Core with LiteDB; ingredients embedded in recipe documents |
 
 ---
 
 ## Open / future decisions
 
 - Ingredient fuzzy matching — see `docs/features/fuzzy-matching.md`
-- Image storage — see `docs/features/image-storage.md` and ADR 0001
+- Image storage — see `docs/features/image-storage.md` (LiteStorage via existing LiteDB file)
 - Multi-user support — see `docs/features/multi-user.md`
 - Translation support — see `docs/features/translation-support.md`
-- LiteDB migration — see `docs/adr/0001-switch-sqlite-to-litedb.md` and `docs/features/litedb-migration.md`

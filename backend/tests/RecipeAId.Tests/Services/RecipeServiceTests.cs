@@ -9,13 +9,12 @@ namespace RecipeAId.Tests.Services;
 
 public class RecipeServiceTests
 {
-    private readonly Mock<IRecipeRepository>    _recipeRepo = new();
-    private readonly Mock<IIngredientRepository> _ingredientRepo = new();
-    private readonly RecipeService              _sut;
+    private readonly Mock<IRecipeRepository> _recipeRepo = new();
+    private readonly RecipeService           _sut;
 
     public RecipeServiceTests()
     {
-        _sut = new RecipeService(_recipeRepo.Object, _ingredientRepo.Object);
+        _sut = new RecipeService(_recipeRepo.Object);
     }
 
     // ── GetAllAsync ────────────────────────────────────────────────────────
@@ -62,14 +61,13 @@ public class RecipeServiceTests
     [Fact]
     public async Task GetByIdAsync_ReturnsMappedDto_WhenFound()
     {
-        var ingredient = new Ingredient { Id = 1, Name = "flour" };
         var recipe = new Recipe
         {
             Id    = 1,
             Title = "Cake",
             RecipeIngredients =
             [
-                new RecipeIngredient { IngredientId = 1, Ingredient = ingredient, Amount = "2", Unit = "cups", SortOrder = 0 }
+                new RecipeIngredient { Name = "flour", Amount = "2", Unit = "cups", SortOrder = 0 }
             ]
         };
         _recipeRepo.Setup(r => r.GetByIdAsync(1, default)).ReturnsAsync(recipe);
@@ -94,26 +92,16 @@ public class RecipeServiceTests
             null, null, null, null,
             [new IngredientLineDto("FLOUR", "2", "cups"), new IngredientLineDto("Sugar", "1", "cup")]);
 
-        string? capturedFlour = null;
-        string? capturedSugar = null;
-
-        _ingredientRepo
-            .Setup(r => r.GetOrCreateAsync(It.IsAny<string>(), default))
-            .ReturnsAsync((string name, CancellationToken _) =>
-            {
-                if (name == "flour") capturedFlour = name;
-                if (name == "sugar") capturedSugar = name;
-                return new Ingredient { Id = 1, Name = name };
-            });
-
+        Recipe? saved = null;
         _recipeRepo
             .Setup(r => r.AddAsync(It.IsAny<Recipe>(), default))
-            .ReturnsAsync((Recipe r, CancellationToken _) => r);
+            .ReturnsAsync((Recipe r, CancellationToken _) => { saved = r; return r; });
 
         await _sut.CreateAsync(request);
 
-        Assert.Equal("flour", capturedFlour);
-        Assert.Equal("sugar", capturedSugar);
+        Assert.NotNull(saved);
+        Assert.Equal("flour", saved.RecipeIngredients[0].Name);
+        Assert.Equal("sugar", saved.RecipeIngredients[1].Name);
     }
 
     [Fact]
@@ -188,20 +176,20 @@ public class RecipeServiceTests
     {
         var recipe = new Recipe { Id = 1, Title = "Old", RecipeIngredients = [] };
         _recipeRepo.Setup(r => r.GetByIdAsync(1, default)).ReturnsAsync(recipe);
+
+        IEnumerable<RecipeIngredient>? captured = null;
         _recipeRepo
             .Setup(r => r.UpdateAsync(It.IsAny<Recipe>(), It.IsAny<IEnumerable<RecipeIngredient>>(), default))
+            .Callback<Recipe, IEnumerable<RecipeIngredient>, CancellationToken>((_, ris, _) => captured = ris)
             .Returns(Task.CompletedTask);
-
-        _ingredientRepo
-            .Setup(r => r.GetOrCreateAsync(It.IsAny<string>(), default))
-            .ReturnsAsync((string name, CancellationToken _) => new Ingredient { Id = 1, Name = name });
 
         var request = new UpdateRecipeRequest("New Title", "Cook it.", null, [new IngredientLineDto("BUTTER", "100", "g")]);
         var result = await _sut.UpdateAsync(1, request);
 
         Assert.NotNull(result);
         Assert.Equal("New Title", result.Title);
-        _ingredientRepo.Verify(r => r.GetOrCreateAsync("butter", default), Times.Once);
+        Assert.NotNull(captured);
+        Assert.Equal("butter", captured!.First().Name);
     }
 
     [Fact]

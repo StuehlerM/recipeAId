@@ -1,57 +1,50 @@
-using Microsoft.EntityFrameworkCore;
+using LiteDB;
 using RecipeAId.Core.Entities;
 using RecipeAId.Core.Interfaces;
 
 namespace RecipeAId.Data.Repositories;
 
-public class RecipeRepository(AppDbContext db) : IRecipeRepository
+public class RecipeRepository(ILiteDatabase db) : IRecipeRepository
 {
-    public async Task<IEnumerable<Recipe>> GetAllAsync(string? titleFilter, CancellationToken ct = default)
+    private ILiteCollection<Recipe> Recipes => db.GetCollection<Recipe>("recipes");
+
+    public Task<IEnumerable<Recipe>> GetAllAsync(string? titleFilter, CancellationToken ct = default)
     {
-        var query = db.Recipes
-            .Include(r => r.RecipeIngredients)
-                .ThenInclude(ri => ri.Ingredient)
-            .AsQueryable();
+        var all = Recipes.FindAll().OrderByDescending(r => r.CreatedAt);
 
-        if (!string.IsNullOrWhiteSpace(titleFilter))
-            query = query.Where(r => r.Title.ToLower().Contains(titleFilter.ToLower()));
+        IEnumerable<Recipe> results = string.IsNullOrWhiteSpace(titleFilter)
+            ? all
+            : all.Where(r => r.Title.Contains(titleFilter, StringComparison.OrdinalIgnoreCase));
 
-        return await query.OrderByDescending(r => r.CreatedAt).ToListAsync(ct);
+        return Task.FromResult(results);
     }
 
-    public async Task<Recipe?> GetByIdAsync(int id, CancellationToken ct = default) =>
-        await db.Recipes
-            .Include(r => r.RecipeIngredients)
-                .ThenInclude(ri => ri.Ingredient)
-            .FirstOrDefaultAsync(r => r.Id == id, ct);
-
-    public async Task<Recipe> AddAsync(Recipe recipe, CancellationToken ct = default)
+    public Task<Recipe?> GetByIdAsync(int id, CancellationToken ct = default)
     {
-        db.Recipes.Add(recipe);
-        await db.SaveChangesAsync(ct);
-        return recipe;
+        var recipe = Recipes.FindById(id);
+        return Task.FromResult<Recipe?>(recipe);
     }
 
-    public async Task UpdateAsync(Recipe recipe, IEnumerable<RecipeIngredient> newIngredients, CancellationToken ct = default)
+    public Task<Recipe> AddAsync(Recipe recipe, CancellationToken ct = default)
     {
-        // Explicitly replace ingredients to avoid EF tracking conflicts
-        var old = await db.RecipeIngredients.Where(ri => ri.RecipeId == recipe.Id).ToListAsync(ct);
-        db.RecipeIngredients.RemoveRange(old);
-
-        db.Entry(recipe).State = EntityState.Modified;
-
-        foreach (var ri in newIngredients)
-        {
-            ri.RecipeId = recipe.Id;
-            db.RecipeIngredients.Add(ri);
-        }
-
-        await db.SaveChangesAsync(ct);
+        var now = DateTime.UtcNow;
+        recipe.CreatedAt = now;
+        recipe.UpdatedAt = now;
+        Recipes.Insert(recipe);
+        return Task.FromResult(recipe);
     }
 
-    public async Task DeleteAsync(Recipe recipe, CancellationToken ct = default)
+    public Task UpdateAsync(Recipe recipe, IEnumerable<RecipeIngredient> newIngredients, CancellationToken ct = default)
     {
-        db.Recipes.Remove(recipe);
-        await db.SaveChangesAsync(ct);
+        recipe.UpdatedAt = DateTime.UtcNow;
+        recipe.RecipeIngredients = newIngredients.ToList();
+        Recipes.Update(recipe);
+        return Task.CompletedTask;
+    }
+
+    public Task DeleteAsync(Recipe recipe, CancellationToken ct = default)
+    {
+        Recipes.Delete(recipe.Id);
+        return Task.CompletedTask;
     }
 }

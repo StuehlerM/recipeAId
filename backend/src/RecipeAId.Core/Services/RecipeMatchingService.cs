@@ -25,7 +25,7 @@ public class RecipeMatchingService(IRecipeRepository recipeRepo) : IRecipeMatchi
             .Select(r =>
             {
                 var recipeIngredientNames = r.RecipeIngredients
-                    .Select(ri => ri.Ingredient.Name)
+                    .Select(ri => ri.Name)
                     .ToList();
 
                 var matched = recipeIngredientNames.Intersect(requested).ToList();
