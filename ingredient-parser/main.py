@@ -223,6 +223,7 @@ async def health() -> dict:
     except httpx.HTTPError as exc:
         raise HTTPException(status_code=503, detail=f"Ollama unreachable: {exc}") from exc
 
+    logger.info("[health] ok — active requests: %d", _active_requests)
     return {"status": "ok", "model": MODEL_NAME, "active_requests": _active_requests}
 
 
