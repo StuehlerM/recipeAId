@@ -1,13 +1,13 @@
 import { NavLink } from "react-router-dom";
-import { BookOpen, Search, Plus, Camera, CalendarDays } from "lucide-react";
+import { BookOpen, Search, Plus, CalendarDays, Settings } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 const TABS: { to: string; end: boolean; Icon: LucideIcon; label: string; fab?: true }[] = [
-  { to: "/",        end: true,  Icon: BookOpen,     label: "Recipes"  },
-  { to: "/search",  end: false, Icon: Search,       label: "Search"   },
-  { to: "/add",     end: false, Icon: Plus,         label: "Add",     fab: true },
-  { to: "/upload",  end: false, Icon: Camera,       label: "Upload"   },
-  { to: "/planner", end: false, Icon: CalendarDays, label: "Planner"  },
+  { to: "/",          end: true,  Icon: BookOpen,     label: "Recipes"  },
+  { to: "/search",    end: false, Icon: Search,       label: "Search"   },
+  { to: "/add",       end: false, Icon: Plus,         label: "Add",     fab: true },
+  { to: "/planner",   end: false, Icon: CalendarDays, label: "Planner"  },
+  { to: "/settings",  end: false, Icon: Settings,     label: "Settings" },
 ];
 
 export default function NavBar() {

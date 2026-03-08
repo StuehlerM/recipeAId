@@ -75,7 +75,7 @@ Recipe document
 
 **Trade-off (accepted):** Ingredient search (`/search/by-ingredients`) requires a full collection scan because ingredients are embedded, not indexed separately. See ADR 0001 for full rationale.
 
-**DB file:** `recipeaid.db` (path configurable via `ConnectionStrings:DefaultConnection`). No migrations — schema changes are applied in code.
+**DB file:** `recipeaid.db` (path configurable via `ConnectionStrings:DefaultConnection`). No migrations — schema changes are applied in code. `ILiteDatabase` is resolved eagerly at startup so a corrupt file crashes the container at boot (visible in logs) rather than silently failing on the first request.
 
 ---
 

@@ -34,7 +34,7 @@ backend/
 
 **Service layer:** All controllers depend on service interfaces, not repositories directly. `IIngredientService` / `IngredientService` handles ingredient queries; `IRecipeService` / `RecipeService` handles recipe CRUD. `RecipeService` uses a private `BuildIngredients` static helper to build embedded ingredient lists from `IngredientLineDto`.
 
-**DI lifetimes:** `ILiteDatabase` — `AddSingleton` (one file lock). Repositories and services — `AddScoped`.
+**DI lifetimes:** `ILiteDatabase` — `AddSingleton` (one file lock). Repositories and services — `AddScoped`. `ILiteDatabase` is resolved eagerly at startup (`app.Services.GetRequiredService<ILiteDatabase>()`) so a corrupt or missing database file crashes the container immediately rather than silently 500-ing on the first request.
 
 **DTO organization:** One record per file in `Core/DTOs/`. Key DTOs: `CreateRecipeRequest` (with `BookTitle`), `UpdateRecipeRequest`, `RecipeDto`, `RecipeIngredientDto` (Amount + Unit), `RecipeSummaryDto`, `RecipeOcrDraftDto` (with optional `SessionId`), `OcrResult`, `IngredientLineDto(Name, Amount, Unit)`, `IngredientParseRequest`, `IngredientParseResult`.
 

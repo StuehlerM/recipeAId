@@ -75,6 +75,10 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Eagerly open the database so a corrupt/missing file crashes the container at startup
+// (visible in logs) rather than silently failing on the first real request.
+app.Services.GetRequiredService<ILiteDatabase>();
+
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseCors("DevPolicy");
 
