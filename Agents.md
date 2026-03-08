@@ -99,8 +99,8 @@ recipeaid/
 - [x] `src/components/OcrCaptureButton.tsx` — camera icon button with spinner and inline error display; renders `CameraCapture` (z-[70]) and `CropModal` (z-[60])
 - [x] `src/components/CameraCapture.tsx` — fullscreen live camera overlay: `getUserMedia` video stream, guide frame with corner accents + scrim, `LevelIndicator` sub-component (DeviceOrientationEvent bubble, iOS 13+ permission-gated), shadow badge, blur badge + capture button disabled when blurry, torch toggle (capability-gated), `hidden` prop keeps stream alive under CropModal
 - [x] `src/utils/imageAnalysis.ts` — `computeSharpnessVariance` (Laplacian variance, center 50% of frame) + `detectShadow` (mean luma + dark/bright pixel ratio); exported `SHARPNESS_THRESHOLD=30`, `ANALYSIS_WIDTH/HEIGHT=320×240`
-- [x] `src/components/CropModal.tsx` — fullscreen crop overlay (`react-image-crop`); applies automatic image enhancement (grayscale + auto-contrast + sharpen via `imageEnhance.ts`) before OCR upload
-- [x] `src/utils/imageEnhance.ts` — Canvas-based image preprocessing pipeline: BT.601 grayscale, histogram-stretch auto-contrast (1% percentile clipping), unsharp-mask sharpening
+- [x] ~~`src/components/CropModal.tsx` — fullscreen crop overlay (`react-image-crop`); applies automatic image enhancement before OCR upload~~ — image enhancement removed; `CropModal` now passes the cropped image directly to OCR; all preprocessing runs server-side in the OCR sidecar
+- [x] ~~`src/utils/imageEnhance.ts` — Canvas-based image preprocessing pipeline: BT.601 grayscale, histogram-stretch auto-contrast (1% percentile clipping), unsharp-mask sharpening~~ — removed; preprocessing moved to OCR sidecar
 - [x] `src/features/add-recipe/StepIndicator.tsx` — 4-step progress indicator (clickable for completed/current steps to enable backwards navigation; title required before forward navigation from step 1)
 - [x] `src/features/add-recipe/UnitCombobox.tsx` — datalist-based unit picker (extracted from AddRecipePage)
 - [x] Feature-based folder structure: `src/features/{recipes,search,upload,add-recipe,planner}/`
@@ -129,13 +129,13 @@ recipeaid/
 - [x] **Transient failure handling:** `_call_ollama` retries up to 3 times with exponential backoff (1s, 2s, 4s) on `httpx.HTTPError`; handles brief Ollama unavailability gracefully
 - [x] **Request tracking:** `_active_requests` counter tracks concurrent LLM parses; incremented on `/parse` entry, decremented in `finally` block; exposed via `/health` and `/status` endpoints for backend health monitoring
 - [x] `Dockerfile` — multi-stage: borrows Ollama binary from `ollama/ollama:latest`, python:3.11-slim; BuildKit pip cache
-- [x] `entrypoint.sh` — starts Ollama daemon, waits for readiness, pulls `mistral:latest` (no-op if cached), starts uvicorn
+- [x] `entrypoint.sh` — starts Ollama daemon, waits for readiness, pulls `ministral-3:3b` (no-op if cached), starts uvicorn
 - [x] `ingredient-parser/tests/test_sanitizer.py` + `tests/test_main.py` — pytest, mocked Ollama
 - [x] `build-ingredient-parser.ps1` — mirrors `build-ocr.ps1`; sets `DOCKER_BUILDKIT=1`
 - [x] `Core/DTOs/IngredientParseRequest.cs` + `IngredientParseResult.cs`
 - [x] `Core/Interfaces/IIngredientParserService.cs`
 - [x] `Api/ParserServices/LlmIngredientParserService.cs` — named HttpClient "IngredientParser", 200s timeout, float→string conversion, graceful fallback
-- [x] `RecipesController.FromImage` — LLM refinement **temporarily disabled**; always returns regex draft with `SessionId = null` (TODO: re-enable once LLM sidecar is stable)
+- [x] `RecipesController.FromImage` — accepts `?refine=true` (default); fires LLM in background via `OcrSessionStore`/`IServiceScopeFactory`; returns regex draft immediately with `SessionId`; returns `SessionId = null` when `refine=false` or no ingredients detected
 - [x] `IngredientsController` — added `POST /api/v1/ingredients/parse` standalone endpoint
 - [x] `docker-compose.yml` — `ingredient-parser` service (no host port, `ollama-models` volume, 120s start period), backend `depends_on` it
 - [x] `appsettings.json` — `IngredientParser:BaseUrl` default `http://localhost:8002`
@@ -146,7 +146,7 @@ recipeaid/
 - [x] `Api/OcrSessions/OcrSessionStore.cs` — singleton `ConcurrentDictionary<string, Session>` keyed by GUID; holds `TaskCompletionSource<IngredientParseResult>` per active scan; `CreateSession()`, `TryGetTcs()`, `Complete()`, `Remove()`, `CleanupStale(maxAge)`
 - [x] `Api/OcrSessions/OcrSessionCleanupService.cs` — `BackgroundService` that runs every 60s, removes sessions older than 5 minutes (calls `TrySetCanceled()` on stale TCS)
 - [x] `Api/Controllers/OcrSessionsController.cs` — `GET /api/v1/ocr-sessions/{sessionId}/events` SSE endpoint: sends `{"status":"processing"}` immediately, then polls ingredient-parser every 30s via `/status` endpoint; awaits TCS with 5s polling intervals; sends `{"status":"done","ingredients":[...]}` on success or `{"status":"failed"}` on error; hard 15-minute (900s) timeout as safety net; fails with `"error":"ingredient parser lost"` if parser becomes unreachable after initially reachable; removes session in `finally`
-- [x] `RecipesController.FromImage` — `refine` query param removed; LLM background task disabled; always returns draft with `SessionId = null`; `scopeFactory` and `sessionStore` removed from constructor
+- [x] `RecipesController.FromImage` — accepts `?refine=true` (default); `OcrSessionStore` and `IServiceScopeFactory` injected; fires LLM as background `Task.Run` via fresh DI scope; returns regex draft immediately with `SessionId`; when `refine=false` or no ingredients detected returns `SessionId = null` directly
 - [x] `Core/DTOs/RecipeOcrDraftDto.cs` — added `string? SessionId = null` as optional last parameter (all existing callers unaffected)
 - [x] `Program.cs` — registered `OcrSessionStore` (singleton) and `OcrSessionCleanupService` (hosted service)
 - [x] `frontend/nginx.conf` — added dedicated SSE location block (`/api/v1/ocr-sessions/`) **before** the generic `/api/` block; `proxy_buffering off`, `proxy_cache off`, `proxy_read_timeout 220s`, `proxy_http_version 1.1`
@@ -169,8 +169,8 @@ recipeaid/
 | POST | `/api/v1/recipes` | Create recipe (JSON) |
 | PUT | `/api/v1/recipes/{id}` | Update recipe |
 | DELETE | `/api/v1/recipes/{id}` | Delete recipe |
-| POST | `/api/v1/recipes/from-image` | Upload image → OCR → regex draft returned immediately; LLM refinement currently disabled (`SessionId` always null) |
-| GET | `/api/v1/ocr-sessions/{sessionId}/events` | SSE stream (infrastructure in place; not triggered while LLM is disabled) |
+| POST | `/api/v1/recipes/from-image` | Upload image → OCR → regex draft returned immediately with sessionId; LLM refinement fires in background when refine=true (default) and ingredients found; returns SessionId=null when refine=false |
+| GET | `/api/v1/ocr-sessions/{sessionId}/events` | SSE stream — sends processing/done/failed events; awaits background LLM result; 15-min hard timeout |
 | GET | `/api/v1/recipes/search/by-ingredients` | Ranked ingredient search |
 | GET | `/api/v1/ingredients` | All known ingredients |
 | POST | `/api/v1/ingredients/parse` | Parse raw ingredient text via LLM sidecar |
@@ -237,4 +237,6 @@ recipeaid/
 - **Unit tests are required** for all service and business logic implementations to prevent regressions. Write tests alongside each phase's service layer before marking tasks complete.
 
 ## Known Issues / Tech Debt
-*(none yet)*
+- `imageEnhance.ts` removed from frontend; `Agents.md` Phase 7 checkbox updated to reflect removal — no code change needed
+- Model name in docs was incorrect (`mistral:latest`) — corrected to `ministral-3:3b` to match `ingredient-parser/main.py` and `entrypoint.sh`
+- NavBar icon description in CLAUDE.md was incorrect ("flat inline SVG") — corrected to lucide-react
