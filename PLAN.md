@@ -7,19 +7,18 @@ with broader roadmap ideas. Each section notes its source so nothing gets lost.
 
 ## Gap Analysis (from Agents.md)
 
-### Documentation Drift — Fix Before Next Feature Work
+### ~~Documentation Drift — Fix Before Next Feature Work~~ ✅ Resolved (PR #2)
 
-These are inconsistencies between `Agents.md` and the actual codebase state.
-They do not require code changes but must be corrected to keep the AI agent accurate.
+~~These are inconsistencies between `Agents.md` and the actual codebase state.
+They do not require code changes but must be corrected to keep the AI agent accurate.~~
 
-| # | Location | Issue |
-|---|----------|-------|
-| 1 | Phase 9 & 10 | Say LLM refinement is "temporarily disabled" and `SessionId` always null — but commit `741c176` re-enabled the async SSE pipeline. `Agents.md` must be updated to reflect the active SSE flow. |
-| 2 | Phase 7 | References `src/utils/imageEnhance.ts` as existing. `CLAUDE.md` says it was removed; all OCR preprocessing now runs server-side in the sidecar. Phase 7 checkbox for `imageEnhance.ts` should be struck through and a note added. |
-| 3 | Phase 7 | Says "replaced emoji with lucide-react icons (BookOpen, Search, Plus, Camera, CalendarDays)". `CLAUDE.md` says NavBar uses flat inline SVG icons. One of these is wrong — verify and correct `Agents.md`. |
-| 4 | Phase 9 | Says `mistral:latest` via Ollama. `CLAUDE.md` and MEMORY.md say `ministral:3b`. Update `Agents.md` to match. |
-| 5 | API Reference | `POST /from-image` row says "LLM refinement currently disabled" — update to reflect re-enabled async SSE pipeline. |
-| 6 | Known Issues | Says "none yet" — add tech debt items if any are identified during the above fixes. |
+All 6 issues fixed in PR #2 (merged 2026-03-08):
+1. Phase 9 & 10 "temporarily disabled" → updated to reflect active SSE pipeline with `refine` param and background task
+2. Phase 7 `imageEnhance.ts` / `CropModal` enhancement references → struck through; preprocessing is server-side
+3. CLAUDE.md "flat inline SVG icons" → corrected to lucide-react icons (NavBar.tsx confirmed)
+4. Phase 9 `mistral:latest` → corrected to `ministral-3:3b` (confirmed in `main.py` + `entrypoint.sh`)
+5. API Reference `/from-image` and SSE rows → updated to describe active async pipeline
+6. Known Issues "none yet" → replaced with three tech debt bullets
 
 ---
 
