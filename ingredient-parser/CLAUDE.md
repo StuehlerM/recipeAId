@@ -35,7 +35,8 @@ Python FastAPI sidecar using Ollama + Ministral 3B for structured ingredient ext
 ## Docker
 
 - Multi-stage build: borrows Ollama binary from `ollama/ollama:latest`, python:3.11-slim, BuildKit pip cache
-- `entrypoint.sh`: starts Ollama daemon → waits for readiness → pulls `ministral-3:3b` (no-op if cached) → starts uvicorn
+- `entrypoint.sh`: starts Ollama daemon → waits for readiness → pulls `ministral-3:3b` (no-op if cached) → starts uvicorn with `--log-config /app/log_config.json`
+- `log_config.json`: uvicorn log format `[%(levelname)s] %(message)s` — consistent with backend and nginx
 - `docker-compose.yml`: 120s `start_period` (first-time model pull); backend `depends_on` with health check
 
 **Build helper:**

@@ -19,6 +19,7 @@ RUN npm run build
 FROM nginx:alpine AS runtime
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx-global.conf /etc/nginx/nginx.conf
 
 # Optional: extra IP/hostname to include in the cert's Subject Alternative Names.
 # Set VM_HOST=<your-ip-or-hostname> at build time to avoid browser cert warnings

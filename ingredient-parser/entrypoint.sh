@@ -17,4 +17,4 @@ ollama pull ministral-3:3b
 
 # 4. Start the FastAPI service
 echo "Starting ingredient-parser on port 8002..."
-exec uvicorn main:app --host 0.0.0.0 --port 8002
+exec uvicorn main:app --host 0.0.0.0 --port 8002 --log-config /app/log_config.json

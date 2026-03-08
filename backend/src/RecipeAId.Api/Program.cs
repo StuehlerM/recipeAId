@@ -8,18 +8,13 @@ using RecipeAId.Core.Services;
 using RecipeAId.Data.Repositories;
 using Scalar.AspNetCore;
 using Serilog;
-using Serilog.Formatting.Compact;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Serilog — compact JSON in Production (easy to grep/pipe), readable text in Development
+// Serilog — consistent plain-text format in all environments: [LEVEL] message
 builder.Host.UseSerilog((ctx, config) =>
 {
-    if (ctx.HostingEnvironment.IsProduction())
-        config.WriteTo.Console(new CompactJsonFormatter());
-    else
-        config.WriteTo.Console();
-
+    config.WriteTo.Console(outputTemplate: "[{Level:u3}] {Message:lj}{NewLine}{Exception}");
     config.ReadFrom.Configuration(ctx.Configuration);
 });
 

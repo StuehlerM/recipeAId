@@ -40,7 +40,7 @@ backend/
 
 **`IRecipeRepository.UpdateAsync`:** Takes an explicit `newIngredients` list. The repository replaces `recipe.RecipeIngredients` and calls `Recipes.Update(recipe)` — no EF tracking concerns.
 
-**Logging:** Serilog (`Serilog.AspNetCore` + `Serilog.Formatting.Compact`). Development = human-readable text; Production = compact JSON. `RecipesController.FromImage` logs OCR+LLM pipeline with per-stage timing.
+**Logging:** Serilog (`Serilog.AspNetCore`). Uniform `[LEVEL] message` plain-text format in all environments (no JSON). Noisy namespaces (`Microsoft.AspNetCore`, `System.Net.Http.HttpClient`) suppressed to `Warning` in appsettings. `RecipesController.FromImage` logs OCR+LLM pipeline with per-stage timing.
 
 **Error handling:** All error responses use `ProblemDetails` (RFC 7807) — both inline controller validation and `ExceptionHandlingMiddleware`. The `detail` field is only populated in Development. The middleware checks `Response.HasStarted` before setting headers (safe for SSE streams).
 

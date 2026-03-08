@@ -18,6 +18,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install -r requirements.txt
 
 COPY *.py /app/
+COPY log_config.json /app/
 
 EXPOSE 8002
 

@@ -23,6 +23,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # image rebuilds and are only downloaded once on first container startup.
 
 COPY main.py .
+COPY log_config.json .
 
 EXPOSE 8001
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001", "--log-config", "/app/log_config.json"]

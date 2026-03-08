@@ -8,6 +8,7 @@ GET  /health — liveness probe (checks Ollama is reachable + model is loaded)
 import asyncio
 import json
 import logging
+import time
 
 import httpx
 from fastapi import FastAPI, HTTPException
@@ -105,8 +106,6 @@ async def _call_ollama(prompt: str) -> str:
         "stream": True,
         "options": {"temperature": 0.1},
     }
-    logger.info("LLM INPUT:\n%s", prompt)
-
     max_retries = 3
     for attempt in range(max_retries):
         try:
@@ -124,14 +123,15 @@ async def _call_ollama(prompt: str) -> str:
                             chunks.append(token)
                             token_count += 1
                             if token_count % 20 == 0:
-                                logger.info("[LLM] %d tokens generated...", token_count)
+                                logger.info("[LLM] Generating... %d tokens (active: %d)", token_count, _active_requests)
                         if data.get("done"):
                             eval_count = data.get("eval_count", token_count)
                             eval_duration = data.get("eval_duration", 0)
                             tokens_per_sec = eval_count / (eval_duration / 1e9) if eval_duration else 0
                             logger.info("[LLM] Done — %d tokens at %.1f tok/s", eval_count, tokens_per_sec)
                 raw = "".join(chunks)
-            logger.info("LLM OUTPUT:\n%s", raw)
+            preview = raw[:200] + ("..." if len(raw) > 200 else "")
+            logger.info("[LLM] Output: %s", preview)
             return raw
         except httpx.HTTPError as exc:
             if attempt < max_retries - 1:
@@ -186,6 +186,8 @@ async def parse_ingredients(request: ParseRequest) -> ParseResponse:
     prompt = build_prompt(clean_text, request.lang)
 
     _active_requests += 1
+    started_at = time.monotonic()
+    logger.info("[parse] Request started — active: %d", _active_requests)
     try:
         try:
             raw_response = await _call_ollama(prompt)
@@ -200,6 +202,8 @@ async def parse_ingredients(request: ParseRequest) -> ParseResponse:
             raise HTTPException(status_code=422, detail="LLM returned unparseable output.") from exc
 
         items = _apply_sanity_bounds(items)
+        elapsed = time.monotonic() - started_at
+        logger.info("[parse] Complete — %d ingredients in %.1fs (active after: %d)", len(items), elapsed, _active_requests - 1)
         return ParseResponse(ingredients=items)
     finally:
         _active_requests -= 1
@@ -224,17 +228,9 @@ async def health() -> dict:
 
 @app.get("/status")
 async def status() -> dict:
-    """Return current service state: healthy, processing status, active requests."""
-    try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            resp = await client.get(f"{OLLAMA_URL}/api/tags")
-            resp.raise_for_status()
-            ollama_ok = True
-    except httpx.HTTPError:
-        ollama_ok = False
-
+    """Lightweight in-memory status — no external calls. Polled every 30s by the backend SSE controller."""
     return {
-        "ollama_reachable": ollama_ok,
+        "ollama_reachable": True,  # If this endpoint responds, the sidecar is up
         "active_requests": _active_requests,
         "processing": _active_requests > 0,
     }

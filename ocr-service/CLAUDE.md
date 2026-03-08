@@ -43,7 +43,7 @@ Each step falls back to the unmodified image when no usable geometry is found. R
 
 ## Logging
 
-Logs per request: image dimensions, preprocessing timing, PaddleOCR inference timing, confidence score stats (avg/min), total pipeline timing.
+Logs per request: image dimensions, preprocessing timing, PaddleOCR inference timing, confidence score stats (avg/min), total pipeline timing. Format: `[%(levelname)s] %(message)s` via `log_config.json` (passed to uvicorn as `--log-config /app/log_config.json`).
 
 ## Testing
 
