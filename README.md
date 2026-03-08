@@ -79,7 +79,7 @@ cd backend
 dotnet run --project src/RecipeAId.Api
 ```
 
-The SQLite database is created automatically on first run. The interactive API explorer is available at `http://localhost:<port>/scalar/v1`.
+The LiteDB database is created automatically on first run. The interactive API explorer is available at `http://localhost:<port>/scalar/v1`.
 
 ### 3. Frontend
 
@@ -129,7 +129,7 @@ recipeaid/
 │   ├── RecipeAId.sln
 │   ├── src/
 │   │   ├── RecipeAId.Core/    # Entities, interfaces, DTOs (one per file), services
-│   │   ├── RecipeAId.Data/    # EF Core + SQLite, repositories, migrations
+│   │   ├── RecipeAId.Data/    # LiteDB, repositories
 │   │   └── RecipeAId.Api/     # Controllers, OCR + parser services, middleware
 │   ├── tests/
 │   │   └── RecipeAId.Tests/   # xUnit + Moq
@@ -286,7 +286,7 @@ Two explicit flags required — `--no-verify` skips the local pre-push hook, and
 |-------|-----------|
 | Frontend | React 19, Vite 7, TypeScript, Tailwind CSS v4, TanStack Query v5, React Router v6, sonner (toasts) |
 | PWA | vite-plugin-pwa (installable, standalone, theme-color) |
-| Backend | ASP.NET Core 9, Entity Framework Core 9, SQLite |
+| Backend | ASP.NET Core 9, LiteDB v5 (embedded document DB) |
 | OCR | Python 3.11, PaddleOCR PP-OCRv5 (English + German), FastAPI, uvicorn |
 | Ingredient parser | Python 3.11, Ollama + Ministral 3B, FastAPI, uvicorn; 4-layer prompt injection defense; transient-failure retry logic (3 attempts, exponential backoff) |
 | Testing | xUnit + Moq (backend), pytest + httpx (Python sidecars), Cucumber.js + Playwright (BDD) |
