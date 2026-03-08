@@ -40,7 +40,7 @@ recipeaid/
 ## Phase 1: Foundation
 - [x] Solution and project scaffolding (`dotnet new sln`, `classlib`, `webapi`)
 - [x] Core entities: `Recipe`, `Ingredient`, `RecipeIngredient`
-- [x] Core interfaces: `IRecipeRepository`, `IIngredientRepository`, `IRecipeService`, `IIngredientService`, `IRecipeMatchingService`, `IOcrService`, `IOcrParser`, `IRecipeSuggestionService` (stub)
+- [x] Core interfaces: `IRecipeRepository`, `IIngredientRepository`, `IRecipeService`, `IIngredientService`, `IRecipeMatchingService`, `IOcrService`, `IOcrParser`
 - [x] Core DTOs (one record per file): `CreateRecipeRequest` (with `BookTitle`), `UpdateRecipeRequest` (with `BookTitle`), `RecipeDto`, `RecipeIngredientDto` (Amount + Unit), `RecipeSummaryDto` (with `BookTitle`), `RecipeOcrDraftDto`, `OcrResult`, `IngredientSearchResultDto`, `IngredientLineDto(Name, Amount, Unit)`, `IngredientDto`
 - [x] `AppDbContext` with EF Core fluent configuration
 - [x] EF Core initial migration + SQLite DB creation (auto-applied on startup)
@@ -227,7 +227,7 @@ recipeaid/
 ## Open / Future Decisions
 - `[x]` OCR upgrade: replaced EasyOCR with PaddleOCR (PP-OCRv5) for better accuracy and faster inference; latin model covers English + German
 - `[ ]` Ingredient fuzzy matching: Levenshtein distance or synonym table (Phase 4)
-- `[ ]` LLM recipe suggestion: `IRecipeSuggestionService` interface exists as a seam; implement when needed
+- `[ ]` LLM recipe suggestion: descoped — `IRecipeSuggestionService` stub removed
 - `[ ]` Image storage: local filesystem for now; Azure Blob / S3 upgrade path via `IImageStorageService`
 - `[ ]` Authentication / multi-user support (not in scope currently)
 
