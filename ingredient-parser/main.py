@@ -128,16 +128,16 @@ async def _call_ollama(prompt: str) -> str:
 
 def _parse_llm_output(raw: str) -> list[IngredientItem]:
     """Parse and validate the LLM JSON response."""
-    # The model sometimes wraps output in a top-level object {"ingredients": [...]}
     parsed = json.loads(raw)
     if isinstance(parsed, dict):
-        # Accept {"ingredients": [...]} or any single-key dict containing a list
+        # Accept {"ingredients": [...]} or any wrapper dict containing a list
         for val in parsed.values():
             if isinstance(val, list):
                 parsed = val
                 break
         else:
-            raise ValueError("No list found in LLM response object")
+            # Model returned a single ingredient object — wrap it in a list
+            parsed = [parsed]
 
     if not isinstance(parsed, list):
         raise ValueError("Expected a JSON array from LLM")
@@ -146,7 +146,9 @@ def _parse_llm_output(raw: str) -> list[IngredientItem]:
     for entry in parsed:
         if not isinstance(entry, dict):
             continue
-        # Allow only expected keys
+        # Accept "amount" as the primary key (model's natural output) or "value" as fallback
+        if "amount" in entry and "value" not in entry:
+            entry = {**entry, "value": entry["amount"]}
         allowed = {"name", "value", "unit"}
         filtered = {k: v for k, v in entry.items() if k in allowed}
         items.append(IngredientItem(**filtered))
