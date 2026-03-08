@@ -6,5 +6,6 @@ public record RecipeOcrDraftDto(
     List<IngredientLineDto> DetectedIngredients,
     string RawOcrText,
     string? ImagePath,
-    string? SessionId = null
+    string? SessionId = null,
+    string? ImageKey = null
 );

@@ -40,11 +40,13 @@ Core has zero infrastructure dependencies. All interfaces live in Core.
 | POST | `/api/v1/recipes` | Create recipe (JSON) |
 | PUT | `/api/v1/recipes/{id}` | Update recipe |
 | DELETE | `/api/v1/recipes/{id}` | Delete recipe |
-| POST | `/api/v1/recipes/from-image` | Upload image → OCR + LLM pipeline (async SSE when `refine=true`) |
+| POST | `/api/v1/recipes/from-image` | Upload image → OCR + LLM pipeline; response includes `imageKey` for later commit |
 | GET | `/api/v1/ocr-sessions/{sessionId}/events` | SSE stream for LLM refinement results |
 | GET | `/api/v1/recipes/search/by-ingredients` | Ranked ingredient search (`?ingredients=&minMatch=1&limit=20`) |
 | GET | `/api/v1/ingredients` | All known ingredients (autocomplete) |
 | POST | `/api/v1/ingredients/parse` | Parse raw ingredient text via LLM sidecar |
+| GET | `/api/v1/recipes/{id}/images/{slot}` | Retrieve stored recipe image (`slot` = `title \| ingredients \| instructions`) |
+| PUT | `/api/v1/recipes/{id}/images/{slot}` | Upload image directly to a recipe slot (multipart/form-data) |
 
 ---
 
@@ -68,6 +70,8 @@ Recipe document
     ├── Unit       (string?  e.g. "cups")
     └── SortOrder  (int)
 ```
+
+**Image storage:** Recipe photos are stored in LiteDB `FileStorage` (same `.db` file, no extra volume). Keys follow the pattern `recipe/{id}/{slot}` (slots: `title`, `ingredients`, `instructions`). During the OCR flow, images are temporarily stored under `temp/{guid}` and committed to their permanent slot when the recipe is saved (client sends back the `imageKey` from the OCR response in `CreateRecipeRequest.ImageKeys`). Images can also be uploaded directly via `PUT /api/v1/recipes/{id}/images/{slot}`.
 
 **Trade-off (accepted):** Ingredient search (`/search/by-ingredients`) requires a full collection scan because ingredients are embedded, not indexed separately. See ADR 0001 for full rationale.
 
@@ -114,12 +118,12 @@ All phases are complete.
 | 9 | LLM Ingredient Parser Sidecar — Ministral 3B, prompt injection defense |
 | 10 | Async SSE OCR+LLM Pipeline — background task, SSE delivery, health polling |
 | 11 | LiteDB Migration — replaced SQLite + EF Core with LiteDB; ingredients embedded in recipe documents |
+| 12 | Image Storage — recipe photos stored in LiteDB `FileStorage`; temp→commit flow; GET/PUT image endpoints; RecipeDetailPage displays stored title image |
 
 ---
 
 ## Open / future decisions
 
 - Ingredient fuzzy matching — see `docs/features/fuzzy-matching.md`
-- Image storage — see `docs/features/image-storage.md` (LiteStorage via existing LiteDB file)
 - Multi-user support — see `docs/features/multi-user.md`
 - Translation support — see `docs/features/translation-support.md`

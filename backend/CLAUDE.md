@@ -105,15 +105,17 @@ Key classes:
 | POST | `/api/v1/recipes` | Create recipe (JSON) |
 | PUT | `/api/v1/recipes/{id}` | Update recipe |
 | DELETE | `/api/v1/recipes/{id}` | Delete recipe |
-| POST | `/api/v1/recipes/from-image` | Upload image → OCR+LLM pipeline (see SSE section above) |
+| POST | `/api/v1/recipes/from-image` | Upload image → OCR+LLM pipeline; response includes `imageKey` for later commit |
 | GET | `/api/v1/ocr-sessions/{sessionId}/events` | SSE stream for LLM refinement results |
 | GET | `/api/v1/recipes/search/by-ingredients` | Ranked ingredient search (`?ingredients=&minMatch=1&limit=20`) |
 | GET | `/api/v1/ingredients` | All known ingredients (autocomplete) |
 | POST | `/api/v1/ingredients/parse` | Parse raw ingredient text via LLM sidecar |
+| GET | `/api/v1/recipes/{id}/images/{slot}` | Retrieve stored recipe image (`slot` = `title \| ingredients \| instructions`) |
+| PUT | `/api/v1/recipes/{id}/images/{slot}` | Upload image directly to a recipe slot (multipart/form-data) |
 
 ## Testing conventions
 
 - Test project references `RecipeAId.Core` only — no `Data` or `Api` dependencies
 - Services under test live in `Core/Services/`; tests in `tests/RecipeAId.Tests/Services/`
-- Use xUnit + Moq. Mock `IRecipeRepository` for `RecipeService` tests (no `IIngredientRepository` needed)
-- 39 tests covering OcrParserService, RecipeService, RecipeMatchingService
+- Use xUnit + Moq. Mock `IRecipeRepository` for `RecipeService` tests; mock `IImageStorage` for `RecipeImageService` tests
+- 58 tests covering OcrParserService, RecipeService, RecipeMatchingService, RecipeImageService

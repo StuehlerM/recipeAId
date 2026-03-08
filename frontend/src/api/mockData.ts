@@ -140,4 +140,5 @@ export const MOCK_OCR_DRAFT: RecipeOcrDraftDto = {
     "Grandma's Apple Pie\n\nIngredients:\n2 cups flour\n125g butter\n6 large apples\n3/4 cup sugar\n1 tsp cinnamon\n4 tbsp water\n\nInstructions:\nPreheat oven to 180C...",
   imagePath: null,
   sessionId: null,
+  imageKey: null,
 };

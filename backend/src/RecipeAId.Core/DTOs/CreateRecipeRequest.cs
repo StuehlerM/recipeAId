@@ -6,5 +6,6 @@ public record CreateRecipeRequest(
     string? ImagePath,
     string? RawOcrText,
     string? BookTitle,
-    List<IngredientLineDto> Ingredients
+    List<IngredientLineDto> Ingredients,
+    Dictionary<string, string>? ImageKeys = null
 );

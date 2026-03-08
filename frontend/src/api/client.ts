@@ -166,6 +166,7 @@ export async function createRecipe(data: CreateRecipeRequest): Promise<RecipeDto
         rawOcrText: null,
         bookTitle: data.bookTitle,
         ingredients: data.ingredients.map((i) => ({ name: i.name, amount: i.amount, unit: i.unit })),
+        imageKeys: data.imageKeys ?? null,
       }),
     }),
     "POST /api/v1/recipes"
@@ -248,6 +249,14 @@ export async function uploadRecipeImage(file: File, refine = true): Promise<Reci
     "POST /api/v1/recipes/from-image"
   );
   return res.json() as Promise<RecipeOcrDraftDto>;
+}
+
+// ── Recipe images ─────────────────────────────────────────────────────────────
+
+/** Returns the URL for a stored recipe image slot. The browser will 404 if no image is stored. */
+export function getRecipeImageUrl(recipeId: number, slot: "title" | "ingredients" | "instructions"): string {
+  const base = BASE === "" ? "" : BASE;
+  return `${base}/api/v1/recipes/${recipeId}/images/${slot}`;
 }
 
 /**

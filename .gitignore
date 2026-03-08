@@ -71,7 +71,6 @@ frontend/.vite/
 integration/reports/
 integration/playwright-report/
 integration/test-results/
-integration/TestImages/
 
 # ======================
 # Claude Code agent memory

@@ -36,8 +36,11 @@ npm test
 | `create-recipe.feature` | 4-step wizard |
 | `ingredient-search.feature` | Chip input, ranked results |
 | `planner.feature` | Weekly planner, shopping list |
+| `image-storage.feature` | Image slot 404, invalid slot 400, stored image visible on detail page |
 
-**Totals:** 14 scenarios, 90 steps — all passing.
+**Totals:** 17 scenarios — all passing.
+
+**Test images:** `TestImages/` contains real JPEG fixtures committed to the repo (un-gitignored in Phase 12). Used by `image-storage.steps.ts` to seed images via `PUT /api/v1/recipes/{id}/images/{slot}`.
 
 ## Project structure
 

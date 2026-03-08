@@ -33,6 +33,14 @@
   color: #5c7a52;
 }
 
+.recipeImage {
+  width: 100%;
+  max-height: 320px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-bottom: 1.75rem;
+}
+
 .section {
   margin-bottom: 2rem;
 }

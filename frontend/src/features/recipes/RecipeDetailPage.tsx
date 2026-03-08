@@ -1,7 +1,7 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { getRecipe, deleteRecipe } from "../../api/client";
+import { getRecipe, deleteRecipe, getRecipeImageUrl } from "../../api/client";
 import styles from "./RecipeDetailPage.module.css";
 
 export default function RecipeDetailPage() {
@@ -36,6 +36,13 @@ export default function RecipeDetailPage() {
   return (
     <div className={styles.page}>
       <Link to="/" className={styles.back}>← Back to recipes</Link>
+
+      <img
+        src={getRecipeImageUrl(recipeId, "title")}
+        alt={recipe.title}
+        className={styles.recipeImage}
+        onError={(e) => { e.currentTarget.style.display = "none"; }}
+      />
 
       <h1 className={styles.title}>{recipe.title}</h1>
       <p className={styles.meta}>

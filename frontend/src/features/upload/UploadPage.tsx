@@ -43,6 +43,7 @@ export default function UploadPage() {
         ingredients: ingredients
           .filter((i) => i.name.trim())
           .map((i, idx) => ({ name: i.name.trim(), amount: i.amount.trim() || null, unit: i.unit.trim() || null, sortOrder: idx })),
+        imageKeys: draft?.imageKey ? { title: draft.imageKey } : undefined,
       }),
     onSuccess: (recipe) => {
       qc.invalidateQueries({ queryKey: ["recipes"] });
@@ -205,7 +206,7 @@ export default function UploadPage() {
         <button
           className={styles.manualBtn}
           onClick={() => {
-            setDraft({ detectedTitle: "", detectedInstructions: null, detectedIngredients: [], rawOcrText: "", imagePath: null, sessionId: null });
+            setDraft({ detectedTitle: "", detectedInstructions: null, detectedIngredients: [], rawOcrText: "", imagePath: null, sessionId: null, imageKey: null });
             setTitle("");
             setInstructions("");
             setIngredients([{ name: "", amount: "", unit: "" }]);
