@@ -95,13 +95,14 @@ def _apply_sanity_bounds(items: list[IngredientItem]) -> list[IngredientItem]:
 async def _call_ollama(prompt: str) -> str:
     """Send *prompt* to Ollama and return the raw text response.
 
+    Streams the response token-by-token, logging progress every 20 tokens.
     Retries up to 3 times with exponential backoff (1s, 2s, 4s) on transient failures.
     """
     payload = {
         "model": MODEL_NAME,
         "prompt": prompt,
         "format": "json",
-        "stream": False,
+        "stream": True,
         "options": {"temperature": 0.1},
     }
     logger.info("LLM INPUT:\n%s", prompt)
@@ -110,10 +111,26 @@ async def _call_ollama(prompt: str) -> str:
     for attempt in range(max_retries):
         try:
             async with httpx.AsyncClient(timeout=OLLAMA_TIMEOUT) as client:
-                resp = await client.post(f"{OLLAMA_URL}/api/generate", json=payload)
-                resp.raise_for_status()
-                data = resp.json()
-                raw = data.get("response", "")
+                chunks: list[str] = []
+                token_count = 0
+                async with client.stream("POST", f"{OLLAMA_URL}/api/generate", json=payload) as resp:
+                    resp.raise_for_status()
+                    async for line in resp.aiter_lines():
+                        if not line:
+                            continue
+                        data = json.loads(line)
+                        token = data.get("response", "")
+                        if token:
+                            chunks.append(token)
+                            token_count += 1
+                            if token_count % 20 == 0:
+                                logger.info("[LLM] %d tokens generated...", token_count)
+                        if data.get("done"):
+                            eval_count = data.get("eval_count", token_count)
+                            eval_duration = data.get("eval_duration", 0)
+                            tokens_per_sec = eval_count / (eval_duration / 1e9) if eval_duration else 0
+                            logger.info("[LLM] Done — %d tokens at %.1f tok/s", eval_count, tokens_per_sec)
+                raw = "".join(chunks)
             logger.info("LLM OUTPUT:\n%s", raw)
             return raw
         except httpx.HTTPError as exc:
