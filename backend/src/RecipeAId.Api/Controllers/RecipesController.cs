@@ -13,6 +13,7 @@ public class RecipesController(
     IRecipeMatchingService matchingService,
     IOcrService ocrService,
     IOcrParser ocrParser,
+    IRecipeImageService imageService,
     OcrSessionStore sessionStore,
     IServiceScopeFactory scopeFactory,
     ILogger<RecipesController> logger) : ControllerBase
@@ -31,6 +32,43 @@ public class RecipesController(
     {
         var recipe = await recipeService.GetByIdAsync(id, ct);
         return recipe is null ? NotFound() : Ok(recipe);
+    }
+
+    [HttpGet("{id:int}/images/{slot}")]
+    public async Task<IActionResult> GetImage(int id, string slot, CancellationToken ct)
+    {
+        if (!imageService.IsValidSlot(slot))
+            return BadRequest(new ProblemDetails { Title = "Invalid slot. Must be one of: title, ingredients, instructions." });
+
+        var image = await imageService.GetImageAsync(id, slot, ct);
+        if (image is null) return NotFound();
+
+        return File(image.Value.Data, image.Value.ContentType);
+    }
+
+    [HttpPut("{id:int}/images/{slot}")]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> PutImage(int id, string slot, IFormFile image, CancellationToken ct)
+    {
+        if (!imageService.IsValidSlot(slot))
+            return BadRequest(new ProblemDetails { Title = "Invalid slot. Must be one of: title, ingredients, instructions." });
+
+        var recipe = await recipeService.GetByIdAsync(id, ct);
+        if (recipe is null) return NotFound();
+
+        if (image is null || image.Length == 0)
+            return BadRequest(new ProblemDetails { Title = "An image file is required." });
+
+        if (!image.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+            return BadRequest(new ProblemDetails { Title = "File must be an image." });
+
+        const long maxSizeBytes = 10 * 1024 * 1024;
+        if (image.Length > maxSizeBytes)
+            return BadRequest(new ProblemDetails { Title = "Image must be smaller than 10 MB." });
+
+        await using var stream = image.OpenReadStream();
+        await imageService.StoreDirectAsync(id, slot, stream, image.ContentType, ct);
+        return NoContent();
     }
 
     [HttpGet("search/by-ingredients")]
@@ -59,6 +97,10 @@ public class RecipesController(
             return BadRequest(new ProblemDetails { Title = "Title is required." });
 
         var created = await recipeService.CreateAsync(request, ct);
+
+        if (request.ImageKeys is { Count: > 0 })
+            await imageService.CommitImagesAsync(created.Id, request.ImageKeys, ct);
+
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
 
@@ -79,7 +121,10 @@ public class RecipesController(
     public async Task<ActionResult> Delete(int id, CancellationToken ct)
     {
         var deleted = await recipeService.DeleteAsync(id, ct);
-        return deleted ? NoContent() : NotFound();
+        if (!deleted) return NotFound();
+
+        await imageService.DeleteAllImagesAsync(id, ct);
+        return NoContent();
     }
 
     [HttpPost("from-image")]
@@ -103,20 +148,25 @@ public class RecipesController(
             image.FileName, image.ContentType, image.Length, refine);
 
         var sw = Stopwatch.StartNew();
-        await using var stream = image.OpenReadStream();
-        var ocrResult = await ocrService.ExtractTextAsync(stream, image.ContentType, ct);
+        await using var ocrStream = image.OpenReadStream();
+        var ocrResult = await ocrService.ExtractTextAsync(ocrStream, image.ContentType, ct);
         logger.LogInformation("OCR completed in {ElapsedMs}ms — success={Success} chars={Chars}",
             sw.ElapsedMilliseconds, ocrResult.Success, ocrResult.RawText.Length);
 
         if (!ocrResult.Success)
             return UnprocessableEntity(new ProblemDetails { Title = "OCR processing failed.", Detail = ocrResult.ErrorMessage });
 
+        // Store the image for the client to reference when saving the recipe
+        await using var imageStream = image.OpenReadStream();
+        var imageKey = await imageService.StoreTemporaryImageAsync(imageStream, image.ContentType, ct);
+        logger.LogInformation("Image stored temporarily with key={ImageKey}", imageKey);
+
         var draft = ocrParser.Parse(ocrResult.RawText);
         logger.LogInformation("Regex parse: title={Title} ingredients={Count}",
             draft.DetectedTitle ?? "(none)", draft.DetectedIngredients.Count);
 
         if (!refine || draft.DetectedIngredients.Count == 0)
-            return Ok(draft with { SessionId = null });
+            return Ok(draft with { SessionId = null, ImageKey = imageKey });
 
         // Fire LLM refinement in the background; return the regex draft immediately with a sessionId.
         // The frontend opens GET /api/v1/ocr-sessions/{sessionId}/events (SSE) and waits for the result.
@@ -131,6 +181,6 @@ public class RecipesController(
         });
 
         logger.LogInformation("LLM refinement started in background — sessionId={SessionId}", sessionId);
-        return Ok(draft with { SessionId = sessionId });
+        return Ok(draft with { SessionId = sessionId, ImageKey = imageKey });
     }
 }

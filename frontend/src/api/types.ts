@@ -30,6 +30,7 @@ export interface RecipeOcrDraftDto {
   rawOcrText: string;
   imagePath: string | null;
   sessionId: string | null;
+  imageKey: string | null;
 }
 
 export interface IngredientSearchResultDto {
@@ -43,4 +44,5 @@ export interface CreateRecipeRequest {
   instructions: string | null;
   bookTitle: string | null;
   ingredients: { name: string; amount: string | null; unit: string | null; sortOrder: number }[];
+  imageKeys?: Record<string, string>;
 }

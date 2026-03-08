@@ -30,9 +30,11 @@ builder.Services.AddSingleton<ILiteDatabase>(_ => new LiteDatabase(dbPath));
 // Repositories
 builder.Services.AddScoped<IRecipeRepository, RecipeRepository>();
 builder.Services.AddScoped<IIngredientRepository, IngredientRepository>();
+builder.Services.AddScoped<IImageStorage, LiteDbImageStorage>();
 
 // Services
 builder.Services.AddScoped<IRecipeService, RecipeService>();
+builder.Services.AddScoped<IRecipeImageService, RecipeImageService>();
 builder.Services.AddScoped<IIngredientService, IngredientService>();
 builder.Services.AddScoped<IRecipeMatchingService, RecipeMatchingService>();
 // OCR

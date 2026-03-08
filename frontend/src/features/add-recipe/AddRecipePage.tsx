@@ -24,6 +24,7 @@ export default function AddRecipePage() {
   const [bookTitle, setBookTitle] = useState("");
   const [replaceConfirm, setReplaceConfirm] = useState(false);
   const [pendingDraft, setPendingDraft] = useState<RecipeOcrDraftDto | null>(null);
+  const [imageKeys, setImageKeys] = useState<Record<string, string>>({});
 
   const { data: existingRecipes } = useQuery({
     queryKey: ["recipes"],
@@ -51,6 +52,7 @@ export default function AddRecipePage() {
             unit: i.unit.trim() || null,
             sortOrder: idx,
           })),
+        imageKeys: Object.keys(imageKeys).length > 0 ? imageKeys : undefined,
       }),
     onSuccess: (recipe) => {
       qc.invalidateQueries({ queryKey: ["recipes"] });
@@ -87,6 +89,7 @@ export default function AddRecipePage() {
 
   function handleTitleScan(draft: RecipeOcrDraftDto) {
     if (draft.detectedTitle) setTitle(draft.detectedTitle);
+    if (draft.imageKey) setImageKeys((prev) => ({ ...prev, title: draft.imageKey! }));
   }
 
   function mapIngredients(draft: RecipeOcrDraftDto) {
@@ -105,6 +108,7 @@ export default function AddRecipePage() {
   }
 
   function handleIngredientScan(draft: RecipeOcrDraftDto) {
+    if (draft.imageKey) setImageKeys((prev) => ({ ...prev, ingredients: draft.imageKey! }));
     const hasRows = ingredients.some((r) => r.name.trim());
     const mapped = mapIngredients(draft);
     if (mapped.length === 0) return;
@@ -125,6 +129,7 @@ export default function AddRecipePage() {
   }
 
   function handleInstructionScan(draft: RecipeOcrDraftDto) {
+    if (draft.imageKey) setImageKeys((prev) => ({ ...prev, instructions: draft.imageKey! }));
     const text = draft.detectedInstructions ?? draft.rawOcrText;
     if (text) setInstructions(text);
   }
