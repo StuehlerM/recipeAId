@@ -29,26 +29,45 @@ recipeaid/
 When starting any implementation task, always use a git worktree and open a pull request — never merge directly to main:
 
 ```bash
-# 1. Create a worktree with a new branch (sibling to main repo, not nested inside)
+# 1. Pick a feature from docs/features/ (or create a new feature spec if needed)
+# 2. If the feature involves a significant architectural choice → write an ADR first
+
+# 3. Create a worktree with a new branch (sibling to main repo, not nested inside)
 git worktree add ../<feature-name> -b <feature-name>
 
-# 2. Do all work and commits inside the worktree directory
+# 4. Do all work and commits inside the worktree directory
 cd ../<feature-name>
 
-# 3. Push the feature branch and open a PR (CI runs automatically)
+# 5. Push the feature branch and open a PR (CI runs automatically)
 git push -u origin <feature-name>
 gh pr create --title "<title>" --body "<summary>"
 
-# 4. After the PR is merged on GitHub, clean up locally
+# 6. After the PR is merged on GitHub, clean up locally
 cd ../recipeaid
 git pull origin main
 git worktree remove ../<feature-name>
 git branch -d <feature-name>
 ```
 
-## Before committing and pushing
+## Documentation rules
 
-**Update documentation before every commit/push — no exceptions:**
+### What to update when
+
+| Event | Update |
+|-------|--------|
+| Feature implemented | Relevant `CLAUDE.md`(s), `docs/architecture.md`, `README.md`; **delete** `docs/features/<name>.md` |
+| Architectural decision | New `docs/adr/NNNN-<title>.md` — only for significant choices between alternatives |
+| New feature idea | New `docs/features/<name>.md` |
+| Bug fix / refactor | Relevant `CLAUDE.md`(s) only if behavior changed |
+
+### ADRs vs feature specs
+
+- **ADRs** (`docs/adr/`) — record *why* a significant decision was made (database engine, storage strategy, new sidecar, auth approach). Written *before* implementation when choosing between meaningful alternatives. Kept forever.
+- **Feature specs** (`docs/features/`) — describe *what* to build. Deleted after the feature is merged — `docs/architecture.md` becomes the living record, and git history preserves the original spec.
+
+### Before every commit/push
+
+Update these docs — no exceptions:
 
 - **Relevant `CLAUDE.md`** — root and/or sub-project, whichever was affected
 - **`docs/architecture.md`** — if API routes, DB schema, or architectural patterns changed
