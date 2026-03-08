@@ -22,13 +22,10 @@ public class RecipeMatchingServiceTests
         int order = 0;
         foreach (var name in ingredientNames)
         {
-            var ingredient = new Ingredient { Id = order + 1, Name = name };
             recipe.RecipeIngredients.Add(new RecipeIngredient
             {
-                RecipeId     = id,
-                IngredientId = ingredient.Id,
-                Ingredient   = ingredient,
-                SortOrder    = order++,
+                Name      = name,
+                SortOrder = order++,
             });
         }
         return recipe;

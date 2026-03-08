@@ -9,7 +9,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=8080
       # Use a fresh isolated DB for every test run
-      - ConnectionStrings__DefaultConnection=Data Source=/data/recipeaid-test.db
+      - ConnectionStrings__DefaultConnection=/data/recipeaid-test.db
       # Allow requests from the frontend container's origin
       - Cors__AllowedOrigins__0=http://frontend
     volumes:

@@ -1,26 +1,39 @@
-using Microsoft.EntityFrameworkCore;
+using LiteDB;
 using RecipeAId.Core.Entities;
 using RecipeAId.Core.Interfaces;
 
 namespace RecipeAId.Data.Repositories;
 
-public class IngredientRepository(AppDbContext db) : IIngredientRepository
+public class IngredientRepository(ILiteDatabase db) : IIngredientRepository
 {
-    public async Task<IEnumerable<Ingredient>> GetAllAsync(CancellationToken ct = default) =>
-        await db.Ingredients.OrderBy(i => i.Name).ToListAsync(ct);
+    private ILiteCollection<Recipe> Recipes => db.GetCollection<Recipe>("recipes");
 
-    public async Task<Ingredient?> GetByNameAsync(string normalizedName, CancellationToken ct = default) =>
-        await db.Ingredients.FirstOrDefaultAsync(i => i.Name == normalizedName, ct);
-
-    public async Task<Ingredient> GetOrCreateAsync(string normalizedName, CancellationToken ct = default)
+    public Task<IEnumerable<Ingredient>> GetAllAsync(CancellationToken ct = default)
     {
-        var existing = await GetByNameAsync(normalizedName, ct);
-        if (existing is not null)
-            return existing;
+        var names = Recipes.FindAll()
+            .SelectMany(r => r.RecipeIngredients.Select(ri => ri.Name))
+            .Distinct()
+            .OrderBy(n => n)
+            .Select((name, idx) => new Ingredient { Id = idx + 1, Name = name })
+            .ToList();
 
-        var ingredient = new Ingredient { Name = normalizedName };
-        db.Ingredients.Add(ingredient);
-        await db.SaveChangesAsync(ct);
-        return ingredient;
+        return Task.FromResult<IEnumerable<Ingredient>>(names);
+    }
+
+    public Task<Ingredient?> GetByNameAsync(string normalizedName, CancellationToken ct = default)
+    {
+        var found = Recipes.FindAll()
+            .SelectMany(r => r.RecipeIngredients)
+            .Any(ri => ri.Name == normalizedName);
+
+        var ingredient = found ? new Ingredient { Name = normalizedName } : null;
+        return Task.FromResult(ingredient);
+    }
+
+    public Task<Ingredient> GetOrCreateAsync(string normalizedName, CancellationToken ct = default)
+    {
+        // Ingredients are embedded inside recipe documents; no separate storage is needed.
+        // This method is retained for interface compatibility.
+        return Task.FromResult(new Ingredient { Name = normalizedName });
     }
 }

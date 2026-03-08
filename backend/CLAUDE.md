@@ -1,19 +1,16 @@
 # Backend — CLAUDE.md
 
-ASP.NET Core 9 Web API with Entity Framework Core 9 and SQLite.
+ASP.NET Core 9 Web API with LiteDB (embedded document database).
 
 ## Commands
 
 All commands run from `backend/`.
 
 ```bash
-dotnet run --project src/RecipeAId.Api          # Run the API (SQLite DB auto-created)
+dotnet run --project src/RecipeAId.Api          # Run the API (LiteDB file auto-created)
 dotnet test                                      # Run all tests (39 tests)
 dotnet test --filter "ClassName=OcrParserServiceTests"  # Single test class
 dotnet test --filter "FullyQualifiedName~ParseTitle"    # Single test method
-
-# EF Core migration
-dotnet ef migrations add <Name> --project src/RecipeAId.Data --startup-project src/RecipeAId.Api
 ```
 
 API explorer (Development only): `https://localhost:<port>/scalar/v1`
@@ -25,7 +22,7 @@ OpenAPI spec: `https://localhost:<port>/openapi/v1.json`
 backend/
 ├── src/
 │   ├── RecipeAId.Core/        # Entities, interfaces, DTOs (one per file), services — NO infra deps
-│   ├── RecipeAId.Data/        # EF Core + SQLite, repositories, migrations
+│   ├── RecipeAId.Data/        # LiteDB repositories (no migrations)
 │   └── RecipeAId.Api/         # Controllers, OcrServices/, ParserServices/, OcrSessions/, middleware, Program.cs
 └── tests/
     └── RecipeAId.Tests/       # xUnit + Moq — references Core only
@@ -35,19 +32,44 @@ backend/
 
 ## Architecture
 
-**Service layer:** All controllers depend on service interfaces, not repositories directly. `IIngredientService` / `IngredientService` handles ingredient queries; `IRecipeService` / `RecipeService` handles recipe CRUD. `RecipeService` uses a private `BuildIngredientsAsync` helper to avoid duplicating ingredient normalization logic between create and update.
+**Service layer:** All controllers depend on service interfaces, not repositories directly. `IIngredientService` / `IngredientService` handles ingredient queries; `IRecipeService` / `RecipeService` handles recipe CRUD. `RecipeService` uses a private `BuildIngredients` static helper to build embedded ingredient lists from `IngredientLineDto`.
 
-**DI lifetimes:** All services, repositories, OCR services — `AddScoped`.
+**DI lifetimes:** `ILiteDatabase` — `AddSingleton` (one file lock). Repositories and services — `AddScoped`.
 
 **DTO organization:** One record per file in `Core/DTOs/`. Key DTOs: `CreateRecipeRequest` (with `BookTitle`), `UpdateRecipeRequest`, `RecipeDto`, `RecipeIngredientDto` (Amount + Unit), `RecipeSummaryDto`, `RecipeOcrDraftDto` (with optional `SessionId`), `OcrResult`, `IngredientLineDto(Name, Amount, Unit)`, `IngredientParseRequest`, `IngredientParseResult`.
 
-**`IRecipeRepository.UpdateAsync`:** Takes an explicit `newIngredients` list. The repository deletes all existing `RecipeIngredient` rows and re-inserts to avoid EF Core change-tracking conflicts.
+**`IRecipeRepository.UpdateAsync`:** Takes an explicit `newIngredients` list. The repository replaces `recipe.RecipeIngredients` and calls `Recipes.Update(recipe)` — no EF tracking concerns.
 
 **Logging:** Serilog (`Serilog.AspNetCore` + `Serilog.Formatting.Compact`). Development = human-readable text; Production = compact JSON. `RecipesController.FromImage` logs OCR+LLM pipeline with per-stage timing.
 
 **Error handling:** All error responses use `ProblemDetails` (RFC 7807) — both inline controller validation and `ExceptionHandlingMiddleware`. The `detail` field is only populated in Development. The middleware checks `Response.HasStarted` before setting headers (safe for SSE streams).
 
 **CORS:** `DevPolicy` applied globally. Origins via `Cors:AllowedOrigins` — `["http://localhost:5173", "https://localhost:5173"]` in Development, `https://localhost` in Docker.
+
+## Data model (LiteDB)
+
+Recipes are stored as documents in a LiteDB collection (`"recipes"`). Each document embeds its ingredients directly — no separate ingredient collection or join table.
+
+```
+Recipe document
+├── Id          (int, auto-increment)
+├── Title       (string)
+├── Instructions (string?)
+├── ImagePath   (string?)
+├── RawOcrText  (string?)
+├── BookTitle   (string?)
+├── CreatedAt   (DateTime)
+├── UpdatedAt   (DateTime)
+└── RecipeIngredients []
+    ├── Name        (string, normalized lowercase)
+    ├── Amount      (string?)
+    ├── Unit        (string?)
+    └── SortOrder   (int)
+```
+
+`IIngredientRepository.GetAllAsync` returns distinct ingredient names by scanning all recipe documents (full collection scan — acceptable at hobby scale; see ADR 0001).
+
+`IIngredientRepository.GetOrCreateAsync` is retained for interface compatibility but is a no-op; ingredient persistence happens when the recipe document is saved.
 
 ## OCR integration
 
@@ -89,38 +111,9 @@ Key classes:
 | GET | `/api/v1/ingredients` | All known ingredients (autocomplete) |
 | POST | `/api/v1/ingredients/parse` | Parse raw ingredient text via LLM sidecar |
 
-## Database schema
-
-### Recipe
-| Column | Type | Notes |
-|--------|------|-------|
-| Id | INTEGER PK | |
-| Title | TEXT NOT NULL | Indexed (non-unique) |
-| Instructions | TEXT NULL | |
-| ImagePath | TEXT NULL | Currently unused |
-| RawOcrText | TEXT NULL | |
-| BookTitle | TEXT NULL | Source cookbook name |
-| CreatedAt | DATETIME | |
-| UpdatedAt | DATETIME | |
-
-### Ingredient
-| Column | Type | Notes |
-|--------|------|-------|
-| Id | INTEGER PK | |
-| Name | TEXT UNIQUE | Normalized lowercase |
-
-### RecipeIngredient (join)
-| Column | Type | Notes |
-|--------|------|-------|
-| RecipeId | FK → Recipe | CASCADE DELETE |
-| IngredientId | FK → Ingredient | |
-| Amount | TEXT NULL | e.g. "2" |
-| Unit | TEXT NULL | e.g. "cups" |
-| SortOrder | INTEGER | |
-
 ## Testing conventions
 
 - Test project references `RecipeAId.Core` only — no `Data` or `Api` dependencies
 - Services under test live in `Core/Services/`; tests in `tests/RecipeAId.Tests/Services/`
-- Use xUnit + Moq. Mock `IRecipeRepository`/`IIngredientRepository` for service tests
+- Use xUnit + Moq. Mock `IRecipeRepository` for `RecipeService` tests (no `IIngredientRepository` needed)
 - 39 tests covering OcrParserService, RecipeService, RecipeMatchingService

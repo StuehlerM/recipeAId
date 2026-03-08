@@ -50,7 +50,7 @@ services:
       - db-data:/data
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - ConnectionStrings__DefaultConnection=Data Source=/data/recipeaid.db
+      - ConnectionStrings__DefaultConnection=/data/recipeaid.db
       - OcrService__BaseUrl=http://ocr-service:8001
       - IngredientParser__BaseUrl=http://ingredient-parser:8002
       - Cors__AllowedOrigins__0=https://localhost
