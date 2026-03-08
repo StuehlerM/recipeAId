@@ -38,16 +38,32 @@ git worktree add ../<feature-name> -b <feature-name>
 # 4. Do all work and commits inside the worktree directory
 cd ../<feature-name>
 
-# 5. Push the feature branch and open a PR (CI runs automatically)
+# 5. Write tests FIRST (test-driven development — see TDD rules below)
+#    a. Write unit tests for all new service/business logic (expect them to fail)
+#    b. Write BDD scenarios in integration/features/ covering the happy path and key edge cases
+#    Commit these tests before writing any implementation code.
+
+# 6. Implement the feature until all tests pass
+
+# 7. Push the feature branch and open a PR (CI runs automatically)
 git push -u origin <feature-name>
 gh pr create --title "<title>" --body "<summary>"
 
-# 6. After the PR is merged on GitHub, clean up locally
+# 8. After the PR is merged on GitHub, clean up locally
 cd ../recipeaid
 git pull origin main
 git worktree remove ../<feature-name>
 git branch -d <feature-name>
 ```
+
+### TDD rules
+
+Follow a strict test-first order for every feature:
+
+1. **Unit tests first** — write failing unit tests covering the new service/business logic before touching implementation files. Each test must assert one specific behaviour (arrange / act / assert). Heavy dependencies (PaddleOCR, Ollama) are always mocked.
+2. **BDD scenarios second** — write the Gherkin `.feature` file(s) in `integration/features/` and the matching step definitions before the feature is wired up end-to-end. Cover the happy path and the most important error cases.
+3. **Implement to green** — only then write the production code. Stop when all tests pass; do not add untested behaviour.
+4. **No skipping** — do not mark tests as pending/skipped to make CI pass. Fix the implementation or the test expectation instead.
 
 ## Documentation rules
 
@@ -55,10 +71,12 @@ git branch -d <feature-name>
 
 | Event | Update |
 |-------|--------|
+| New feature | Write unit tests + BDD scenarios **before** implementation (see TDD rules) |
 | Feature implemented | Relevant `CLAUDE.md`(s), `docs/architecture.md`, `README.md`; **delete** `docs/features/<name>.md` |
 | Architectural decision | New `docs/adr/NNNN-<title>.md` — only for significant choices between alternatives |
 | New feature idea | New `docs/features/<name>.md` |
-| Bug fix / refactor | Relevant `CLAUDE.md`(s) only if behavior changed |
+| Bug fix | Write a failing unit test that reproduces the bug, then fix it |
+| Refactor | Update existing tests to match new signatures; do not delete tests to make them pass |
 
 ### ADRs vs feature specs
 
@@ -139,5 +157,6 @@ GitHub Actions runs the full BDD Docker stack on every PR to `main` automaticall
 - Use descriptive variable names (no single-letter vars), avoid magic numbers
 - Feature-based folder structure in frontend (`src/features/`)
 - New frontend UI → Tailwind; existing pages → leave CSS Modules alone
-- Unit tests required for all service/business logic
+- Unit tests required for all service/business logic — written **before** the implementation (TDD)
+- BDD scenarios required for every user-facing feature — written **before** wiring up the feature end-to-end
 - Heavy model dependencies (PaddleOCR, Ollama) are **never** exercised in unit tests — always mocked
