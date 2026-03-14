@@ -76,6 +76,10 @@ integration/test-results/
 # Claude Code agent memory
 # ======================
 .claude/memory/
+.claude/settings.json
+.claude/settings.local.json
+**/PLAN.md
+**/REVIEW.md
 
 # ======================
 # IDE

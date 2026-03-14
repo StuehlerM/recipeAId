@@ -61,32 +61,39 @@ Flag only clear issues — do not speculate:
 
 ## Output format
 
-Structure your review exactly like this:
+Write the full review to **`REVIEW.md`** in the repo root (create or overwrite). Then print a short one-paragraph summary to the user so they know the file is ready.
 
-### Summary
+Structure `REVIEW.md` exactly like this:
+
+```markdown
+# Code Review
+
+_Generated: <ISO date>_
+_Target: <files reviewed or "current branch changes">_
+
+## Summary
 One short paragraph: overall quality, biggest strength, biggest concern.
 
-### Findings
+## Findings
 
-List each finding as:
-
-```
 **[SEVERITY] [DIMENSION] — file:line**
 [What the problem is, in one sentence.]
 [Why it matters for readability/maintainability.]
 [Concrete suggestion — show a corrected snippet if the fix is non-obvious.]
+
+<!-- repeat for each finding -->
+
+## Verdict
+One of:
+- **Approve** — no `[MUST]` findings; `[SHOULD]` findings are minor or already addressed
+- **Request changes** — one or more `[MUST]` findings that need to be resolved before merge
+- **Comment** — no blocking issues, but notable `[SHOULD]` items worth a discussion
 ```
 
 Severity levels:
 - `[MUST]` — clear bug, security issue, or violation that will cause real problems
 - `[SHOULD]` — meaningful improvement, easy to miss but worth fixing before merge
 - `[CONSIDER]` — minor polish, stylistic, or speculative — fine to defer
-
-### Verdict
-One of:
-- **Approve** — no `[MUST]` findings; `[SHOULD]` findings are minor or already addressed
-- **Request changes** — one or more `[MUST]` findings that need to be resolved before merge
-- **Comment** — no blocking issues, but notable `[SHOULD]` items worth a discussion
 
 ---
 

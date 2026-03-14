@@ -20,6 +20,36 @@ Extract:
 
 Show the user the issue title and the feature name you derived. Ask them to confirm or correct the feature name before continuing.
 
+Once confirmed, **immediately create `PLAN.md`** in the repo root as a scratchpad (it will be moved/committed to the worktree in Step 5). Populate it with everything you already know:
+
+```markdown
+# Plan: FEATURE_NAME (Issue #ISSUE_NUMBER)
+
+## Issue summary
+[One paragraph from the issue description]
+
+## Acceptance criteria
+- [ ] AC 1
+- [ ] AC 2
+...
+
+## Implementation checklist
+- [ ] Worktree created
+- [ ] Frontend deps installed (`npm install`)
+- [ ] Test scaffold committed
+- [ ] Backend implementation
+- [ ] OCR sidecar changes (if applicable)
+- [ ] Ingredient-parser changes (if applicable)
+- [ ] Frontend changes (if applicable)
+- [ ] All unit tests pass (`./scripts/run-unit-tests.sh`)
+- [ ] PR opened
+
+## Notes
+[Anything non-obvious about the design or approach — fill in as work progresses]
+```
+
+Tick items off as each step completes.
+
 ---
 
 ## Step 2 — Create the worktree
@@ -88,15 +118,17 @@ python -m pytest ../FEATURE_NAME/ingredient-parser/tests/ -v 2>&1 | tail -20
 
 ---
 
-## Step 5 — Commit the test scaffold
+## Step 5 — Commit the test scaffold and PLAN.md
 
-Stage and commit **only the test files** — no production code yet:
+Tick off the completed checklist items in `PLAN.md` (worktree created, deps installed), then stage and commit **only the test files and PLAN.md** — no production code yet:
 
 ```bash
 cd ../FEATURE_NAME
-git add backend/tests/ ocr-service/tests/ ingredient-parser/tests/ integration/features/
+git add backend/tests/ ocr-service/tests/ ingredient-parser/tests/ integration/features/ PLAN.md
 git commit -m "test(#$ARGUMENTS): scaffold failing tests for FEATURE_NAME"
 ```
+
+After committing, tick off "Test scaffold committed" in `PLAN.md` and add a second commit for that update.
 
 ---
 
@@ -108,10 +140,12 @@ Print a clear summary:
 ✔ Worktree created:  ../FEATURE_NAME  (branch: dev/FEATURE_NAME)
 ✔ Frontend deps:     npm install done
 ✔ Tests scaffolded:  [list files created]
+✔ PLAN.md written:   ../FEATURE_NAME/PLAN.md
 ✔ Test commit:       [commit hash]
 
 Next steps (implement to green):
   cd ../FEATURE_NAME
+  cat PLAN.md   ← start here in a new session
   [implement each acceptance criterion until all tests pass]
   ./scripts/run-unit-tests.sh   ← run before pushing
 
