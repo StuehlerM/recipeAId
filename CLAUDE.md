@@ -33,7 +33,7 @@ When starting any implementation task, always use a git worktree and open a pull
 # 2. If the feature involves a significant architectural choice → write an ADR first
 
 # 3. Create a worktree with a new branch (sibling to main repo, not nested inside)
-git worktree add ../<feature-name> -b <feature-name>
+git worktree add ../<feature-name> -b dev/<feature-name>
 
 # 4. Do all work and commits inside the worktree directory
 cd ../<feature-name>
@@ -46,14 +46,14 @@ cd ../<feature-name>
 # 6. Implement the feature until all tests pass
 
 # 7. Push the feature branch and open a PR (CI runs automatically)
-git push -u origin <feature-name>
+git push -u origin dev/<feature-name>
 gh pr create --title "<title>" --body "<summary>"
 
 # 8. After the PR is merged on GitHub, clean up locally
 cd ../recipeaid
 git pull origin main
 git worktree remove ../<feature-name>
-git branch -d <feature-name>
+git branch -d dev/<feature-name>
 ```
 
 ### TDD rules
@@ -61,7 +61,7 @@ git branch -d <feature-name>
 Follow a strict test-first order for every feature:
 
 1. **Unit tests first** — write failing unit tests covering the new service/business logic before touching implementation files. Each test must assert one specific behaviour (arrange / act / assert). Heavy dependencies (PaddleOCR, Ollama) are always mocked.
-2. **BDD scenarios second** — write the Gherkin `.feature` file(s) in `integration/features/` and the matching step definitions before the feature is wired up end-to-end. Cover the happy path and the most important error cases.
+2. **BDD scenarios second** — write the Gherkin `.feature` file(s) in `integration/features/` and the matching step definitions before the feature is wired up end-to-end. Cover the happy path and the most important error cases. **This is mandatory for every user-facing feature — not optional.**
 3. **Implement to green** — only then write the production code. Stop when all tests pass; do not add untested behaviour.
 4. **No skipping** — do not mark tests as pending/skipped to make CI pass. Fix the implementation or the test expectation instead.
 
@@ -75,7 +75,7 @@ Follow a strict test-first order for every feature:
 | Feature implemented | Relevant `CLAUDE.md`(s), `docs/architecture.md`, `README.md`; **delete** `docs/features/<name>.md` |
 | Architectural decision | New `docs/adr/NNNN-<title>.md` — only for significant choices between alternatives |
 | New feature idea | New `docs/features/<name>.md` |
-| Bug fix | Write a failing unit test that reproduces the bug, then fix it |
+| Bug fix | Write a failing unit test that reproduces the bug, then fix it. Add a BDD scenario if the bug represents a user-visible behaviour gap. |
 | Refactor | Update existing tests to match new signatures; do not delete tests to make them pass |
 
 ### ADRs vs feature specs
