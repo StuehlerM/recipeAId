@@ -169,4 +169,64 @@ public class RecipeMatchingServiceTests
         Assert.Single(result);
         Assert.Equal(1, result[0].MatchedIngredientCount);
     }
+
+    // ── Fuzzy matching ─────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task FindByIngredients_FuzzyMatch_TypoWithinThreshold()
+    {
+        // "tomatoe" is distance 1 from "tomato" — should match
+        _recipeRepo.Setup(r => r.GetAllAsync(null, default))
+            .ReturnsAsync([MakeRecipe(1, "Salad", "tomato")]);
+
+        var result = (await _sut.FindByIngredientsAsync(["tomatoe"])).ToList();
+
+        Assert.Single(result);
+        Assert.Equal(1, result[0].MatchedIngredientCount);
+        Assert.Contains("tomato", result[0].MatchedIngredients);
+    }
+
+    [Fact]
+    public async Task FindByIngredients_FuzzyMatch_Transposition()
+    {
+        // "tmoato" — transposition of adjacent characters in "tomato", distance 2
+        _recipeRepo.Setup(r => r.GetAllAsync(null, default))
+            .ReturnsAsync([MakeRecipe(1, "Salad", "tomato")]);
+
+        var result = (await _sut.FindByIngredientsAsync(["tmoato"])).ToList();
+
+        Assert.Single(result);
+        Assert.Equal(1, result[0].MatchedIngredientCount);
+    }
+
+    [Fact]
+    public async Task FindByIngredients_FuzzyMatch_BeyondThreshold_NoMatch()
+    {
+        // "apple" vs "flour" — distance > 2, should not match
+        _recipeRepo.Setup(r => r.GetAllAsync(null, default))
+            .ReturnsAsync([MakeRecipe(1, "Bread", "flour")]);
+
+        var result = (await _sut.FindByIngredientsAsync(["apple"])).ToList();
+
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public async Task FindByIngredients_ExactMatchRanksAboveFuzzyMatch()
+    {
+        // Recipe A has exact "tomato"; Recipe B has "tomatoe" (fuzzy match).
+        // Both have 1 matched ingredient, but A's score is higher (1.0 vs 0.8).
+        _recipeRepo.Setup(r => r.GetAllAsync(null, default))
+            .ReturnsAsync(
+            [
+                MakeRecipe(1, "Exact Recipe", "tomato"),
+                MakeRecipe(2, "Fuzzy Recipe", "tomatoe"),
+            ]);
+
+        var result = (await _sut.FindByIngredientsAsync(["tomato"])).ToList();
+
+        Assert.Equal(2, result.Count);
+        Assert.Equal("Exact Recipe", result[0].Recipe.Title);
+        Assert.Equal("Fuzzy Recipe", result[1].Recipe.Title);
+    }
 }
