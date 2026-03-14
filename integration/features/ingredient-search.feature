@@ -27,3 +27,9 @@ Feature: Ingredient-based recipe search
     And I click "Find Recipes"
     Then I should see "Garlic Pasta" in the search results
     And "Garlic Pasta" should appear before "Garlic Bread" in the results
+
+  Scenario: Fuzzy match tolerates a typo in an ingredient name
+    When I navigate to the ingredient search page
+    And I add ingredient chip "garlc"
+    And I click "Find Recipes"
+    Then I should see "Garlic Pasta" in the search results
