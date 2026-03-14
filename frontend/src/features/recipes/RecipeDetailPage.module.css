@@ -6,7 +6,7 @@
 
 .back {
   display: inline-block;
-  color: #6b6560;
+  color: var(--color-ghost);
   text-decoration: none;
   font-size: 0.875rem;
   margin-bottom: 1.25rem;
@@ -14,23 +14,23 @@
 }
 
 .back:hover {
-  color: #5c7a52;
+  color: var(--color-sage);
 }
 
 .title {
   font-size: 2rem;
-  color: #1a1917;
+  color: var(--color-ink);
   margin-bottom: 0.25rem;
 }
 
 .meta {
-  color: #6b6560;
+  color: var(--color-ghost);
   font-size: 0.85rem;
   margin-bottom: 2rem;
 }
 
 .bookBadge {
-  color: #5c7a52;
+  color: var(--color-sage);
 }
 
 .recipeImage {
@@ -47,11 +47,11 @@
 
 .section h2 {
   font-size: 1.1rem;
-  color: #5c7a52;
+  color: var(--color-sage);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 0.75rem;
-  border-bottom: 1px solid #e0dbd4;
+  border-bottom: 1px solid var(--color-edge);
   padding-bottom: 0.4rem;
 }
 
@@ -70,25 +70,25 @@
   align-items: baseline;
   padding: 0.4rem 0.75rem;
   border-radius: 6px;
-  background: #f5f3ef;
+  background: var(--color-tint);
 }
 
 .ingredientName {
-  color: #1a1917;
+  color: var(--color-ink);
   font-size: 0.95rem;
   text-transform: capitalize;
 }
 
 .quantity {
-  color: #6b6560;
+  color: var(--color-ghost);
   font-size: 0.875rem;
 }
 
 .instructions {
-  color: #1a1917;
+  color: var(--color-ink);
   line-height: 1.8;
   white-space: pre-line;
-  background: #f5f3ef;
+  background: var(--color-tint);
   padding: 1rem 1.25rem;
   border-radius: 8px;
   font-size: 0.95rem;
@@ -98,17 +98,17 @@
   margin-top: 1rem;
   padding: 0.5rem 1rem;
   border-radius: 6px;
-  border: 1px solid #b54f4f;
+  border: 1px solid var(--color-rose);
   background: transparent;
-  color: #b54f4f;
+  color: var(--color-rose);
   cursor: pointer;
   font-size: 0.875rem;
   transition: background 0.15s, color 0.15s;
 }
 
 .deleteBtn:hover:not(:disabled) {
-  background: #b54f4f;
-  color: #ffffff;
+  background: var(--color-rose);
+  color: var(--color-card);
 }
 
 .deleteBtn:disabled {
@@ -117,13 +117,13 @@
 }
 
 .status {
-  color: #6b6560;
+  color: var(--color-ghost);
   margin: 2rem auto;
   text-align: center;
 }
 
 .error {
-  color: #8b3a3a;
+  color: var(--color-rose-dark);
   margin: 2rem auto;
   text-align: center;
 }
