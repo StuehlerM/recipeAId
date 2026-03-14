@@ -75,6 +75,8 @@ Recipe document
 
 **Trade-off (accepted):** Ingredient search (`/search/by-ingredients`) requires a full collection scan because ingredients are embedded, not indexed separately. See ADR 0001 for full rationale.
 
+**Ingredient matching:** `RecipeMatchingService` uses Damerau-Levenshtein (OSA variant, distance ≤ 2) so common typos and transpositions still find recipes. Exact matches score 1.0 and fuzzy matches score 0.8; results are ranked by total score descending, then by score/ingredient-count ratio.
+
 **DB file:** `recipeaid.db` (path configurable via `ConnectionStrings:DefaultConnection`). No migrations — schema changes are applied in code. `ILiteDatabase` is resolved eagerly at startup so a corrupt file crashes the container at boot (visible in logs) rather than silently failing on the first request.
 
 ---
@@ -119,11 +121,11 @@ All phases are complete.
 | 10 | Async SSE OCR+LLM Pipeline — background task, SSE delivery, health polling |
 | 11 | LiteDB Migration — replaced SQLite + EF Core with LiteDB; ingredients embedded in recipe documents |
 | 12 | Image Storage — recipe photos stored in LiteDB `FileStorage`; temp→commit flow; GET/PUT image endpoints; RecipeDetailPage displays stored title image |
+| 13 | Fuzzy Ingredient Matching — Damerau-Levenshtein (OSA, distance ≤ 2); exact hits score 1.0, fuzzy 0.8 |
 
 ---
 
 ## Open / future decisions
 
-- Ingredient fuzzy matching — see `docs/features/fuzzy-matching.md`
 - Multi-user support — see `docs/features/multi-user.md`
 - Translation support — see `docs/features/translation-support.md`

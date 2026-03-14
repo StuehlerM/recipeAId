@@ -32,7 +32,7 @@ backend/
 
 ## Architecture
 
-**Service layer:** All controllers depend on service interfaces, not repositories directly. `IIngredientService` / `IngredientService` handles ingredient queries; `IRecipeService` / `RecipeService` handles recipe CRUD. `RecipeService` uses a private `BuildIngredients` static helper to build embedded ingredient lists from `IngredientLineDto`.
+**Service layer:** All controllers depend on service interfaces, not repositories directly. `IIngredientService` / `IngredientService` handles ingredient queries; `IRecipeService` / `RecipeService` handles recipe CRUD. `RecipeService` uses a private `BuildIngredients` static helper to build embedded ingredient lists from `IngredientLineDto`. `RecipeMatchingService` uses Damerau-Levenshtein (OSA, distance ≤ 2) for fuzzy ingredient matching — exact matches score 1.0, fuzzy matches score 0.8; results ranked by total score then score/ingredient ratio.
 
 **DI lifetimes:** `ILiteDatabase` — `AddSingleton` (one file lock). Repositories and services — `AddScoped`. `ILiteDatabase` is resolved eagerly at startup (`app.Services.GetRequiredService<ILiteDatabase>()`) so a corrupt or missing database file crashes the container immediately rather than silently 500-ing on the first request.
 
@@ -118,4 +118,4 @@ Key classes:
 - Test project references `RecipeAId.Core` only — no `Data` or `Api` dependencies
 - Services under test live in `Core/Services/`; tests in `tests/RecipeAId.Tests/Services/`
 - Use xUnit + Moq. Mock `IRecipeRepository` for `RecipeService` tests; mock `IImageStorage` for `RecipeImageService` tests
-- 58 tests covering OcrParserService, RecipeService, RecipeMatchingService, RecipeImageService
+- 62 tests covering OcrParserService, RecipeService, RecipeMatchingService (incl. fuzzy matching), RecipeImageService
