@@ -1,0 +1,29 @@
+name: Deploy to VM
+
+# Triggered by pushing a date tag (e.g. v20260314, v20260314.2)
+on:
+  push:
+    tags:
+      - 'v[0-9]*'
+
+jobs:
+  deploy:
+    name: Deploy ${{ github.ref_name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            set -e
+            cd /srv/recipeaid
+            git fetch --tags
+            git checkout ${{ github.ref_name }}
+            docker compose down
+            docker compose up --build -d
+            echo "Deployed ${{ github.ref_name }} successfully"
