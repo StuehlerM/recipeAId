@@ -38,6 +38,9 @@ git worktree add ../<feature-name> -b dev/<feature-name>
 # 4. Do all work and commits inside the worktree directory
 cd ../<feature-name>
 
+# 4a. Install frontend dependencies in the worktree (node_modules are not shared)
+cd frontend && npm install && cd ..
+
 # 5. Write tests FIRST (test-driven development — see TDD rules below)
 #    a. Write unit tests for all new service/business logic (expect them to fail)
 #    b. Write BDD scenarios in integration/features/ covering the happy path and key edge cases
