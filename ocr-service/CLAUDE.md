@@ -41,6 +41,8 @@ Applied before PaddleOCR inference, in order:
 
 Each step falls back to the unmodified image when no usable geometry is found. Requires `opencv-python-headless`.
 
+All numeric tuning values are defined as module-level constants at the top of `main.py` (e.g. `CANNY_LOW_THRESHOLD`, `HOUGH_THRESHOLD`, `ADAPTIVE_BLOCK_SIZE_DIVISOR`). Adjust constants there rather than hunting through function bodies.
+
 ## Logging
 
 Logs per request: image dimensions, preprocessing timing, PaddleOCR inference timing, confidence score stats (avg/min), total pipeline timing. Format: `[%(levelname)s] %(message)s` via `log_config.json` (passed to uvicorn as `--log-config /app/log_config.json`).
