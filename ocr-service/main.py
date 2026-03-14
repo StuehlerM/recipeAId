@@ -34,6 +34,42 @@ class OcrResponse(BaseModel):
 class HealthResponse(BaseModel):
     status: str
 
+
+# ---------------------------------------------------------------------------
+# Preprocessing constants
+# ---------------------------------------------------------------------------
+
+# Canny edge detection
+CANNY_LOW_THRESHOLD = 50
+CANNY_HIGH_THRESHOLD = 150
+
+# Contour analysis for perspective correction
+TOP_CONTOURS_TO_CHECK = 5
+POLY_APPROX_EPSILON_RATIO = 0.02
+MIN_CONTOUR_AREA_RATIO = 0.20
+
+# Median filtering (denoising)
+MEDIAN_KERNEL_SIZE = 3
+
+# Hough line detection (deskewing)
+HOUGH_RHO = 1
+HOUGH_THETA_DIVISOR = 180  # theta = np.pi / HOUGH_THETA_DIVISOR
+HOUGH_THRESHOLD = 80
+HOUGH_MIN_LINE_LENGTH = 50
+HOUGH_MAX_LINE_GAP = 10
+
+# Deskew angle filtering
+DESKEW_HORIZONTAL_MAX_ANGLE = 45.0
+DESKEW_MIN_SIGNIFICANT_ANGLE = 0.5
+
+# Adaptive thresholding
+ADAPTIVE_BLOCK_SIZE_DIVISOR = 40
+ADAPTIVE_MIN_BLOCK_SIZE = 11
+ADAPTIVE_C = 10
+
+# Line grouping
+Y_GROUPING_THRESHOLD_RATIO = 0.5
+
 # Initialise once at startup — model download happens here on first run.
 # lang="de" loads the latin PP-OCRv5 model which covers all 45 Latin-script
 # languages including both German and English.
@@ -153,7 +189,7 @@ def _correct_perspective(img_bgr: np.ndarray) -> np.ndarray:
     """
     gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
     blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-    edges = cv2.Canny(blurred, 50, 150)
+    edges = cv2.Canny(blurred, CANNY_LOW_THRESHOLD, CANNY_HIGH_THRESHOLD)
 
     # Dilate edges to close small gaps between card border segments
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
@@ -165,10 +201,10 @@ def _correct_perspective(img_bgr: np.ndarray) -> np.ndarray:
 
     image_area = img_bgr.shape[0] * img_bgr.shape[1]
     quad = None
-    for contour in sorted(contours, key=cv2.contourArea, reverse=True)[:5]:
+    for contour in sorted(contours, key=cv2.contourArea, reverse=True)[:TOP_CONTOURS_TO_CHECK]:
         perimeter = cv2.arcLength(contour, True)
-        approx = cv2.approxPolyDP(contour, 0.02 * perimeter, True)
-        if len(approx) == 4 and cv2.contourArea(approx) > 0.20 * image_area:
+        approx = cv2.approxPolyDP(contour, POLY_APPROX_EPSILON_RATIO * perimeter, True)
+        if len(approx) == 4 and cv2.contourArea(approx) > MIN_CONTOUR_AREA_RATIO * image_area:
             quad = approx.reshape(4, 2).astype(np.float32)
             break
 
@@ -220,7 +256,7 @@ def _denoise(img_bgr: np.ndarray) -> np.ndarray:
     Median filtering preserves hard text edges better than Gaussian blurring
     while still smoothing out isolated bright/dark pixels from paper grain.
     """
-    return cv2.medianBlur(img_bgr, 3)
+    return cv2.medianBlur(img_bgr, MEDIAN_KERNEL_SIZE)
 
 
 def _deskew(img_bgr: np.ndarray) -> np.ndarray:
@@ -236,10 +272,10 @@ def _deskew(img_bgr: np.ndarray) -> np.ndarray:
     Falls back to the unmodified input when no dominant angle can be found.
     """
     gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
-    edges = cv2.Canny(gray, 50, 150, apertureSize=3)
+    edges = cv2.Canny(gray, CANNY_LOW_THRESHOLD, CANNY_HIGH_THRESHOLD, apertureSize=3)
     lines = cv2.HoughLinesP(
-        edges, rho=1, theta=np.pi / 180, threshold=80,
-        minLineLength=50, maxLineGap=10,
+        edges, rho=HOUGH_RHO, theta=np.pi / HOUGH_THETA_DIVISOR, threshold=HOUGH_THRESHOLD,
+        minLineLength=HOUGH_MIN_LINE_LENGTH, maxLineGap=HOUGH_MAX_LINE_GAP,
     )
     if lines is None or len(lines) == 0:
         return img_bgr
@@ -251,14 +287,14 @@ def _deskew(img_bgr: np.ndarray) -> np.ndarray:
         if abs(dx) < 1:
             continue
         angle_deg = math.degrees(math.atan2(dy, dx))
-        if -45.0 <= angle_deg <= 45.0:
+        if -DESKEW_HORIZONTAL_MAX_ANGLE <= angle_deg <= DESKEW_HORIZONTAL_MAX_ANGLE:
             angles.append(angle_deg)
 
     if not angles:
         return img_bgr
 
     median_angle = float(np.median(angles))
-    if abs(median_angle) < 0.5:
+    if abs(median_angle) < DESKEW_MIN_SIGNIFICANT_ANGLE:
         return img_bgr
 
     height, width = img_bgr.shape[:2]
@@ -291,8 +327,8 @@ def _adaptive_threshold(img_bgr: np.ndarray) -> np.ndarray:
     """
     gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
 
-    # Block size must be odd and at least 11
-    raw_block_size = max(11, gray.shape[0] // 40)
+    # Block size must be odd and at least ADAPTIVE_MIN_BLOCK_SIZE
+    raw_block_size = max(ADAPTIVE_MIN_BLOCK_SIZE, gray.shape[0] // ADAPTIVE_BLOCK_SIZE_DIVISOR)
     block_size = raw_block_size if raw_block_size % 2 == 1 else raw_block_size + 1
 
     binary = cv2.adaptiveThreshold(
@@ -301,7 +337,7 @@ def _adaptive_threshold(img_bgr: np.ndarray) -> np.ndarray:
         adaptiveMethod=cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
         thresholdType=cv2.THRESH_BINARY,
         blockSize=block_size,
-        C=10,
+        C=ADAPTIVE_C,
     )
     return cv2.cvtColor(binary, cv2.COLOR_GRAY2BGR)
 
@@ -314,7 +350,7 @@ def _group_into_lines(
     texts: list[str],
     scores: list[float],
     polys: list,
-    y_threshold_ratio: float = 0.5,
+    y_threshold_ratio: float = Y_GROUPING_THRESHOLD_RATIO,
 ) -> list[str]:
     """Group OCR text blocks into lines based on y-coordinate proximity.
 
