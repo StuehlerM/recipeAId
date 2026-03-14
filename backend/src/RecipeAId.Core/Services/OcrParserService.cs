@@ -138,18 +138,22 @@ public sealed partial class OcrParserService : IOcrParser
         if (titleLineIndex != -1)
         {
             // Next non-empty line after "Recipe:" header
+            int titleFoundAt = -1;
             for (int i = titleLineIndex + 1; i < firstSection; i++)
             {
-                if (lines[i].Length > 0) { title = lines[i]; break; }
+                if (lines[i].Length > 0) { title = lines[i]; titleFoundAt = i; break; }
             }
+            title = MergeTitleContinuation(lines, titleFoundAt, firstSection, title);
         }
         else
         {
             // First non-empty line before any section header
+            int titleFoundAt = -1;
             for (int i = 0; i < firstSection; i++)
             {
-                if (lines[i].Length > 0) { title = lines[i]; break; }
+                if (lines[i].Length > 0) { title = lines[i]; titleFoundAt = i; break; }
             }
+            title = MergeTitleContinuation(lines, titleFoundAt, firstSection, title);
         }
 
         var ingredients = new List<IngredientLineDto>();
@@ -193,6 +197,13 @@ public sealed partial class OcrParserService : IOcrParser
         var title = lines.FirstOrDefault(l => l.Length > 0);
 
         var rest = lines.Skip(1).Where(l => l.Length > 0).ToList();
+
+        // Merge title continuation: if line 1 looks like a title second line, join it
+        if (rest.Count > 0 && IsTitleContinuation(rest[0]))
+        {
+            title = title + " " + rest[0];
+            rest = rest.Skip(1).ToList();
+        }
 
         var ingredients = new List<IngredientLineDto>();
         var instrParts = new List<string>();
@@ -296,5 +307,42 @@ public sealed partial class OcrParserService : IOcrParser
             return true;
 
         return false;
+    }
+
+    /// <summary>
+    /// Returns true if <paramref name="line"/> could be the second line of a two-line title.
+    /// Requires: not a section header, no bullet/quantity prefix, ≤ 60 chars, no trailing period or colon.
+    /// </summary>
+    private static bool IsTitleContinuation(string line)
+    {
+        if (line.Length == 0 || line.Length > 60) return false;
+        if (line.EndsWith('.') || line.EndsWith(':')) return false;
+
+        var lower = line.ToLowerInvariant().TrimEnd(':');
+        if (IngredientHeaders.Contains(lower) || InstructionHeaders.Contains(lower)) return false;
+
+        if (LeadingBulletPattern().IsMatch(line)) return false;
+        if (StartsWithQuantityPattern().IsMatch(line)) return false;
+
+        return true;
+    }
+
+    /// <summary>
+    /// If the line immediately after <paramref name="titleFoundAt"/> (up to <paramref name="upperBound"/>)
+    /// qualifies as a title continuation, appends it to <paramref name="title"/> and returns the merged string.
+    /// </summary>
+    private static string? MergeTitleContinuation(List<string> lines, int titleFoundAt, int upperBound, string? title)
+    {
+        if (title is null || titleFoundAt == -1) return title;
+
+        for (int i = titleFoundAt + 1; i < upperBound && i < lines.Count; i++)
+        {
+            if (lines[i].Length == 0) continue;
+            if (IsTitleContinuation(lines[i]))
+                title += " " + lines[i];
+            break; // only check the very next non-empty line
+        }
+
+        return title;
     }
 }

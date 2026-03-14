@@ -348,4 +348,77 @@ public class OcrParserServiceTests
         Assert.NotNull(draft.DetectedInstructions);
         Assert.Contains("pürieren", draft.DetectedInstructions);
     }
+
+    // ── Multi-line title merging ─────────────────────────────────────────────
+
+    // AC1: Two-line title is merged (unstructured path)
+    [Fact]
+    public void Parse_Unstructured_TwoLineTitleMerged()
+    {
+        var text = "Spring chickpea stew\nwith salted lemons\n2 cups chickpeas";
+
+        var draft = _sut.Parse(text);
+
+        Assert.Equal("Spring chickpea stew with salted lemons", draft.DetectedTitle);
+        Assert.Single(draft.DetectedIngredients);
+    }
+
+    // AC2: Single-line title is unchanged (unstructured path)
+    [Fact]
+    public void Parse_Unstructured_SingleLineTitleUnchanged()
+    {
+        var text = "Simple Pasta\n200g spaghetti";
+
+        var draft = _sut.Parse(text);
+
+        Assert.Equal("Simple Pasta", draft.DetectedTitle);
+    }
+
+    // AC3: Second line that looks like an ingredient is NOT merged into title
+    [Fact]
+    public void Parse_Unstructured_IngredientLineNotMergedIntoTitle()
+    {
+        var text = "Pasta bake\n200g spaghetti\n1 cup sauce";
+
+        var draft = _sut.Parse(text);
+
+        Assert.Equal("Pasta bake", draft.DetectedTitle);
+        Assert.Equal(2, draft.DetectedIngredients.Count);
+    }
+
+    // AC4: Section header on line 2 is NOT merged into title (structured path)
+    [Fact]
+    public void Parse_Structured_SectionHeaderNotMergedIntoTitle()
+    {
+        var text = "Pasta bake\nIngredients:\n200g spaghetti";
+
+        var draft = _sut.Parse(text);
+
+        Assert.Equal("Pasta bake", draft.DetectedTitle);
+        Assert.Single(draft.DetectedIngredients);
+    }
+
+    // AC5: Only the first two lines are considered — a third short line is NOT merged
+    [Fact]
+    public void Parse_Unstructured_OnlyFirstTwoLinesConsideredForTitle()
+    {
+        var text = "Spring chickpea stew\nwith salted lemons\nand some extras\n2 cups chickpeas";
+
+        var draft = _sut.Parse(text);
+
+        Assert.Equal("Spring chickpea stew with salted lemons", draft.DetectedTitle);
+        Assert.DoesNotContain("extras", draft.DetectedTitle);
+    }
+
+    // AC6: Two-line title merged in the structured (section-headers) path
+    [Fact]
+    public void Parse_Structured_TwoLineTitleMerged()
+    {
+        var text = "Spring chickpea stew\nwith salted lemons\n\nIngredients:\n2 cups chickpeas";
+
+        var draft = _sut.Parse(text);
+
+        Assert.Equal("Spring chickpea stew with salted lemons", draft.DetectedTitle);
+        Assert.Single(draft.DetectedIngredients);
+    }
 }

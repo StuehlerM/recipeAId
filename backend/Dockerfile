@@ -3,12 +3,10 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /source
 
 # Restore dependencies first (better layer caching)
-COPY RecipeAId.sln .
 COPY src/RecipeAId.Core/RecipeAId.Core.csproj   src/RecipeAId.Core/
 COPY src/RecipeAId.Data/RecipeAId.Data.csproj   src/RecipeAId.Data/
 COPY src/RecipeAId.Api/RecipeAId.Api.csproj     src/RecipeAId.Api/
-COPY tests/RecipeAId.Tests/RecipeAId.Tests.csproj tests/RecipeAId.Tests/
-RUN dotnet restore
+RUN dotnet restore src/RecipeAId.Api/RecipeAId.Api.csproj
 
 # Copy sources and publish
 COPY . .
