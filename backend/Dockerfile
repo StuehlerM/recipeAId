@@ -7,7 +7,6 @@ COPY RecipeAId.sln .
 COPY src/RecipeAId.Core/RecipeAId.Core.csproj   src/RecipeAId.Core/
 COPY src/RecipeAId.Data/RecipeAId.Data.csproj   src/RecipeAId.Data/
 COPY src/RecipeAId.Api/RecipeAId.Api.csproj     src/RecipeAId.Api/
-COPY tests/RecipeAId.Tests/RecipeAId.Tests.csproj tests/RecipeAId.Tests/
 RUN dotnet restore
 
 # Copy sources and publish
