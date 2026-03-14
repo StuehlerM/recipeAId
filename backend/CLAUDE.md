@@ -8,7 +8,7 @@ All commands run from `backend/`.
 
 ```bash
 dotnet run --project src/RecipeAId.Api          # Run the API (LiteDB file auto-created)
-dotnet test                                      # Run all tests (39 tests)
+dotnet test                                      # Run all tests (68 tests)
 dotnet test --filter "ClassName=OcrParserServiceTests"  # Single test class
 dotnet test --filter "FullyQualifiedName~ParseTitle"    # Single test method
 ```
@@ -75,7 +75,7 @@ Recipe document
 
 `PythonOcrService` (in `Api/OcrServices/`) implements `IOcrService` — forwards images to the OCR sidecar via named `HttpClient` (30s timeout). Image uploads limited to 10 MB.
 
-`OcrParserService` (in `Core/Services/`) implements `IOcrParser` — pure string logic, fully unit-tested. Uses `[GeneratedRegex]` source generators. Three ingredient patterns tried in order: `amount unit name` ("2 cups flour"), `name amount unit` ("Flour 200 g"), `name amount` ("Eggs 2"). German section headers supported ("Zutaten", "Zubereitung"). Run-on lines split at quantity+unit boundaries.
+`OcrParserService` (in `Core/Services/`) implements `IOcrParser` — pure string logic, fully unit-tested. Uses `[GeneratedRegex]` source generators. Three ingredient patterns tried in order: `amount unit name` ("2 cups flour"), `name amount unit` ("Flour 200 g"), `name amount` ("Eggs 2"). German section headers supported ("Zutaten", "Zubereitung"). Run-on lines split at quantity+unit boundaries. **Multi-line title merging**: if the second line before any section header qualifies as a title continuation (≤ 60 chars, no trailing `.`/`:`, not a section header, not starting with a quantity or bullet), it is joined to the first line with a space — works in both structured and unstructured paths.
 
 ## Async SSE pipeline (OCR + LLM)
 
@@ -118,4 +118,4 @@ Key classes:
 - Test project references `RecipeAId.Core` only — no `Data` or `Api` dependencies
 - Services under test live in `Core/Services/`; tests in `tests/RecipeAId.Tests/Services/`
 - Use xUnit + Moq. Mock `IRecipeRepository` for `RecipeService` tests; mock `IImageStorage` for `RecipeImageService` tests
-- 62 tests covering OcrParserService, RecipeService, RecipeMatchingService (incl. fuzzy matching), RecipeImageService
+- 68 tests covering OcrParserService (incl. multi-line title merging), RecipeService, RecipeMatchingService (incl. fuzzy matching), RecipeImageService
