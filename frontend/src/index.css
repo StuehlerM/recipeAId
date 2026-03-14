@@ -30,7 +30,7 @@ body {
   font-family: var(--font-sans);
   line-height: 1.5;
   font-weight: 400;
-  color-scheme: light;
+  color-scheme: light dark;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -46,4 +46,14 @@ h2,
 h3 {
   margin: 0 0 0.5rem;
   line-height: 1.2;
+}
+
+/* Dark theme — neutral token overrides only; sage and rose unchanged */
+html.dark {
+  --color-canvas: #1c1b19;
+  --color-card:   #252422;
+  --color-tint:   #2e2c29;
+  --color-edge:   #3a3835;
+  --color-ink:    #f0ede8;
+  --color-ghost:  #9b9590;
 }
