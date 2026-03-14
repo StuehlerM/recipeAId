@@ -122,6 +122,7 @@ All phases are complete.
 | 11 | LiteDB Migration — replaced SQLite + EF Core with LiteDB; ingredients embedded in recipe documents |
 | 12 | Image Storage — recipe photos stored in LiteDB `FileStorage`; temp→commit flow; GET/PUT image endpoints; RecipeDetailPage displays stored title image |
 | 13 | Fuzzy Ingredient Matching — Damerau-Levenshtein (OSA, distance ≤ 2); exact hits score 1.0, fuzzy 0.8 |
+| 14 | Health Check Caching — ingredient-parser `/health` caches `_model_loaded` flag after first successful Ollama check; subsequent checks return instantly |
 
 ---
 
