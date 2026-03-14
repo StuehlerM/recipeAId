@@ -7,7 +7,7 @@
 .page h1 {
   font-size: 1.8rem;
   margin-bottom: 1.25rem;
-  color: #1a1917;
+  color: var(--color-ink);
 }
 
 .searchForm {
@@ -20,23 +20,23 @@
   flex: 1;
   padding: 0.5rem 0.75rem;
   border-radius: 6px;
-  border: 1px solid #e0dbd4;
-  background: #ffffff;
-  color: #1a1917;
+  border: 1px solid var(--color-edge);
+  background: var(--color-card);
+  color: var(--color-ink);
   font-size: 0.95rem;
 }
 
 .searchInput:focus {
   outline: none;
-  border-color: #5c7a52;
+  border-color: var(--color-sage);
 }
 
 .searchBtn {
   padding: 0.5rem 1rem;
   border-radius: 6px;
   border: none;
-  background: #5c7a52;
-  color: #ffffff;
+  background: var(--color-sage);
+  color: var(--color-card);
   font-weight: 600;
   cursor: pointer;
   font-size: 0.9rem;
@@ -52,24 +52,24 @@
   margin-bottom: 1rem;
   padding: 0.5rem 0.75rem;
   border-radius: 6px;
-  border: 1px solid #e0dbd4;
-  background: #ffffff;
-  color: #1a1917;
+  border: 1px solid var(--color-edge);
+  background: var(--color-card);
+  color: var(--color-ink);
   font-size: 0.9rem;
   cursor: pointer;
 }
 
 .bookFilter:focus {
   outline: none;
-  border-color: #5c7a52;
+  border-color: var(--color-sage);
 }
 
 .bookBadge {
   display: inline-block;
   font-size: 0.72rem;
-  color: #5c7a52;
-  background: #5c7a5215;
-  border: 1px solid #e0dbd4;
+  color: var(--color-sage);
+  background: color-mix(in srgb, var(--color-sage) 8%, transparent);
+  border: 1px solid var(--color-edge);
   border-radius: 4px;
   padding: 0.1rem 0.5rem;
   margin-top: 0.15rem;
@@ -87,14 +87,14 @@
 
 .card {
   border-radius: 8px;
-  background: #ffffff;
-  border: 1px solid #e0dbd4;
+  background: var(--color-card);
+  border: 1px solid var(--color-edge);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   transition: border-color 0.15s;
 }
 
 .card:hover {
-  border-color: #5c7a52;
+  border-color: var(--color-sage);
 }
 
 .cardLink {
@@ -109,20 +109,20 @@
 .cardTitle {
   font-size: 1.05rem;
   font-weight: 600;
-  color: #1a1917;
+  color: var(--color-ink);
 }
 
 .cardMeta {
   font-size: 0.8rem;
-  color: #6b6560;
+  color: var(--color-ghost);
 }
 
 .status {
-  color: #6b6560;
+  color: var(--color-ghost);
   margin-top: 1rem;
 }
 
 .error {
-  color: #8b3a3a;
+  color: var(--color-rose-dark);
   margin-top: 1rem;
 }
