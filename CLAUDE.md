@@ -10,8 +10,7 @@ recipeaid/
 ├── docs/
 │   ├── adr/                   # Architecture Decision Records
 │   │   └── 0001-switch-sqlite-to-litedb.md
-│   ├── architecture.md        # Living doc: current system architecture, API ref, DB schema
-│   └── features/              # Planned features (one file each)
+│   └── architecture.md        # Living doc: current system architecture, API ref, DB schema
 ├── backend/                   # ASP.NET Core 9 Web API (see backend/CLAUDE.md)
 ├── frontend/                  # React 19 + Vite 7 + TypeScript (see frontend/CLAUDE.md)
 ├── ocr-service/               # Python PaddleOCR sidecar (see ocr-service/CLAUDE.md)
@@ -29,7 +28,7 @@ recipeaid/
 When starting any implementation task, always use a git worktree and open a pull request — never merge directly to main:
 
 ```bash
-# 1. Pick a feature from docs/features/ (or create a new feature spec if needed)
+# 1. Pick a feature from GitHub Issues (https://github.com/StuehlerM/recipeAId/issues)
 # 2. If the feature involves a significant architectural choice → write an ADR first
 
 # 3. Create a worktree with a new branch (sibling to main repo, not nested inside)
@@ -61,7 +60,7 @@ git branch -d dev/<feature-name>
 
 ### Exceptions to the worktree workflow
 
-For non-code tasks that don't affect runtime behavior — code reviews, documentation-only changes, adding feature specs, updating CLAUDE.md — you may commit directly to `main` without a worktree or PR.
+For non-code tasks that don't affect runtime behavior — code reviews, documentation-only changes, updating CLAUDE.md — you may commit directly to `main` without a worktree or PR.
 
 ### TDD rules
 
@@ -79,16 +78,16 @@ Follow a strict test-first order for every feature:
 | Event | Update |
 |-------|--------|
 | New feature | Write unit tests + BDD scenarios **before** implementation (see TDD rules) |
-| Feature implemented | Relevant `CLAUDE.md`(s), `docs/architecture.md`, `README.md`; **delete** `docs/features/<name>.md` |
+| Feature implemented | Relevant `CLAUDE.md`(s), `docs/architecture.md`, `README.md`; **close** the GitHub Issue |
 | Architectural decision | New `docs/adr/NNNN-<title>.md` — only for significant choices between alternatives |
-| New feature idea | New `docs/features/<name>.md` |
+| New feature idea | Open a GitHub Issue at https://github.com/StuehlerM/recipeAId/issues |
 | Bug fix | Write a failing unit test that reproduces the bug, then fix it. Add a BDD scenario if the bug represents a user-visible behaviour gap. |
 | Refactor | Update existing tests to match new signatures; do not delete tests to make them pass |
 
-### ADRs vs feature specs
+### ADRs vs GitHub Issues
 
 - **ADRs** (`docs/adr/`) — record *why* a significant decision was made (database engine, storage strategy, new sidecar, auth approach). Written *before* implementation when choosing between meaningful alternatives. Kept forever.
-- **Feature specs** (`docs/features/`) — describe *what* to build. Deleted after the feature is merged — `docs/architecture.md` becomes the living record, and git history preserves the original spec.
+- **GitHub Issues** — track *what* to build. Close the issue after the feature is merged — `docs/architecture.md` becomes the living record.
 
 ### Before every commit/push
 
