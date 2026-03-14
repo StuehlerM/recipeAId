@@ -56,6 +56,10 @@ git worktree remove ../<feature-name>
 git branch -d dev/<feature-name>
 ```
 
+### Exceptions to the worktree workflow
+
+For non-code tasks that don't affect runtime behavior — code reviews, documentation-only changes, adding feature specs, updating CLAUDE.md — you may commit directly to `main` without a worktree or PR.
+
 ### TDD rules
 
 Follow a strict test-first order for every feature:
