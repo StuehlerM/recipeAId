@@ -75,7 +75,7 @@ integration/test-results/
 # ======================
 # Claude Code agent memory
 # ======================
-.claude/
+.claude/memory/
 
 # ======================
 # IDE

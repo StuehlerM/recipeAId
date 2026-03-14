@@ -25,7 +25,18 @@ recipeaid/
 
 ## Implementation workflow
 
-When starting any implementation task, always use a git worktree and open a pull request — never merge directly to main:
+When starting any implementation task, always use a git worktree and open a pull request — never merge directly to main.
+
+**Skills automate this workflow** — use them instead of running the steps manually:
+
+| Step | Skill | What it does |
+|------|-------|--------------|
+| New feature idea | `/create-issue <description>` | Drafts user story + acceptance criteria, opens GitHub Issue |
+| Start work | `/start-feature <issue-number>` | Creates worktree, installs deps, scaffolds failing tests |
+| Before PR | `/review` | Checks SOLID, DRY, readability across changed files |
+| After merge | `/finish-feature <issue> <feature>` | Updates docs, pulls main, closes issue, removes worktree |
+
+Skills live in `.claude/skills/`. If a step fails or you need manual control, the equivalent shell commands are:
 
 ```bash
 # 1. Pick a feature from GitHub Issues (https://github.com/StuehlerM/recipeAId/issues)
@@ -47,11 +58,13 @@ cd frontend && npm install && cd ..
 
 # 6. Implement the feature until all tests pass
 
-# 7. Push the feature branch and open a PR (CI runs automatically)
+# 7. Before opening a PR — run /review and address any [MUST] findings
+
+# 8. Push the feature branch and open a PR (CI runs automatically)
 git push -u origin dev/<feature-name>
 gh pr create --title "<title>" --body "<summary>"
 
-# 8. After the PR is merged on GitHub, clean up locally
+# 9. After the PR is merged on GitHub, clean up locally
 cd ../recipeaid
 git pull origin main
 git worktree remove ../<feature-name>
