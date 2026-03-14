@@ -32,6 +32,10 @@ Python FastAPI sidecar using Ollama + Ministral 3B for structured ingredient ext
 
 `_active_requests` counter tracks concurrent LLM parses. Incremented on `/parse` entry, decremented in `finally` block. Exposed via `/health` and `/status` for backend health monitoring (SSE controller polls `/status` every 30s).
 
+## Health check caching
+
+`_model_loaded` (module-level bool, default `False`) caches Ollama reachability after the first successful `/health` check. Once `True`, subsequent health checks return instantly without calling Ollama. The model does not unload itself during normal operation, so this cache is safe. Container still reports unhealthy (503) if Ollama is unreachable or the model is not yet pulled.
+
 ## Docker
 
 - Multi-stage build: borrows Ollama binary from `ollama/ollama:latest`, python:3.11-slim, BuildKit pip cache
@@ -52,7 +56,7 @@ Tests in `tests/`. Ollama is mocked via `unittest.mock.patch`.
 
 ```bash
 pip install fastapi pydantic python-multipart pytest pytest-asyncio httpx  # one-time
-pytest tests/ -v                                                            # 26 tests
+pytest tests/ -v                                                            # 31 tests
 ```
 
-Covers: sanitizer (control chars, role markers, truncation), LLM parsing (success, prompt injection, Ollama unavailable, unparseable output, empty text).
+Covers: sanitizer (control chars, role markers, truncation), LLM parsing (success, prompt injection, Ollama unavailable, unparseable output, empty text), health check caching (first call hits Ollama, subsequent calls skip it, 503 on missing model/unreachable Ollama).

@@ -23,6 +23,7 @@ app = FastAPI(title="Ingredient Parser", version="1.0.0")
 
 # ── Processing state ──────────────────────────────────────────────────────────
 _active_requests = 0
+_model_loaded = False
 
 OLLAMA_URL = "http://localhost:11434"
 MODEL_NAME = "ministral-3:3b"
@@ -211,17 +212,25 @@ async def parse_ingredients(request: ParseRequest) -> ParseResponse:
 
 @app.get("/health")
 async def health() -> dict:
-    """Return 200 if Ollama is reachable and the model is available."""
-    try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            resp = await client.get(f"{OLLAMA_URL}/api/tags")
-            resp.raise_for_status()
-            tags = resp.json()
-            model_names = [m.get("name", "") for m in tags.get("models", [])]
-            if not any(MODEL_NAME in n for n in model_names):
-                raise HTTPException(status_code=503, detail=f"Model {MODEL_NAME!r} not yet loaded.")
-    except httpx.HTTPError as exc:
-        raise HTTPException(status_code=503, detail=f"Ollama unreachable: {exc}") from exc
+    """Return 200 if Ollama is reachable and the model is available.
+
+    Calls Ollama only until the model is confirmed loaded; subsequent
+    invocations return instantly from the cached _model_loaded flag.
+    The model does not unload itself, so caching is safe.
+    """
+    global _model_loaded
+    if not _model_loaded:
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                resp = await client.get(f"{OLLAMA_URL}/api/tags")
+                resp.raise_for_status()
+                tags = resp.json()
+                model_names = [m.get("name", "") for m in tags.get("models", [])]
+                if not any(MODEL_NAME in n for n in model_names):
+                    raise HTTPException(status_code=503, detail=f"Model {MODEL_NAME!r} not yet loaded.")
+                _model_loaded = True
+        except httpx.HTTPError as exc:
+            raise HTTPException(status_code=503, detail=f"Ollama unreachable: {exc}") from exc
 
     logger.info("[health] ok — active requests: %d", _active_requests)
     return {"status": "ok", "model": MODEL_NAME, "active_requests": _active_requests}
