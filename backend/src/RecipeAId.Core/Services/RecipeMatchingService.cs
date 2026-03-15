@@ -21,7 +21,9 @@ public class RecipeMatchingService(IRecipeRepository recipeRepo) : IRecipeMatchi
             .ToHashSet();
 
         if (requested.Count == 0)
+        {
             return [];
+        }
 
         var recipes = await recipeRepo.GetAllAsync(null, ct);
 

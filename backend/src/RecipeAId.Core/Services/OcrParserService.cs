@@ -78,7 +78,9 @@ public sealed partial class OcrParserService : IOcrParser
         while (lines.Count > 0 && lines[^1].Length == 0) lines.RemoveAt(lines.Count - 1);
 
         if (lines.Count == 0)
+        {
             return new RecipeOcrDraftDto(null, null, [], rawOcrText, imagePath);
+        }
 
         // Find section header positions
         int ingredientStart = -1;
@@ -110,7 +112,9 @@ public sealed partial class OcrParserService : IOcrParser
         bool hasHeaders = ingredientStart != -1 || instructionStart != -1;
 
         if (hasHeaders)
+        {
             return ParseStructured(lines, titleLineIndex, ingredientStart, instructionStart, rawOcrText, imagePath);
+        }
 
         return ParseUnstructured(lines, rawOcrText, imagePath);
     }
@@ -127,8 +131,15 @@ public sealed partial class OcrParserService : IOcrParser
     {
         // Determine the end boundary of each section
         var sectionStarts = new List<int>();
-        if (ingredientStart != -1) sectionStarts.Add(ingredientStart);
-        if (instructionStart != -1) sectionStarts.Add(instructionStart);
+        if (ingredientStart != -1)
+        {
+            sectionStarts.Add(ingredientStart);
+        }
+
+        if (instructionStart != -1)
+        {
+            sectionStarts.Add(instructionStart);
+        }
         sectionStarts.Sort();
 
         // Title: either the line after "Recipe:" header, or the first line before any section
@@ -173,7 +184,10 @@ public sealed partial class OcrParserService : IOcrParser
                 .Take(end - instructionStart - 1)
                 .Where(l => l.Length > 0);
             instructions = string.Join("\n", instrLines);
-            if (instructions.Length == 0) instructions = null;
+            if (instructions.Length == 0)
+            {
+                instructions = null;
+            }
         }
 
         return new RecipeOcrDraftDto(title, instructions, ingredients, rawOcrText, imagePath);
@@ -182,7 +196,12 @@ public sealed partial class OcrParserService : IOcrParser
     private static int NextSection(int current, List<int> allStarts)
     {
         foreach (var s in allStarts)
-            if (s > current) return s;
+        {
+            if (s > current)
+            {
+                return s;
+            }
+        }
         return int.MaxValue; // go to end of file
     }
 
@@ -213,10 +232,14 @@ public sealed partial class OcrParserService : IOcrParser
             if (LooksLikeIngredient(line))
             {
                 foreach (var sub in SplitRunOnIngredientLine(line))
+                {
                     ingredients.Add(ParseIngredientLine(sub));
+                }
             }
             else
+            {
                 instrParts.Add(line);
+            }
         }
 
         var instructions = instrParts.Count > 0 ? string.Join("\n", instrParts) : null;
@@ -231,7 +254,10 @@ public sealed partial class OcrParserService : IOcrParser
     /// </summary>
     private static List<string> SplitRunOnIngredientLine(string line)
     {
-        if (line.Length <= 50) return [line];
+        if (line.Length <= 50)
+        {
+            return [line];
+        }
 
         var parts = new List<string>();
         // Split on quantity+unit boundaries, then case transitions within each segment
@@ -240,7 +266,10 @@ public sealed partial class OcrParserService : IOcrParser
             foreach (var sub in CaseBoundaryPattern().Split(segment))
             {
                 var trimmed = sub.Trim();
-                if (trimmed.Length > 0) parts.Add(trimmed);
+                if (trimmed.Length > 0)
+                {
+                    parts.Add(trimmed);
+                }
             }
         }
         return parts.Count > 0 ? parts : [line];
@@ -252,9 +281,15 @@ public sealed partial class OcrParserService : IOcrParser
         int end = Math.Min(to == int.MaxValue ? lines.Count : to, lines.Count);
         for (int i = from; i < end; i++)
         {
-            if (lines[i].Length == 0) continue;
+            if (lines[i].Length == 0)
+            {
+                continue;
+            }
+
             foreach (var sub in SplitRunOnIngredientLine(lines[i]))
+            {
                 result.Add(ParseIngredientLine(sub));
+            }
         }
         return result;
     }
@@ -266,26 +301,32 @@ public sealed partial class OcrParserService : IOcrParser
         // Try "amount unit name" first (e.g. "2 cups flour")
         var match = AmountUnitNamePattern().Match(stripped);
         if (match.Success)
+        {
             return new IngredientLineDto(
                 match.Groups["name"].Value.Trim(),
                 match.Groups["amount"].Value.Trim(),
                 match.Groups["unit"].Value.Trim());
+        }
 
         // Try "name amount unit" (e.g. "Flour 200 g")
         match = NameAmountUnitPattern().Match(stripped);
         if (match.Success)
+        {
             return new IngredientLineDto(
                 match.Groups["name"].Value.Trim(),
                 match.Groups["amount"].Value.Trim(),
                 match.Groups["unit"].Value.Trim());
+        }
 
         // Try "name amount" without unit (e.g. "Eggs 2")
         match = NameAmountPattern().Match(stripped);
         if (match.Success)
+        {
             return new IngredientLineDto(
                 match.Groups["name"].Value.Trim(),
                 match.Groups["amount"].Value.Trim(),
                 null);
+        }
 
         return new IngredientLineDto(stripped, null, null);
     }
@@ -298,13 +339,19 @@ public sealed partial class OcrParserService : IOcrParser
     private static bool LooksLikeIngredient(string line)
     {
         if (LeadingBulletPattern().IsMatch(line))
+        {
             return true;
+        }
 
         if (StartsWithQuantityPattern().IsMatch(line))
+        {
             return true;
+        }
 
         if (line.Length < 40 && !line.Contains('.'))
+        {
             return true;
+        }
 
         return false;
     }
@@ -315,14 +362,31 @@ public sealed partial class OcrParserService : IOcrParser
     /// </summary>
     private static bool IsTitleContinuation(string line)
     {
-        if (line.Length == 0 || line.Length > 60) return false;
-        if (line.EndsWith('.') || line.EndsWith(':')) return false;
+        if (line.Length == 0 || line.Length > 60)
+        {
+            return false;
+        }
+
+        if (line.EndsWith('.') || line.EndsWith(':'))
+        {
+            return false;
+        }
 
         var lower = line.ToLowerInvariant().TrimEnd(':');
-        if (IngredientHeaders.Contains(lower) || InstructionHeaders.Contains(lower)) return false;
+        if (IngredientHeaders.Contains(lower) || InstructionHeaders.Contains(lower))
+        {
+            return false;
+        }
 
-        if (LeadingBulletPattern().IsMatch(line)) return false;
-        if (StartsWithQuantityPattern().IsMatch(line)) return false;
+        if (LeadingBulletPattern().IsMatch(line))
+        {
+            return false;
+        }
+
+        if (StartsWithQuantityPattern().IsMatch(line))
+        {
+            return false;
+        }
 
         return true;
     }
@@ -333,13 +397,22 @@ public sealed partial class OcrParserService : IOcrParser
     /// </summary>
     private static string? MergeTitleContinuation(List<string> lines, int titleFoundAt, int upperBound, string? title)
     {
-        if (title is null || titleFoundAt == -1) return title;
+        if (title is null || titleFoundAt == -1)
+        {
+            return title;
+        }
 
         for (int i = titleFoundAt + 1; i < upperBound && i < lines.Count; i++)
         {
-            if (lines[i].Length == 0) continue;
+            if (lines[i].Length == 0)
+            {
+                continue;
+            }
+
             if (IsTitleContinuation(lines[i]))
+            {
                 title += " " + lines[i];
+            }
             break; // only check the very next non-empty line
         }
 

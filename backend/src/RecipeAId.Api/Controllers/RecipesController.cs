@@ -38,10 +38,15 @@ public class RecipesController(
     public async Task<IActionResult> GetImage(int id, string slot, CancellationToken ct)
     {
         if (!imageService.IsValidSlot(slot))
+        {
             return BadRequest(new ProblemDetails { Title = "Invalid slot. Must be one of: title, ingredients, instructions." });
+        }
 
         var image = await imageService.GetImageAsync(id, slot, ct);
-        if (image is null) return NotFound();
+        if (image is null)
+        {
+            return NotFound();
+        }
 
         return File(image.Value.Data, image.Value.ContentType);
     }
@@ -51,20 +56,31 @@ public class RecipesController(
     public async Task<IActionResult> PutImage(int id, string slot, IFormFile image, CancellationToken ct)
     {
         if (!imageService.IsValidSlot(slot))
+        {
             return BadRequest(new ProblemDetails { Title = "Invalid slot. Must be one of: title, ingredients, instructions." });
+        }
 
         var recipe = await recipeService.GetByIdAsync(id, ct);
-        if (recipe is null) return NotFound();
+        if (recipe is null)
+        {
+            return NotFound();
+        }
 
         if (image is null || image.Length == 0)
+        {
             return BadRequest(new ProblemDetails { Title = "An image file is required." });
+        }
 
         if (!image.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+        {
             return BadRequest(new ProblemDetails { Title = "File must be an image." });
+        }
 
         const long maxSizeBytes = 10 * 1024 * 1024;
         if (image.Length > maxSizeBytes)
+        {
             return BadRequest(new ProblemDetails { Title = "Image must be smaller than 10 MB." });
+        }
 
         await using var stream = image.OpenReadStream();
         await imageService.StoreDirectAsync(id, slot, stream, image.ContentType, ct);
@@ -79,7 +95,9 @@ public class RecipesController(
         CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(ingredients))
+        {
             return BadRequest(new ProblemDetails { Title = "At least one ingredient is required." });
+        }
 
         var names = ingredients
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
@@ -94,12 +112,16 @@ public class RecipesController(
         CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(request.Title))
+        {
             return BadRequest(new ProblemDetails { Title = "Title is required." });
+        }
 
         var created = await recipeService.CreateAsync(request, ct);
 
         if (request.ImageKeys is { Count: > 0 })
+        {
             await imageService.CommitImagesAsync(created.Id, request.ImageKeys, ct);
+        }
 
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
@@ -111,7 +133,9 @@ public class RecipesController(
         CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(request.Title))
+        {
             return BadRequest(new ProblemDetails { Title = "Title is required." });
+        }
 
         var updated = await recipeService.UpdateAsync(id, request, ct);
         return updated is null ? NotFound() : Ok(updated);
@@ -121,7 +145,10 @@ public class RecipesController(
     public async Task<ActionResult> Delete(int id, CancellationToken ct)
     {
         var deleted = await recipeService.DeleteAsync(id, ct);
-        if (!deleted) return NotFound();
+        if (!deleted)
+        {
+            return NotFound();
+        }
 
         await imageService.DeleteAllImagesAsync(id, ct);
         return NoContent();
@@ -135,14 +162,20 @@ public class RecipesController(
         CancellationToken ct = default)
     {
         if (image is null || image.Length == 0)
+        {
             return BadRequest(new ProblemDetails { Title = "An image file is required." });
+        }
 
         if (!image.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+        {
             return BadRequest(new ProblemDetails { Title = "File must be an image." });
+        }
 
         const long maxSizeBytes = 10 * 1024 * 1024; // 10 MB
         if (image.Length > maxSizeBytes)
+        {
             return BadRequest(new ProblemDetails { Title = "Image must be smaller than 10 MB." });
+        }
 
         logger.LogInformation("OCR pipeline started: {FileName} {ContentType} {SizeBytes}B refine={Refine}",
             image.FileName, image.ContentType, image.Length, refine);
@@ -154,7 +187,9 @@ public class RecipesController(
             sw.ElapsedMilliseconds, ocrResult.Success, ocrResult.RawText.Length);
 
         if (!ocrResult.Success)
+        {
             return UnprocessableEntity(new ProblemDetails { Title = "OCR processing failed.", Detail = ocrResult.ErrorMessage });
+        }
 
         // Store the image for the client to reference when saving the recipe
         await using var imageStream = image.OpenReadStream();
@@ -166,7 +201,9 @@ public class RecipesController(
             draft.DetectedTitle ?? "(none)", draft.DetectedIngredients.Count);
 
         if (!refine || draft.DetectedIngredients.Count == 0)
+        {
             return Ok(draft with { SessionId = null, ImageKey = imageKey });
+        }
 
         // Fire LLM refinement in the background; return the regex draft immediately with a sessionId.
         // The frontend opens GET /api/v1/ocr-sessions/{sessionId}/events (SSE) and waits for the result.
