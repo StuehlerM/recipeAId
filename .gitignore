@@ -80,6 +80,7 @@ integration/test-results/
 .claude/settings.local.json
 **/PLAN.md
 **/REVIEW.md
+**/ROAST.md
 
 # ======================
 # IDE
