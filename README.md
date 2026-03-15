@@ -11,6 +11,7 @@ A recipe management app that reads physical recipe cards with your camera. Point
 - **4-step recipe wizard** — add recipes manually in four focused steps: Title → Ingredients → Instructions → Book; OCR capture available at every step
 - **Browse & search** — filter recipes by title or by cookbook/book title; search by the ingredients you have on hand (ranked by match count)
 - **Weekly planner** — select recipes for the week; a shopping list is generated automatically with ingredient quantities summed across recipes
+- **Dark theme** — toggle in Settings; preference persisted across sessions via localStorage
 - **PWA / mobile-first** — installable on iOS and Android; bottom tab bar navigation with safe-area support
 
 ---
@@ -145,7 +146,8 @@ recipeaid/
 │   │       ├── search/        # IngredientSearchPage
 │   │       ├── upload/        # UploadPage
 │   │       ├── add-recipe/    # AddRecipePage wizard, StepIndicator, UnitCombobox
-│   │       └── planner/       # PlannerPage, usePlanner, quantityAggregator
+│   │       ├── planner/       # PlannerPage, usePlanner, quantityAggregator
+│   │       └── settings/      # SettingsPage, ThemeContext (dark/light toggle)
 │   └── Dockerfile
 └── integration/               # BDD integration tests (Cucumber + Playwright)
     ├── features/              # Gherkin .feature files
@@ -223,6 +225,8 @@ Feature files:
 | `create-recipe.feature` | 4-step wizard |
 | `ingredient-search.feature` | Chip input, ranked results |
 | `planner.feature` | Weekly planner, shopping list |
+| `settings.feature` | Dark theme toggle, preference restored after reload |
+| `image-storage.feature` | Image slot 404, invalid slot 400, stored image visible |
 
 **Run locally (Docker — recommended):**
 

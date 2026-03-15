@@ -33,14 +33,15 @@ src/
     ├── add-recipe/    # AddRecipePage wizard, StepIndicator, UnitCombobox
     │                  # Steps: StepTitle, StepIngredients, StepInstructions, StepBook
     │                  # types.ts — IngredientRow { name, amount, unit }
-    └── planner/       # PlannerPage, usePlanner.ts, quantityAggregator.ts
+    ├── planner/       # PlannerPage, usePlanner.ts, quantityAggregator.ts
+    └── settings/      # SettingsPage, ThemeContext.tsx (dark/light toggle)
 ```
 
 New pages use Tailwind classes; existing pages keep their CSS Modules.
 
 ## Styling — Tailwind CSS v4
 
-Custom `@theme` tokens defined in `src/index.css`. **Light theme.**
+Custom `@theme` tokens defined in `src/index.css`. Supports **light and dark themes** via Tailwind's `class` strategy — `ThemeContext` toggles a `dark` class on `<html>`. Preference persisted to `localStorage` key `recipeaid_theme_v1`.
 
 | Token | Hex | Usage |
 |-------|-----|-------|
@@ -65,6 +66,7 @@ Custom `@theme` tokens defined in `src/index.css`. **Light theme.**
 | `/upload` | UploadPage | Camera/file → OCR draft → edit → save |
 | `/add` | AddRecipePage | 4-step wizard: Title → Ingredients → Instructions → Book |
 | `/planner` | PlannerPage | Recipe browser + weekly plan + shopping list |
+| `/settings` | SettingsPage | Dark theme toggle (persisted to localStorage) |
 
 **NavBar:** Fixed bottom tab bar (5 tabs: Recipes / Search / **Add** (FAB) / Upload / Planner). Uses lucide-react icons (BookOpen, Search, Plus, Camera, CalendarDays). `env(safe-area-inset-bottom)` for iPhone home bar. `<main className="pb-20">` clears it.
 

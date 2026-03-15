@@ -37,8 +37,9 @@ npm test
 | `ingredient-search.feature` | Chip input, ranked results, fuzzy typo match |
 | `planner.feature` | Weekly planner, shopping list |
 | `image-storage.feature` | Image slot 404, invalid slot 400, stored image visible on detail page |
+| `settings.feature` | Dark theme toggle, preference restored after reload, toggle off restores light theme |
 
-**Totals:** 18 scenarios — all passing.
+**Totals:** 21 scenarios — all passing.
 
 **Test images:** `TestImages/` contains real JPEG fixtures committed to the repo (un-gitignored in Phase 12). Used by `image-storage.steps.ts` to seed images via `PUT /api/v1/recipes/{id}/images/{slot}`.
 
