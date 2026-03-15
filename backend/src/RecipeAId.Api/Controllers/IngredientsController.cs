@@ -23,10 +23,14 @@ public class IngredientsController(
         CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(request.Text))
+        {
             return BadRequest(new ProblemDetails { Title = "Text is required." });
+        }
 
         if (request.Text.Length > 5000)
+        {
             return BadRequest(new ProblemDetails { Title = "Text must be 5000 characters or fewer." });
+        }
 
         var result = await ingredientParserService.ParseAsync(
             request.Text,
@@ -34,11 +38,13 @@ public class IngredientsController(
             ct);
 
         if (!result.Success)
+        {
             return UnprocessableEntity(new ProblemDetails
             {
                 Title = "Ingredient parsing failed.",
                 Detail = result.ErrorMessage,
             });
+        }
 
         return Ok(result.Ingredients);
     }

@@ -26,7 +26,9 @@ public class OcrSessionsController(
             var client = httpClientFactory.CreateClient("IngredientParser");
             var resp = await client.GetAsync("/status", ct);
             if (!resp.IsSuccessStatusCode)
+            {
                 return null;
+            }
 
             var json = await resp.Content.ReadFromJsonAsync<IngredientParserStatus>(ct);
             return json;

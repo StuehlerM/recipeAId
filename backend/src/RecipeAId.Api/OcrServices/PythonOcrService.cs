@@ -45,7 +45,9 @@ public sealed class PythonOcrService(IHttpClientFactory httpClientFactory, ILogg
 
         var result = await response.Content.ReadFromJsonAsync<OcrResponse>(ct);
         if (result is null || result.RawText is null)
+        {
             return new OcrResult(string.Empty, false, "OCR service returned an unexpected response");
+        }
 
         logger.LogInformation("OCR sidecar responded in {ElapsedMs}ms — {Chars} chars extracted",
             sw.ElapsedMilliseconds, result.RawText.Length);

@@ -82,7 +82,10 @@ public sealed class LlmIngredientParserService(
     /// </summary>
     private static string FormatValue(double value)
     {
-        if (value == 0) return string.Empty;
+        if (value == 0)
+        {
+            return string.Empty;
+        }
         return value % 1 == 0
             ? ((long)value).ToString()
             : value.ToString("0.##");
