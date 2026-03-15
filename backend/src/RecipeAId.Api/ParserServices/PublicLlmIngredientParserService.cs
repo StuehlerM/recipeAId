@@ -43,6 +43,9 @@ public sealed class PublicLlmIngredientParserService(
     private const int MaxNameLength   = 100;
     private const double MaxAmount    = 5_000;
 
+    private static readonly JsonSerializerOptions CaseInsensitiveJson =
+        new() { PropertyNameCaseInsensitive = true };
+
     // ── Public API ───────────────────────────────────────────────────────────
 
     public async Task<IngredientParseResult> ParseAsync(
@@ -93,9 +96,9 @@ public sealed class PublicLlmIngredientParserService(
         {
             var responseJson = await response.Content.ReadAsStringAsync(ct);
             var apiResponse  = JsonSerializer.Deserialize<MistralChatResponse>(responseJson);
-            content = apiResponse?.Choices?[0]?.Message?.Content ?? string.Empty;
+            content = apiResponse?.Choices?.FirstOrDefault()?.Message?.Content ?? string.Empty;
         }
-        catch (Exception ex) when (ex is JsonException or ArgumentOutOfRangeException)
+        catch (Exception ex) when (ex is JsonException)
         {
             logger.LogWarning(ex, "Could not read Mistral API response");
             return new IngredientParseResult([], false, "Invalid response from ingredient parser API");
@@ -198,8 +201,7 @@ public sealed class PublicLlmIngredientParserService(
         List<RawIngredientItem>? items;
         try
         {
-            items = JsonSerializer.Deserialize<List<RawIngredientItem>>(trimmed,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            items = JsonSerializer.Deserialize<List<RawIngredientItem>>(trimmed, CaseInsensitiveJson);
         }
         catch (JsonException)
         {

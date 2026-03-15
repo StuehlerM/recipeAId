@@ -23,10 +23,14 @@ public class IngredientsController(
         CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(request.Text))
+        {
             return BadRequest(new ProblemDetails { Title = "Text is required." });
+        }
 
         if (request.Text.Length > 5000)
+        {
             return BadRequest(new ProblemDetails { Title = "Text must be 5000 characters or fewer." });
+        }
 
         var lang = request.Lang ?? "en";
         if (!System.Text.RegularExpressions.Regex.IsMatch(lang, @"^[a-z]{2}(-[A-Z]{2})?$"))
