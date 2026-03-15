@@ -17,29 +17,6 @@ services:
       retries: 30
       start_period: 60s
 
-  ingredient-parser:
-    build:
-      context: ./ingredient-parser
-      dockerfile: Dockerfile
-    # No host port mapping — accessible only from within the Docker network
-    volumes:
-      - ollama-models:/root/.ollama
-    networks:
-      - internal
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 10g      # hard cap — container is OOM-killed if exceeded
-        reservations:
-          memory: 6g      # Docker will refuse to start this service if 6 GB RAM cannot be reserved
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/health')"]
-      interval: 15s
-      timeout: 10s
-      retries: 20
-      start_period: 120s   # first-time model pull (~4 GB) can take a while
-
   backend:
     build:
       context: ./backend
@@ -52,15 +29,13 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - ConnectionStrings__DefaultConnection=/data/recipeaid.db
       - OcrService__BaseUrl=http://ocr-service:8001
-      - IngredientParser__BaseUrl=http://ingredient-parser:8002
       - Cors__AllowedOrigins__0=https://localhost
       - Cors__AllowedOrigins__1=https://172.205.220.46
+      - INGREDIENT_PARSER_API_KEY=${INGREDIENT_PARSER_API_KEY}
     networks:
       - internal
     depends_on:
       ocr-service:
-        condition: service_healthy
-      ingredient-parser:
         condition: service_healthy
     restart: unless-stopped
 
@@ -106,4 +81,3 @@ networks:
 volumes:
   db-data:
   ocr-models:     # PaddleX model files (~/.paddlex) — persists across image rebuilds
-  ollama-models:  # Ollama model weights (~4 GB) — persists across ingredient-parser rebuilds

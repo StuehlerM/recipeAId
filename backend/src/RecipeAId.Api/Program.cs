@@ -42,14 +42,20 @@ builder.Services.AddHttpClient("OcrService", c =>
 builder.Services.AddScoped<IOcrService, PythonOcrService>();
 builder.Services.AddScoped<IOcrParser, OcrParserService>();
 
-// Ingredient parser (LLM sidecar)
-var parserBaseUrl = builder.Configuration["IngredientParser:BaseUrl"] ?? "http://localhost:8002";
-builder.Services.AddHttpClient("IngredientParser", c =>
+// Ingredient parser — Mistral AI public API
+// API key is read from INGREDIENT_PARSER_API_KEY at startup; empty = parsing unavailable.
+var ingredientParserApiKey = builder.Configuration["INGREDIENT_PARSER_API_KEY"] ?? string.Empty;
+builder.Services.AddHttpClient("MistralApi", c =>
 {
-    c.BaseAddress = new Uri(parserBaseUrl);
-    c.Timeout = TimeSpan.FromSeconds(200);
+    c.BaseAddress = new Uri("https://api.mistral.ai");
+    c.Timeout = TimeSpan.FromSeconds(60);
 });
-builder.Services.AddScoped<IIngredientParserService, LlmIngredientParserService>();
+builder.Services.AddScoped<IIngredientParserService>(sp =>
+{
+    var factory = sp.GetRequiredService<IHttpClientFactory>();
+    var logger  = sp.GetRequiredService<ILogger<PublicLlmIngredientParserService>>();
+    return new PublicLlmIngredientParserService(factory.CreateClient("MistralApi"), ingredientParserApiKey, logger);
+});
 
 // OCR session store (SSE async pipeline)
 builder.Services.AddSingleton<OcrSessionStore>();
