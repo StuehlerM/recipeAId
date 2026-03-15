@@ -194,8 +194,11 @@ public sealed class PublicLlmIngredientParserService(
         var trimmed = content.Trim();
         if (trimmed.StartsWith("```"))
         {
-            var end = trimmed.LastIndexOf("```", StringComparison.Ordinal);
-            trimmed = end > 3 ? trimmed[(trimmed.IndexOf('\n') + 1)..end] : trimmed.TrimStart('`');
+            var end     = trimmed.LastIndexOf("```", StringComparison.Ordinal);
+            var newline = trimmed.IndexOf('\n');
+            trimmed = (end > 3 && newline >= 0)
+                ? trimmed[(newline + 1)..end].Trim()
+                : trimmed.TrimStart('`');
         }
 
         List<RawIngredientItem>? items;
