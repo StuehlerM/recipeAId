@@ -7,7 +7,7 @@ using RecipeAId.Core.Interfaces;
 namespace RecipeAId.Api.ParserServices;
 
 /// <summary>
-/// Calls the LLM ingredient-parser service to refine OCR ingredient text
+/// Calls the Ministral 3B ingredient-parser sidecar to refine OCR ingredient text
 /// into structured <see cref="IngredientLineDto"/> records.
 /// Falls back gracefully — callers should treat a failed result as a signal to use
 /// the regex-parsed fallback.
@@ -47,15 +47,7 @@ public sealed class LlmIngredientParserService(
                 "Ingredient parser returned {Status}: {Body}",
                 (int)response.StatusCode,
                 body);
-
-            if (response.StatusCode is System.Net.HttpStatusCode.Unauthorized or System.Net.HttpStatusCode.Forbidden)
-            {
-                return new IngredientParseResult([], false, "Ingredient parser authentication failed",
-                    IngredientParseErrorCode.Unauthorized);
-            }
-
-            return new IngredientParseResult([], false, $"Ingredient parser error ({(int)response.StatusCode})",
-                IngredientParseErrorCode.ServiceError);
+            return new IngredientParseResult([], false, $"Ingredient parser error ({(int)response.StatusCode})");
         }
 
         ParseResponse? parsed;

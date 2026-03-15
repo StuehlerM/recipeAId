@@ -39,15 +39,6 @@ public class IngredientsController(
 
         if (!result.Success)
         {
-            if (result.ErrorCode == IngredientParseErrorCode.Unauthorized)
-            {
-                return StatusCode(502, new ProblemDetails
-                {
-                    Title = "Ingredient parser unavailable.",
-                    Detail = result.ErrorMessage,
-                });
-            }
-
             return UnprocessableEntity(new ProblemDetails
             {
                 Title = "Ingredient parsing failed.",
