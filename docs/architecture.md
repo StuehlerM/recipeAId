@@ -14,12 +14,12 @@ Living document describing the current system architecture. Updated alongside co
 |-------|-----------|
 | Backend | ASP.NET Core 9, LiteDB 5 (embedded document database) |
 | OCR sidecar | Python 3.11, PaddleOCR PP-OCRv5 (English + German), FastAPI, port 8001 |
-| Ingredient parser sidecar | Python 3.11, Ollama + Ministral 3B (`ministral-3:3b`), FastAPI, port 8002 (Docker-internal) |
+| Ingredient parser | Mistral AI public API (`mistral-small-latest`), called directly from backend over HTTPS — no local sidecar |
 | Frontend | React 19, Vite 7, TypeScript, Tailwind CSS v4, TanStack Query v5, React Router v6 |
 | PWA | vite-plugin-pwa (installable, standalone) |
-| Testing | xUnit + Moq (backend), pytest (sidecars), Cucumber.js + Playwright (BDD) |
+| Testing | xUnit + Moq (backend), pytest (OCR sidecar), Cucumber.js + Playwright (BDD) |
 | CI | GitHub Actions — BDD integration tests on every PR to main |
-| Container | Docker Compose (4 services) |
+| Container | Docker Compose (3 services) |
 
 ### Dependency rule
 
@@ -44,7 +44,7 @@ Core has zero infrastructure dependencies. All interfaces live in Core.
 | GET | `/api/v1/ocr-sessions/{sessionId}/events` | SSE stream for LLM refinement results |
 | GET | `/api/v1/recipes/search/by-ingredients` | Ranked ingredient search (`?ingredients=&minMatch=1&limit=20`) |
 | GET | `/api/v1/ingredients` | All known ingredients (autocomplete) |
-| POST | `/api/v1/ingredients/parse` | Parse raw ingredient text via LLM sidecar |
+| POST | `/api/v1/ingredients/parse` | Parse raw ingredient text via Mistral AI API; `502` if API key missing |
 | GET | `/api/v1/recipes/{id}/images/{slot}` | Retrieve stored recipe image (`slot` = `title \| ingredients \| instructions`) |
 | PUT | `/api/v1/recipes/{id}/images/{slot}` | Upload image directly to a recipe slot (multipart/form-data) |
 
@@ -88,15 +88,13 @@ Recipe document
 | Service | Port | Notes |
 |---------|------|-------|
 | frontend | 80 (HTTP→HTTPS redirect), 443 | nginx, self-signed cert |
-| backend | 8080 | ASP.NET Core, depends on both sidecars |
+| backend | 8080 | ASP.NET Core, depends on `ocr-service` health check |
 | ocr-service | 8001 | PaddleOCR, health check on `/health` |
-| ingredient-parser | — (internal) | Ollama + Ministral 3B, 120s start period, `ollama-models` volume |
 
 ### Key Docker details
 
 - `ocr-service` health check: `/health`, 60s start period
-- `ingredient-parser` health check: `/health`, 120s start period (first-time model pull ~4 GB)
-- Backend waits for both sidecars' health checks via `depends_on: condition: service_healthy`
+- Backend waits for `ocr-service` health check via `depends_on: condition: service_healthy`
 - nginx SSE location block (`/api/v1/ocr-sessions/`): `proxy_buffering off`, `proxy_read_timeout 220s`
 - nginx API location block (`/api/`): `client_max_body_size 10m`, `proxy_read_timeout 210s`
 - HTTPS: self-signed cert generated at build time; `VM_HOST` build arg adds VM IP as SAN
@@ -123,6 +121,7 @@ All phases are complete.
 | 12 | Image Storage — recipe photos stored in LiteDB `FileStorage`; temp→commit flow; GET/PUT image endpoints; RecipeDetailPage displays stored title image |
 | 13 | Fuzzy Ingredient Matching — Damerau-Levenshtein (OSA, distance ≤ 2); exact hits score 1.0, fuzzy 0.8 |
 | 14 | Health Check Caching — ingredient-parser `/health` caches `_model_loaded` flag after first successful Ollama check; subsequent checks return instantly |
+| 15 | Replace Ingredient-Parser Sidecar — Ministral 3B Ollama sidecar replaced by Mistral AI public API called directly from backend; sidecar, 4 GB model volume, and 120s start period eliminated (ADR 0002) |
 
 ---
 

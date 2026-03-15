@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # run-unit-tests.sh
 #
-# Runs all four unit-test layers in sequence.
+# Runs all three unit-test layers in sequence.
 # Exit code 0 = all pass.  Non-zero = at least one layer failed.
 #
 # Usage:
@@ -38,11 +38,7 @@ run_layer "Backend (dotnet test)" \
 run_layer "OCR sidecar (pytest)" \
   python -m pytest "$REPO_ROOT/ocr-service/tests/" -v --tb=short
 
-# ── Layer 3: Ingredient parser Python unit tests ────────────────────────────
-run_layer "Ingredient parser (pytest)" \
-  python -m pytest "$REPO_ROOT/ingredient-parser/tests/" -v --tb=short
-
-# ── Layer 4: Frontend TypeScript build ─────────────────────────────────────
+# ── Layer 3: Frontend TypeScript build ─────────────────────────────────────
 if [[ "${SKIP_FRONTEND:-0}" != "1" ]]; then
   run_layer "Frontend (npm run build)" \
     bash -c "cd '$REPO_ROOT/frontend' && npm run build --silent"

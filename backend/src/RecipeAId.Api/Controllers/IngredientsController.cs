@@ -34,11 +34,21 @@ public class IngredientsController(
             ct);
 
         if (!result.Success)
+        {
+            if (result.IsProviderUnavailable)
+                return StatusCode(StatusCodes.Status502BadGateway, new ProblemDetails
+                {
+                    Title = "Ingredient parser unavailable.",
+                    Detail = result.ErrorMessage,
+                    Status = StatusCodes.Status502BadGateway,
+                });
+
             return UnprocessableEntity(new ProblemDetails
             {
                 Title = "Ingredient parsing failed.",
                 Detail = result.ErrorMessage,
             });
+        }
 
         return Ok(result.Ingredients);
     }

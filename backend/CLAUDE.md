@@ -94,7 +94,7 @@ Key classes:
 
 ## Ingredient parser integration
 
-`LlmIngredientParserService` (in `Api/ParserServices/`) implements `IIngredientParserService`. Named HttpClient "IngredientParser" (200s timeout). Calls sidecar at `IngredientParser:BaseUrl` (default `http://localhost:8002`). Also exposed standalone via `POST /api/v1/ingredients/parse`.
+`PublicLlmIngredientParserService` (in `Core/Services/`) implements `IIngredientParserService`. Calls the **Mistral AI public API** (`https://api.mistral.ai/v1/chat/completions`, model `mistral-small-latest`) directly via `HttpClient` — no local sidecar. Named HttpClient "MistralApi" (60s timeout). API key from `INGREDIENT_PARSER_API_KEY` env var (never in config files). When key is absent or the API is unreachable, `ParseAsync` returns `Success=false, IsProviderUnavailable=true`; the controller maps this to `502 Bad Gateway`. Input sanitisation (truncation/10k chars, control-char strip, role-marker strip) and output validation (max 50 items, name ≤ 100 chars, amount 0–5000) are applied inside the service. Exposed standalone via `POST /api/v1/ingredients/parse`.
 
 ## API reference
 
@@ -109,7 +109,7 @@ Key classes:
 | GET | `/api/v1/ocr-sessions/{sessionId}/events` | SSE stream for LLM refinement results |
 | GET | `/api/v1/recipes/search/by-ingredients` | Ranked ingredient search (`?ingredients=&minMatch=1&limit=20`) |
 | GET | `/api/v1/ingredients` | All known ingredients (autocomplete) |
-| POST | `/api/v1/ingredients/parse` | Parse raw ingredient text via LLM sidecar |
+| POST | `/api/v1/ingredients/parse` | Parse raw ingredient text via Mistral AI API; returns `502` if API key missing |
 | GET | `/api/v1/recipes/{id}/images/{slot}` | Retrieve stored recipe image (`slot` = `title \| ingredients \| instructions`) |
 | PUT | `/api/v1/recipes/{id}/images/{slot}` | Upload image directly to a recipe slot (multipart/form-data) |
 
@@ -118,4 +118,4 @@ Key classes:
 - Test project references `RecipeAId.Core` only — no `Data` or `Api` dependencies
 - Services under test live in `Core/Services/`; tests in `tests/RecipeAId.Tests/Services/`
 - Use xUnit + Moq. Mock `IRecipeRepository` for `RecipeService` tests; mock `IImageStorage` for `RecipeImageService` tests
-- 68 tests covering OcrParserService (incl. multi-line title merging), RecipeService, RecipeMatchingService (incl. fuzzy matching), RecipeImageService
+- 76 tests covering OcrParserService (incl. multi-line title merging), RecipeService, RecipeMatchingService (incl. fuzzy matching), RecipeImageService, PublicLlmIngredientParserService (Mistral API mocked via fake HttpMessageHandler)

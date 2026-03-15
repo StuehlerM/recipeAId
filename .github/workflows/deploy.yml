@@ -13,6 +13,23 @@ jobs:
     timeout-minutes: 30
 
     steps:
+      - name: Write .env file on VM
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          # The key is written via a printf pipe so it never appears in the
+          # shell command itself (which would appear in runner logs).
+          envs: INGREDIENT_PARSER_API_KEY
+          script: |
+            set -e
+            printf 'INGREDIENT_PARSER_API_KEY=%s\n' "$INGREDIENT_PARSER_API_KEY" \
+              > /srv/recipeaid/.env
+            chmod 600 /srv/recipeaid/.env
+        env:
+          INGREDIENT_PARSER_API_KEY: ${{ secrets.INGREDIENT_PARSER_API_KEY }}
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1
         with:
