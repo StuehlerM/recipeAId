@@ -42,6 +42,7 @@ jobs:
         env:
           BUILDX_CACHE_FROM: type=local,src=/tmp/.buildx-cache
           BUILDX_CACHE_TO: type=local,dest=/tmp/.buildx-cache-new,mode=max
+          INGREDIENT_PARSER_API_KEY: ${{ secrets.INGREDIENT_PARSER_API_KEY }}
 
       # Rotate the cache so stale layers don't accumulate indefinitely.
       - name: Rotate Docker layer cache

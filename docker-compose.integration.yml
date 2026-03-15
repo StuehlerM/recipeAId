@@ -1,5 +1,19 @@
 services:
 
+  # ── OCR sidecar ───────────────────────────────────────────────────────────────
+  ocr-service:
+    build:
+      context: ./ocr-service
+      dockerfile: Dockerfile
+    volumes:
+      - ocr-models:/root/.paddlex
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+
   # ── Backend ──────────────────────────────────────────────────────────────────
   backend:
     build:
@@ -12,6 +26,11 @@ services:
       - ConnectionStrings__DefaultConnection=/data/recipeaid-test.db
       # Allow requests from the frontend container's origin
       - Cors__AllowedOrigins__0=http://frontend
+      - OcrService__BaseUrl=http://ocr-service:8001
+      - INGREDIENT_PARSER_API_KEY=${INGREDIENT_PARSER_API_KEY:-}
+    depends_on:
+      ocr-service:
+        condition: service_healthy
     volumes:
       - integration_db:/data
     healthcheck:
@@ -61,3 +80,4 @@ services:
 
 volumes:
   integration_db:
+  ocr-models:

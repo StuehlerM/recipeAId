@@ -68,11 +68,12 @@ Then(
     if (this.lastParseStatus < 200 || this.lastParseStatus >= 300) {
       throw new Error(`Expected 2xx from /ingredients/parse but got ${this.lastParseStatus}`);
     }
-    const body = this.lastParseBody as { ingredients?: Array<{ name?: string }> };
-    if (!body?.ingredients?.length) {
+    // /ingredients/parse returns a direct JSON array of IngredientLineDto
+    const ingredients = this.lastParseBody as Array<{ name?: string }>;
+    if (!Array.isArray(ingredients) || ingredients.length === 0) {
       throw new Error("Parse response contains no ingredients");
     }
-    const hasName = body.ingredients.some((i) => typeof i.name === "string" && i.name.trim().length > 0);
+    const hasName = ingredients.some((i) => typeof i.name === "string" && i.name.trim().length > 0);
     if (!hasName) {
       throw new Error("No ingredient has a non-empty name");
     }
@@ -85,11 +86,12 @@ Then(
     if (this.lastParseStatus < 200 || this.lastParseStatus >= 300) {
       throw new Error(`Expected 2xx from /from-image but got ${this.lastParseStatus}`);
     }
-    const body = this.lastParseBody as { ingredients?: Array<{ name?: string }> };
-    if (!body?.ingredients?.length) {
+    // /from-image returns RecipeOcrDraftDto — ingredients are in detectedIngredients
+    const body = this.lastParseBody as { detectedIngredients?: Array<{ name?: string }> };
+    if (!body?.detectedIngredients?.length) {
       throw new Error("Recipe draft contains no ingredients");
     }
-    const hasName = body.ingredients.some((i) => typeof i.name === "string" && i.name.trim().length > 0);
+    const hasName = body.detectedIngredients.some((i) => typeof i.name === "string" && i.name.trim().length > 0);
     if (!hasName) {
       throw new Error("No ingredient has a non-empty name");
     }
