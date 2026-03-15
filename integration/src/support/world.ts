@@ -12,6 +12,8 @@ export class RecipeAIdWorld extends World<WorldParameters> {
   context!: BrowserContext;
   page!: Page;
   lastCreatedRecipeId?: number;
+  lastParseStatus = 0;
+  lastParseBody: unknown = null;
 
   constructor(options: IWorldOptions<WorldParameters>) {
     super(options);

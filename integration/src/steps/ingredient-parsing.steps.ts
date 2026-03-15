@@ -8,10 +8,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const TEST_IMAGES_DIR = resolve(__dirname, "../../TestImages");
 
-// Module-level state shared across steps in a scenario
-let lastParseStatus = 0;
-let lastParseBody: unknown = null;
-
 // ── Given ──────────────────────────────────────────────────────────────────
 
 Given(
@@ -38,8 +34,21 @@ When(
       `${this.backendUrl}/api/v1/recipes/from-image?refine=true`,
       { method: "POST", body: form }
     );
-    lastParseStatus = res.status;
-    lastParseBody = res.ok ? await res.json() : null;
+    this.lastParseStatus = res.status;
+    this.lastParseBody = res.ok ? await res.json() : null;
+  }
+);
+
+When(
+  "I parse the text {string}",
+  async function (this: RecipeAIdWorld, text: string) {
+    const res = await fetch(`${this.backendUrl}/api/v1/ingredients/parse`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, lang: "en" }),
+    });
+    this.lastParseStatus = res.status;
+    this.lastParseBody = res.ok ? await res.json() : null;
   }
 );
 
@@ -54,12 +63,29 @@ When(
 // ── Then ───────────────────────────────────────────────────────────────────
 
 Then(
+  "the response should contain at least one ingredient with a name",
+  function (this: RecipeAIdWorld) {
+    if (this.lastParseStatus < 200 || this.lastParseStatus >= 300) {
+      throw new Error(`Expected 2xx from /ingredients/parse but got ${this.lastParseStatus}`);
+    }
+    const body = this.lastParseBody as { ingredients?: Array<{ name?: string }> };
+    if (!body?.ingredients?.length) {
+      throw new Error("Parse response contains no ingredients");
+    }
+    const hasName = body.ingredients.some((i) => typeof i.name === "string" && i.name.trim().length > 0);
+    if (!hasName) {
+      throw new Error("No ingredient has a non-empty name");
+    }
+  }
+);
+
+Then(
   "the recipe draft should contain at least one structured ingredient with a name",
   function (this: RecipeAIdWorld) {
-    if (lastParseStatus < 200 || lastParseStatus >= 300) {
-      throw new Error(`Expected 2xx from /from-image but got ${lastParseStatus}`);
+    if (this.lastParseStatus < 200 || this.lastParseStatus >= 300) {
+      throw new Error(`Expected 2xx from /from-image but got ${this.lastParseStatus}`);
     }
-    const body = lastParseBody as { ingredients?: Array<{ name?: string }> };
+    const body = this.lastParseBody as { ingredients?: Array<{ name?: string }> };
     if (!body?.ingredients?.length) {
       throw new Error("Recipe draft contains no ingredients");
     }

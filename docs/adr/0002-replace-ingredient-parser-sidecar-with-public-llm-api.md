@@ -42,7 +42,7 @@ Mistral AI provides a hosted API for the same model family (`Ministral`/`Mistral
 
 - `ingredient-parser/` directory deleted; `build-ingredient-parser.ps1` deleted.
 - `docker-compose.yml`: `ingredient-parser` service and `ollama-models` volume removed; `backend` no longer depends on a sidecar health check.
-- A new `PublicLlmIngredientParserService` in `RecipeAId.Core/Services/` replaces `LlmIngredientParserService` in `RecipeAId.Api/ParserServices/`. It calls `https://api.mistral.ai/v1/chat/completions` directly via `HttpClient`.
+- A new `PublicLlmIngredientParserService` in `RecipeAId.Api/ParserServices/` replaces `LlmIngredientParserService` in the same directory. It calls `https://api.mistral.ai/v1/chat/completions` directly via `HttpClient`.
 - `IIngredientParserService` and `IngredientParseResult` are unchanged — the controller and SSE pipeline are unaffected.
 - The API key is read from the `INGREDIENT_PARSER_API_KEY` environment variable. It is injected at deploy time via a `.env` file on the VM (written by the GitHub Actions deploy workflow from a repository secret). The key never appears in any tracked file.
 

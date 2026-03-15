@@ -107,7 +107,7 @@ public sealed class PublicLlmIngredientParserService(
         }
 
         logger.LogInformation("Mistral parser returned {Count} ingredients", ingredients.Count);
-        return new IngredientParseResult(ingredients, true, null);
+        return new IngredientParseResult(ingredients, true, null, IsProviderUnavailable: false);
     }
 
     // ── Sanitiser ────────────────────────────────────────────────────────────

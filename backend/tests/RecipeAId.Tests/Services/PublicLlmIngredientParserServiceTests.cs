@@ -194,6 +194,7 @@ public class PublicLlmIngredientParserServiceTests
         Assert.NotNull(handler.CapturedRequestBody);
         Assert.DoesNotContain("system:", handler.CapturedRequestBody, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("ignore previous instructions", handler.CapturedRequestBody, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("user:", handler.CapturedRequestBody, StringComparison.OrdinalIgnoreCase);
     }
 
     // ── Missing API key ───────────────────────────────────────────────────────
