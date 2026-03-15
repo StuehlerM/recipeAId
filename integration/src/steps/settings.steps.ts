@@ -1,26 +1,26 @@
 /**
  * Step definitions for settings.feature (Issue #20 — dark theme toggle)
- *
- * These steps are stubs — they will fail until the SettingsPage dark theme
- * toggle is implemented in the frontend.
  */
 import { Given, When, Then } from "@cucumber/cucumber";
 import type { RecipeAIdWorld } from "../support/world";
 
 Given("I navigate to the settings page", async function (this: RecipeAIdWorld) {
-  // Arrange: open the settings page
   await this.page.goto(`${this.frontendUrl}/settings`);
   await this.page.waitForLoadState("networkidle");
 });
 
 When("I toggle the dark theme switch", async function (this: RecipeAIdWorld) {
-  // Act: click the "Dark theme" toggle
-  await this.page.getByRole("checkbox", { name: /dark theme/i }).click();
+  // Click the label so Playwright doesn't need to interact with the sr-only checkbox directly
+  await this.page.locator("label", { hasText: /dark theme/i }).click();
 });
 
 When("I toggle the dark theme switch again", async function (this: RecipeAIdWorld) {
-  // Act: click the toggle a second time to turn it off
-  await this.page.getByRole("checkbox", { name: /dark theme/i }).click();
+  await this.page.locator("label", { hasText: /dark theme/i }).click();
+});
+
+When("I reload the page", async function (this: RecipeAIdWorld) {
+  await this.page.reload();
+  await this.page.waitForLoadState("networkidle");
 });
 
 Then(
