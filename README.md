@@ -20,10 +20,12 @@ A recipe management app that reads physical recipe cards with your camera. Point
 
 Requires [Docker Desktop](https://www.docker.com/products/docker-desktop/).
 
+Requires a [Mistral AI API key](https://console.mistral.ai/) for ingredient parsing.
+
 ```bash
 git clone https://github.com/StuehlerM/recipeAId.git
 cd recipeAId
-docker compose up --build
+INGREDIENT_PARSER_API_KEY=<your-key> docker compose up --build
 ```
 
 > **First build takes a few minutes** — the OCR image downloads PaddlePaddle and PaddleOCR models on first startup. Subsequent builds are fast.
@@ -66,6 +68,7 @@ uvicorn main:app --port 8001
 
 ```bash
 cd backend
+dotnet user-secrets set "INGREDIENT_PARSER_API_KEY" "<your-key>" --project src/RecipeAId.Api
 dotnet run --project src/RecipeAId.Api
 ```
 
@@ -87,5 +90,5 @@ Open https://localhost:5173 (accept the self-signed cert once). Without `VITE_AP
 ## Further reading
 
 - **[Architecture, API reference, data model, Docker details](docs/architecture.md)**
-- **[Backend](backend/CLAUDE.md)** · **[Frontend](frontend/CLAUDE.md)** · **[OCR sidecar](ocr-service/CLAUDE.md)** · **[Ingredient parser](ingredient-parser/CLAUDE.md)** · **[Integration tests](integration/CLAUDE.md)**
+- **[Backend](backend/CLAUDE.md)** · **[Frontend](frontend/CLAUDE.md)** · **[OCR sidecar](ocr-service/CLAUDE.md)** · **[Integration tests](integration/CLAUDE.md)**
 - **[Architecture Decision Records](docs/adr/)**
