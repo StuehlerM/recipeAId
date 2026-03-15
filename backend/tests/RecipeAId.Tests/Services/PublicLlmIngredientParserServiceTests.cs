@@ -197,6 +197,68 @@ public class PublicLlmIngredientParserServiceTests
         Assert.DoesNotContain("user:", handler.CapturedRequestBody, StringComparison.OrdinalIgnoreCase);
     }
 
+    // ── Output validation — markdown fence, empty name, amount range ──────────
+
+    [Fact]
+    public async Task ParseAsync_ModelWrapsInMarkdownFence_StripsAndParsesCorrectly()
+    {
+        // Arrange — model ignores "no markdown fences" instruction and wraps output
+        const string fencedResponse = """
+            {
+              "choices": [
+                {
+                  "message": {
+                    "content": "```json\n[{\"name\":\"flour\",\"amount\":\"2\",\"unit\":\"cups\"}]\n```"
+                  }
+                }
+              ]
+            }
+            """;
+        var sut = BuildSut(HttpStatusCode.OK, fencedResponse);
+
+        // Act
+        var result = await sut.ParseAsync("2 cups flour", "en");
+
+        // Assert — fence stripped; ingredient returned normally
+        Assert.True(result.Success);
+        Assert.Single(result.Ingredients);
+        Assert.Equal("flour", result.Ingredients[0].Name);
+    }
+
+    [Fact]
+    public async Task ParseAsync_ItemWithEmptyName_IsSkipped()
+    {
+        // Arrange — response includes one valid item and one with an empty name
+        const string ingredientJson = """[{"name":"","amount":"1","unit":"g"},{"name":"sugar","amount":"100","unit":"g"}]""";
+        var sut = BuildSut(HttpStatusCode.OK, MistralResponse(ingredientJson));
+
+        // Act
+        var result = await sut.ParseAsync("something", "en");
+
+        // Assert — empty-name item dropped; valid item retained
+        Assert.True(result.Success);
+        Assert.Single(result.Ingredients);
+        Assert.Equal("sugar", result.Ingredients[0].Name);
+    }
+
+    [Fact]
+    public async Task ParseAsync_NumericAmountOutOfRange_ClearsAmountRatherThanDroppingItem()
+    {
+        // Arrange — amount is 6 000, exceeding the 5 000 upper bound
+        const string ingredientJson = """[{"name":"flour","amount":"6000","unit":"g"}]""";
+        var sut = BuildSut(HttpStatusCode.OK, MistralResponse(ingredientJson));
+
+        // Act
+        var result = await sut.ParseAsync("flour 6000g", "en");
+
+        // Assert — item kept, amount cleared to empty string
+        Assert.True(result.Success);
+        Assert.Single(result.Ingredients);
+        Assert.Equal("flour", result.Ingredients[0].Name);
+        Assert.Equal(string.Empty, result.Ingredients[0].Amount);
+        Assert.Equal("g", result.Ingredients[0].Unit);
+    }
+
     // ── Missing API key ───────────────────────────────────────────────────────
 
     [Fact]

@@ -34,7 +34,9 @@ public sealed class OcrSessionStore
     public void Complete(string id, IngredientParseResult result)
     {
         if (_sessions.TryGetValue(id, out var s))
+        {
             s.Tcs.TrySetResult(result);
+        }
     }
 
     /// <summary>Removes the session from the store.</summary>

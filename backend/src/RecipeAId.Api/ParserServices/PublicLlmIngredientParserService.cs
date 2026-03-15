@@ -60,9 +60,10 @@ public sealed class PublicLlmIngredientParserService(
         }
 
         var sanitized = Sanitize(text);
-        logger.LogInformation("Calling Mistral ingredient parser — {Chars} chars (lang={Lang})", sanitized.Length, lang);
+        var safeLang  = SanitizeLang(lang);
+        logger.LogInformation("Calling Mistral ingredient parser — {Chars} chars (lang={Lang})", sanitized.Length, safeLang);
 
-        var requestBody = BuildRequestBody(sanitized, lang);
+        var requestBody = BuildRequestBody(sanitized, safeLang);
         using var request = new HttpRequestMessage(HttpMethod.Post, "/v1/chat/completions")
         {
             Headers = { { "Authorization", $"Bearer {apiKey}" } },
@@ -98,7 +99,7 @@ public sealed class PublicLlmIngredientParserService(
             var apiResponse  = JsonSerializer.Deserialize<MistralChatResponse>(responseJson);
             content = apiResponse?.Choices?.FirstOrDefault()?.Message?.Content ?? string.Empty;
         }
-        catch (Exception ex) when (ex is JsonException)
+        catch (JsonException ex)
         {
             logger.LogWarning(ex, "Could not read Mistral API response");
             return new IngredientParseResult([], false, "Invalid response from ingredient parser API");
@@ -156,6 +157,13 @@ public sealed class PublicLlmIngredientParserService(
         }
         return false;
     }
+
+    /// <summary>
+    /// Strips newlines and truncates the language code so it cannot escape into the prompt.
+    /// Callers are expected to pass a validated BCP-47 tag, but this provides defence-in-depth.
+    /// </summary>
+    private static string SanitizeLang(string lang)
+        => lang.ReplaceLineEndings(" ").Trim()[..Math.Min(lang.Length, 10)];
 
     // ── Prompt builder ───────────────────────────────────────────────────────
 

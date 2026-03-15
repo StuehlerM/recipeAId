@@ -38,7 +38,16 @@ run_layer "Backend (dotnet test)" \
 run_layer "OCR sidecar (pytest)" \
   python -m pytest "$REPO_ROOT/ocr-service/tests/" -v --tb=short
 
-# ── Layer 3: Frontend TypeScript build ─────────────────────────────────────
+# ── Layer 3a: Frontend unit tests (vitest) ──────────────────────────────────
+if [[ "${SKIP_FRONTEND:-0}" != "1" ]]; then
+  run_layer "Frontend unit tests (vitest)" \
+    bash -c "cd '$REPO_ROOT/frontend' && npm test --silent"
+else
+  echo ""
+  echo "  –  Frontend unit tests skipped (SKIP_FRONTEND=1)"
+fi
+
+# ── Layer 3b: Frontend TypeScript build ─────────────────────────────────────
 if [[ "${SKIP_FRONTEND:-0}" != "1" ]]; then
   run_layer "Frontend (npm run build)" \
     bash -c "cd '$REPO_ROOT/frontend' && npm run build --silent"
