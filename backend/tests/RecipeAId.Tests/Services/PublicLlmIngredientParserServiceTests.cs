@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using Microsoft.Extensions.Logging.Abstractions;
-using RecipeAId.Core.Services;
+using RecipeAId.Api.ParserServices;
 using Xunit;
 
 namespace RecipeAId.Tests.Services;

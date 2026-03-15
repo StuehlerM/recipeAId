@@ -2,6 +2,7 @@ using LiteDB;
 using RecipeAId.Api.Middleware;
 using RecipeAId.Api.OcrServices;
 using RecipeAId.Api.OcrSessions;
+using RecipeAId.Api.ParserServices;
 using RecipeAId.Core.Interfaces;
 using RecipeAId.Core.Services;
 using RecipeAId.Data.Repositories;
@@ -43,9 +44,7 @@ builder.Services.AddScoped<IOcrParser, OcrParserService>();
 
 // Ingredient parser — Mistral AI public API
 // API key is read from INGREDIENT_PARSER_API_KEY at startup; empty = parsing unavailable.
-var ingredientParserApiKey = builder.Configuration["INGREDIENT_PARSER_API_KEY"]
-    ?? Environment.GetEnvironmentVariable("INGREDIENT_PARSER_API_KEY")
-    ?? string.Empty;
+var ingredientParserApiKey = builder.Configuration["INGREDIENT_PARSER_API_KEY"] ?? string.Empty;
 builder.Services.AddHttpClient("MistralApi", c =>
 {
     c.BaseAddress = new Uri("https://api.mistral.ai");

@@ -22,18 +22,6 @@ Given(
   }
 );
 
-Given(
-  "the ingredient parser API key is not configured",
-  function (this: RecipeAIdWorld) {
-    // This step is intentionally a stub for the 502 error scenario.
-    // In integration tests the running backend is expected to be configured with
-    // a valid key, so this scenario documents the error contract only.
-    // TODO: wire up a dedicated backend fixture or env-var override when the
-    //       integration test environment supports key injection per-scenario.
-    pending();
-  }
-);
-
 // ── When ───────────────────────────────────────────────────────────────────
 
 When(
@@ -63,19 +51,6 @@ When(
   }
 );
 
-When(
-  "I call the ingredient parse endpoint with text {string}",
-  async function (this: RecipeAIdWorld, text: string) {
-    const res = await fetch(`${this.backendUrl}/api/v1/ingredients/parse`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, lang: "en" }),
-    });
-    lastParseStatus = res.status;
-    lastParseBody = await res.json().catch(() => null);
-  }
-);
-
 // ── Then ───────────────────────────────────────────────────────────────────
 
 Then(
@@ -95,22 +70,3 @@ Then(
   }
 );
 
-Then(
-  "the response status should be {int}",
-  function (this: RecipeAIdWorld, expected: number) {
-    if (lastParseStatus !== expected) {
-      throw new Error(`Expected HTTP ${expected} but got ${lastParseStatus}`);
-    }
-  }
-);
-
-Then(
-  "the response body should contain a ProblemDetails error",
-  function (this: RecipeAIdWorld) {
-    const body = lastParseBody as Record<string, unknown> | null;
-    if (!body) throw new Error("Response body is empty or not JSON");
-    if (!body["title"] && !body["detail"] && !body["type"]) {
-      throw new Error(`Response is not a ProblemDetails object: ${JSON.stringify(body)}`);
-    }
-  }
-);

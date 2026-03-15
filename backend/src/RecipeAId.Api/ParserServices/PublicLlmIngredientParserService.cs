@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 using RecipeAId.Core.DTOs;
 using RecipeAId.Core.Interfaces;
 
-namespace RecipeAId.Core.Services;
+namespace RecipeAId.Api.ParserServices;
 
 /// <summary>
 /// Calls the Mistral AI public API to parse raw ingredient text into structured
@@ -93,7 +93,7 @@ public sealed class PublicLlmIngredientParserService(
             var apiResponse  = JsonSerializer.Deserialize<MistralChatResponse>(responseJson);
             content = apiResponse?.Choices?[0]?.Message?.Content ?? string.Empty;
         }
-        catch (Exception ex) when (ex is JsonException or IndexOutOfRangeException or ArgumentOutOfRangeException)
+        catch (Exception ex) when (ex is JsonException or ArgumentOutOfRangeException)
         {
             logger.LogWarning(ex, "Could not read Mistral API response");
             return new IngredientParseResult([], false, "Invalid response from ingredient parser API");

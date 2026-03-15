@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\RecipeAId.Core\RecipeAId.Core.csproj" />
+    <ProjectReference Include="..\..\src\RecipeAId.Api\RecipeAId.Api.csproj" />
   </ItemGroup>
 
 </Project>

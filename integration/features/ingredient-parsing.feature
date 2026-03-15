@@ -9,8 +9,3 @@ Feature: Ingredient parsing via public LLM API
     And I wait for the ingredient parsing to complete
     Then the recipe draft should contain at least one structured ingredient with a name
 
-  Scenario: Ingredient parser returns 502 when API key is missing
-    Given the ingredient parser API key is not configured
-    When I call the ingredient parse endpoint with text "2 cups flour"
-    Then the response status should be 502
-    And the response body should contain a ProblemDetails error
