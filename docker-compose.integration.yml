@@ -1,5 +1,17 @@
 services:
 
+  # ── Mistral API mock ──────────────────────────────────────────────────────────
+  mock-mistral:
+    build:
+      context: ./integration/mock-mistral
+      dockerfile: Dockerfile
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/ 2>/dev/null; exit 0"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
   # ── OCR sidecar ───────────────────────────────────────────────────────────────
   ocr-service:
     build:
@@ -27,9 +39,13 @@ services:
       # Allow requests from the frontend container's origin
       - Cors__AllowedOrigins__0=http://frontend
       - OcrService__BaseUrl=http://ocr-service:8001
-      - INGREDIENT_PARSER_API_KEY=${INGREDIENT_PARSER_API_KEY:-}
+      # Point at the mock instead of the real Mistral API; dummy key satisfies the non-empty check
+      - MISTRAL_BASE_URL=http://mock-mistral:3000
+      - INGREDIENT_PARSER_API_KEY=integration-test-key
     depends_on:
       ocr-service:
+        condition: service_healthy
+      mock-mistral:
         condition: service_healthy
     volumes:
       - integration_db:/data

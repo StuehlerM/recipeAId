@@ -44,10 +44,12 @@ builder.Services.AddScoped<IOcrParser, OcrParserService>();
 
 // Ingredient parser — Mistral AI public API
 // API key is read from INGREDIENT_PARSER_API_KEY at startup; empty = parsing unavailable.
+// Base URL is overridable via MISTRAL_BASE_URL for integration-test mocking.
 var ingredientParserApiKey = builder.Configuration["INGREDIENT_PARSER_API_KEY"] ?? string.Empty;
+var mistralBaseUrl = builder.Configuration["MISTRAL_BASE_URL"] ?? "https://api.mistral.ai";
 builder.Services.AddHttpClient("MistralApi", c =>
 {
-    c.BaseAddress = new Uri("https://api.mistral.ai");
+    c.BaseAddress = new Uri(mistralBaseUrl);
     c.Timeout = TimeSpan.FromSeconds(60);
 });
 builder.Services.AddScoped<IIngredientParserService>(sp =>
