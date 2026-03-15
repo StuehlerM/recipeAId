@@ -36,6 +36,8 @@ public sealed class PublicLlmIngredientParserService(
     // ── Configuration ────────────────────────────────────────────────────────
 
     private const string MistralModel = "mistral-small-latest";
+    // Defence-in-depth: the controller already rejects inputs > 5 000 chars,
+    // but this bound protects callers that bypass the controller (e.g. the OCR pipeline).
     private const int MaxInputChars   = 10_000;
     private const int MaxOutputItems  = 50;
     private const int MaxNameLength   = 100;

@@ -3,7 +3,7 @@ Feature: Ingredient parsing via public LLM API
   I want my uploaded recipe photo to produce a structured ingredient list
   So that I can save a recipe without manually typing each ingredient
 
-  Scenario: Uploading a recipe image results in a structured ingredient list
+  Scenario: Uploading a recipe image produces an immediate OCR draft
     Given the ingredient parser API key is configured
     When I upload an image with visible ingredients
     And I wait for the ingredient parsing to complete

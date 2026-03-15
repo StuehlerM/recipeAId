@@ -120,8 +120,7 @@ Update these docs — no exceptions:
 |-------|---------|---------------|
 | 1 | `dotnet test backend/` | OcrParserService, RecipeService, matching |
 | 2 | `pytest ocr-service/tests/` | OCR preprocessing pipeline + endpoints (PaddleOCR mocked) |
-| 3 | `pytest ingredient-parser/tests/` | Sanitizer, LLM parsing, sanity bounds (Ollama mocked) |
-| 4 | `cd frontend && npm run build` | TypeScript compilation — catches type errors before CI |
+| 3 | `cd frontend && npm run build` | TypeScript compilation — catches type errors before CI |
 
 The pre-push git hook runs this script automatically after `./scripts/install-hooks.sh` is run once.
 

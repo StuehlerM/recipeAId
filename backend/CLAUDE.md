@@ -8,7 +8,7 @@ All commands run from `backend/`.
 
 ```bash
 dotnet run --project src/RecipeAId.Api          # Run the API (LiteDB file auto-created)
-dotnet test                                      # Run all tests (68 tests)
+dotnet test                                      # Run all tests (76 tests)
 dotnet test --filter "ClassName=OcrParserServiceTests"  # Single test class
 dotnet test --filter "FullyQualifiedName~ParseTitle"    # Single test method
 ```
@@ -94,7 +94,7 @@ Key classes:
 
 ## Ingredient parser integration
 
-`PublicLlmIngredientParserService` (in `Core/Services/`) implements `IIngredientParserService`. Calls the **Mistral AI public API** (`https://api.mistral.ai/v1/chat/completions`, model `mistral-small-latest`) directly via `HttpClient` — no local sidecar. Named HttpClient "MistralApi" (60s timeout). API key from `INGREDIENT_PARSER_API_KEY` env var (never in config files). When key is absent or the API is unreachable, `ParseAsync` returns `Success=false, IsProviderUnavailable=true`; the controller maps this to `502 Bad Gateway`. Input sanitisation (truncation/10k chars, control-char strip, role-marker strip) and output validation (max 50 items, name ≤ 100 chars, amount 0–5000) are applied inside the service. Exposed standalone via `POST /api/v1/ingredients/parse`.
+`PublicLlmIngredientParserService` (in `Api/ParserServices/`) implements `IIngredientParserService`. Calls the **Mistral AI public API** (`https://api.mistral.ai/v1/chat/completions`, model `mistral-small-latest`) directly via `HttpClient` — no local sidecar. Named HttpClient "MistralApi" (60s timeout). API key from `INGREDIENT_PARSER_API_KEY` env var (never in config files). When key is absent or the API is unreachable, `ParseAsync` returns `Success=false, IsProviderUnavailable=true`; the controller maps this to `502 Bad Gateway`. Input sanitisation (truncation/10k chars, control-char strip, role-marker strip) and output validation (max 50 items, name ≤ 100 chars, amount 0–5000) are applied inside the service. Exposed standalone via `POST /api/v1/ingredients/parse`.
 
 ## API reference
 
