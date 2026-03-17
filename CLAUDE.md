@@ -9,7 +9,7 @@ Each sub-project has its own `CLAUDE.md` with project-specific details.
 recipeaid/
 ├── docs/
 │   ├── adr/                   # Architecture Decision Records
-│   │   └── 0001-switch-sqlite-to-litedb.md
+│   │   └── 000X-deciscion-record.md
 │   └── architecture.md        # Living doc: current system architecture, API ref, DB schema
 ├── backend/                   # ASP.NET Core 9 Web API (see backend/CLAUDE.md)
 ├── frontend/                  # React 19 + Vite 7 + TypeScript (see frontend/CLAUDE.md)
@@ -101,6 +101,10 @@ Follow a strict test-first order for every feature:
 
 - **ADRs** (`docs/adr/`) — record *why* a significant decision was made (database engine, storage strategy, new sidecar, auth approach). Written *before* implementation when choosing between meaningful alternatives. Kept forever.
 - **GitHub Issues** — track *what* to build. Close the issue after the feature is merged — `docs/architecture.md` becomes the living record.
+
+### Commit and push approval
+
+**Always pause before running `git commit` or `git push`.** Show the user a summary of all staged changes and wait for explicit approval before proceeding. Do not commit or push autonomously.
 
 ### Before every commit/push
 

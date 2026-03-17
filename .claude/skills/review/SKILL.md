@@ -61,7 +61,7 @@ Flag only clear issues — do not speculate:
 
 ## Output format
 
-Write the full review to **`REVIEW.md`** in the repo root (create or overwrite). Then print a short one-paragraph summary to the user so they know the file is ready.
+Write the full review to **`REVIEW.md`** at the root of the current git worktree (i.e. the directory returned by `git rev-parse --show-toplevel` — this will be the worktree directory when on a feature branch, not the main repo root). Create or overwrite the file. Then print a short one-paragraph summary to the user so they know the file is ready.
 
 Structure `REVIEW.md` exactly like this:
 
