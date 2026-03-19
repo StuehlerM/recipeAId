@@ -8,17 +8,17 @@ const UNIT_SUGGESTIONS = [
 export default function UnitCombobox({
   value,
   onChange,
-  inputCls,
+  className,
 }: {
   value: string;
   onChange: (v: string) => void;
-  inputCls: string;
+  className?: string;
 }) {
   const datalistId = `unit-list-${useId()}`;
   return (
     <>
       <input
-        className={inputCls}
+        className={className}
         list={datalistId}
         value={value}
         onChange={(e) => onChange(e.target.value)}

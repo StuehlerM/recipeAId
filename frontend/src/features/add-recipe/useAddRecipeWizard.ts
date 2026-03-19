@@ -109,11 +109,11 @@ export function useAddRecipeWizard() {
 
   function handleTitleScan(draft: RecipeOcrDraftDto) {
     if (draft.detectedTitle) setTitle(draft.detectedTitle);
-    if (draft.imageKey) setImageKeys((prev) => ({ ...prev, title: draft.imageKey! }));
+    if (draft.imageKey) setImageKeys((prev) => ({ ...prev, title: draft.imageKey }));
   }
 
   function handleIngredientScan(draft: RecipeOcrDraftDto) {
-    if (draft.imageKey) setImageKeys((prev) => ({ ...prev, ingredients: draft.imageKey! }));
+    if (draft.imageKey) setImageKeys((prev) => ({ ...prev, ingredients: draft.imageKey }));
     const hasRows = ingredients.some((r) => r.name.trim());
     const mapped = mapIngredients(draft);
     if (mapped.length === 0) return;
@@ -139,7 +139,7 @@ export function useAddRecipeWizard() {
   }
 
   function handleInstructionScan(draft: RecipeOcrDraftDto) {
-    if (draft.imageKey) setImageKeys((prev) => ({ ...prev, instructions: draft.imageKey! }));
+    if (draft.imageKey) setImageKeys((prev) => ({ ...prev, instructions: draft.imageKey }));
     const text = draft.detectedInstructions ?? draft.rawOcrText;
     if (text) setInstructions(text);
   }
