@@ -1,8 +1,23 @@
 import { inputBase } from "../styles/shared";
-import UnitCombobox from "../features/add-recipe/UnitCombobox";
 
 const fieldCls = `${inputBase} px-2`;
 
+interface UnitComboboxProps {
+  value: string;
+  onChange: (value: string) => void;
+  inputCls?: string;
+}
+
+function UnitCombobox({ value, onChange, inputCls }: UnitComboboxProps) {
+  return (
+    <input
+      className={inputCls}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder="Unit"
+    />
+  );
+}
 interface Props {
   name: string;
   amount: string;
