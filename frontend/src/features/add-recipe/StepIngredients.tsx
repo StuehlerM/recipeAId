@@ -1,5 +1,5 @@
 import OcrCaptureButton from "../../components/OcrCaptureButton";
-import UnitCombobox from "./UnitCombobox";
+import IngredientRowInput from "../../components/IngredientRowInput";
 import type { RecipeOcrDraftDto } from "../../api/types";
 import type { IngredientRow } from "./types";
 
@@ -12,7 +12,6 @@ interface StepIngredientsProps {
   onConfirmReplace: () => void;
   onDismissReplace: () => void;
   onScan: (draft: RecipeOcrDraftDto) => void;
-  inputBase: string;
 }
 
 export default function StepIngredients({
@@ -24,7 +23,6 @@ export default function StepIngredients({
   onConfirmReplace,
   onDismissReplace,
   onScan,
-  inputBase,
 }: StepIngredientsProps) {
   return (
     <div className="space-y-3">
@@ -57,37 +55,15 @@ export default function StepIngredients({
 
       <div className="space-y-2">
         {ingredients.map((ing, idx) => (
-          <div key={idx} className="flex gap-1.5 items-center">
-            <input
-              className={`${inputBase} px-2 flex-1 min-w-0`}
-              value={ing.name}
-              onChange={(e) => onUpdate(idx, "name", e.target.value)}
-              placeholder="Ingredient"
-            />
-            <input
-              className={`${inputBase} px-2 w-14 shrink-0`}
-              value={ing.amount}
-              onChange={(e) => onUpdate(idx, "amount", e.target.value)}
-              placeholder="Amt"
-            />
-            <div className="w-20 shrink-0">
-              <UnitCombobox
-                value={ing.unit}
-                onChange={(v) => onUpdate(idx, "unit", v)}
-                inputCls={`${inputBase} px-2 w-full`}
-              />
-            </div>
-            {ingredients.length > 1 && (
-              <button
-                type="button"
-                onClick={() => onRemove(idx)}
-                className="text-rose hover:text-rose-dark text-xl leading-none shrink-0 w-6 h-8 flex items-center justify-center"
-                aria-label="Remove ingredient"
-              >
-                ×
-              </button>
-            )}
-          </div>
+          <IngredientRowInput
+            key={idx}
+            name={ing.name}
+            amount={ing.amount}
+            unit={ing.unit}
+            onChange={(field, value) => onUpdate(idx, field, value)}
+            onRemove={() => onRemove(idx)}
+            showRemove={ingredients.length > 1}
+          />
         ))}
       </div>
       <button

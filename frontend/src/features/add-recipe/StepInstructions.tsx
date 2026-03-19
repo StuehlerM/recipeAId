@@ -1,14 +1,14 @@
 import OcrCaptureButton from "../../components/OcrCaptureButton";
 import type { RecipeOcrDraftDto } from "../../api/types";
+import { inputCls } from "../../styles/shared";
 
 interface StepInstructionsProps {
   instructions: string;
   onChange: (value: string) => void;
   onScan: (draft: RecipeOcrDraftDto) => void;
-  inputCls: string;
 }
 
-export default function StepInstructions({ instructions, onChange, onScan, inputCls }: StepInstructionsProps) {
+export default function StepInstructions({ instructions, onChange, onScan }: StepInstructionsProps) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">

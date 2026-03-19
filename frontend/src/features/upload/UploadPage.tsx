@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { uploadRecipeImage, createRecipe } from "../../api/client";
 import type { RecipeOcrDraftDto } from "../../api/types";
 import CropModal from "../../components/CropModal";
+import IngredientRowInput from "../../components/IngredientRowInput";
 import styles from "./UploadPage.module.css";
 
 type DraftIngredient = { name: string; amount: string; unit: string };
@@ -147,36 +148,19 @@ export default function UploadPage() {
 
           <label className={styles.label}>Ingredients</label>
           <div className={styles.ingredientList}>
-            {ingredients.map((ing, idx) => (
-              <div key={idx} className={styles.ingredientRow}>
-                <input
-                  className={styles.input}
-                  value={ing.name}
-                  onChange={(e) => updateIngredient(idx, "name", e.target.value)}
-                  placeholder="Ingredient name"
+            <div className="space-y-2">
+              {ingredients.map((ing, idx) => (
+                <IngredientRowInput
+                  key={idx}
+                  name={ing.name}
+                  amount={ing.amount}
+                  unit={ing.unit}
+                  onChange={(field, value) => updateIngredient(idx, field, value)}
+                  onRemove={() => removeIngredient(idx)}
+                  showRemove={true}
                 />
-                <input
-                  className={`${styles.input} ${styles.quantityInput}`}
-                  value={ing.amount}
-                  onChange={(e) => updateIngredient(idx, "amount", e.target.value)}
-                  placeholder="Amount"
-                />
-                <input
-                  className={`${styles.input} ${styles.quantityInput}`}
-                  value={ing.unit}
-                  onChange={(e) => updateIngredient(idx, "unit", e.target.value)}
-                  placeholder="Unit"
-                />
-                <button
-                  type="button"
-                  className={styles.removeBtn}
-                  onClick={() => removeIngredient(idx)}
-                  aria-label="Remove ingredient"
-                >
-                  ×
-                </button>
-              </div>
-            ))}
+              ))}
+            </div>
             <button type="button" className={styles.addBtn} onClick={addIngredient}>
               + Add ingredient
             </button>

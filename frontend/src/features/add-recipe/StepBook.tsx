@@ -1,11 +1,12 @@
+import { inputCls } from "../../styles/shared";
+
 interface StepBookProps {
   bookTitle: string;
   onChange: (value: string) => void;
   bookSuggestions: string[];
-  inputCls: string;
 }
 
-export default function StepBook({ bookTitle, onChange, bookSuggestions, inputCls }: StepBookProps) {
+export default function StepBook({ bookTitle, onChange, bookSuggestions }: StepBookProps) {
   return (
     <div className="space-y-4">
       <p className="text-ghost text-sm">Which cookbook or source is this from? (Optional)</p>
