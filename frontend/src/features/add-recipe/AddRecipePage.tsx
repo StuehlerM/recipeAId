@@ -1,5 +1,4 @@
 import StepIndicator from "./StepIndicator";
-import type { Step } from "./StepIndicator";
 import StepTitle from "./StepTitle";
 import StepIngredients from "./StepIngredients";
 import StepInstructions from "./StepInstructions";
@@ -38,7 +37,7 @@ export default function AddRecipePage() {
     <div className="max-w-sm mx-auto px-4 pt-6">
       <h1 className="text-2xl font-bold text-ink mb-6">New Recipe</h1>
 
-      <StepIndicator step={step as Step} onStepClick={handleStepClick} />
+      <StepIndicator step={step} onStepClick={handleStepClick} />
 
       {step === 1 && (
         <StepTitle title={title} onChange={setTitle} onNext={handleNext} touched={touched} onScan={handleTitleScan} />
