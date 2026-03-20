@@ -20,7 +20,7 @@ Then(
 Then(
   "I should see the quantity {string}",
   async function (this: RecipeAIdWorld, quantity: string) {
-    await this.page.getByText(quantity, { exact: true }).waitFor({ state: "visible" });
+    await this.page.getByText(new RegExp(`\\b${escapeForRegex(quantity)}\\b`)).waitFor({ state: "visible" });
   }
 );
 
