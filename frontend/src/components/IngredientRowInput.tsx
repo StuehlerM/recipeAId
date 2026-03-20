@@ -8,14 +8,25 @@ interface UnitComboboxProps {
   inputCls?: string;
 }
 
+const UNIT_LIST_ID = "unit-options";
+const COMMON_UNITS = ["g", "kg", "ml", "l", "tsp", "tbsp", "cup", "cups", "oz", "lb", "piece", "pinch"];
+
 function UnitCombobox({ value, onChange, inputCls }: UnitComboboxProps) {
   return (
-    <input
-      className={inputCls}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder="Unit"
-    />
+    <>
+      <datalist id={UNIT_LIST_ID}>
+        {COMMON_UNITS.map((u) => (
+          <option key={u} value={u} />
+        ))}
+      </datalist>
+      <input
+        className={inputCls}
+        list={UNIT_LIST_ID}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Unit"
+      />
+    </>
   );
 }
 interface Props {
