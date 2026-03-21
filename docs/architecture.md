@@ -13,13 +13,13 @@ Living document describing the current system architecture. Updated alongside co
 | Layer | Technology |
 |-------|-----------|
 | Backend | ASP.NET Core 9, LiteDB 5 (embedded document database) |
-| OCR sidecar | Python 3.11, PaddleOCR PP-OCRv5 (English + German), FastAPI, port 8001 |
+| OCR provider | Mistral OCR API (`mistral-ocr-latest`), called directly from backend over HTTPS |
 | Ingredient parser | Mistral AI public API (`mistral-small-latest`), called directly from backend over HTTPS — no local sidecar |
 | Frontend | React 19, Vite 7, TypeScript, Tailwind CSS v4, TanStack Query v5, React Router v6 |
 | PWA | vite-plugin-pwa (installable, standalone) |
-| Testing | xUnit + Moq (backend), pytest (OCR sidecar), Cucumber.js + Playwright (BDD) |
+| Testing | xUnit + Moq (backend), pytest (OCR sidecar legacy/reference), Cucumber.js + Playwright (BDD) |
 | CI | GitHub Actions — BDD integration tests on every PR to main |
-| Container | Docker Compose (3 services) |
+| Container | Docker Compose (2 services) |
 
 ### Dependency rule
 
@@ -88,13 +88,11 @@ Recipe document
 | Service | Port | Notes |
 |---------|------|-------|
 | frontend | 80 (HTTP→HTTPS redirect), 443 | nginx, self-signed cert |
-| backend | 8080 | ASP.NET Core, depends on `ocr-service` health check |
-| ocr-service | 8001 | PaddleOCR, health check on `/health` |
+| backend | 8080 | ASP.NET Core |
 
 ### Key Docker details
 
-- `ocr-service` health check: `/health`, 60s start period
-- Backend waits for `ocr-service` health check via `depends_on: condition: service_healthy`
+- Backend calls Mistral OCR and Mistral chat APIs directly (`MISTRAL_BASE_URL`, default `https://api.mistral.ai`)
 - nginx SSE location block (`/api/v1/ocr-sessions/`): `proxy_buffering off`, `proxy_read_timeout 220s`
 - nginx API location block (`/api/`): `client_max_body_size 10m`, `proxy_read_timeout 210s`
 - HTTPS: self-signed cert generated at build time; `VM_HOST` build arg adds VM IP as SAN
@@ -111,7 +109,7 @@ All phases are complete.
 | 2 | CRUD API — RecipeService, RecipesController, OpenAPI, CORS, error handling |
 | 3 | *(removed)* Unit conversion — deleted, never used by frontend |
 | 4 | Search API — RecipeMatchingService, ingredient search endpoint |
-| 5 | OCR Integration — PaddleOCR sidecar, OcrParserService, from-image endpoint |
+| 5 | OCR Integration — OCR provider adapter + OcrParserService + from-image endpoint |
 | 6 | React Frontend — pages, API client, TanStack Query |
 | 7 | Mobile-First Design + PWA — Tailwind, camera capture, planner, bottom nav |
 | 8 | Integration Tests (BDD) — Cucumber.js + Playwright, 14 scenarios |
@@ -122,6 +120,7 @@ All phases are complete.
 | 13 | Fuzzy Ingredient Matching — Damerau-Levenshtein (OSA, distance ≤ 2); exact hits score 1.0, fuzzy 0.8 |
 | 14 | Health Check Caching — ingredient-parser `/health` caches `_model_loaded` flag after first successful Ollama check; subsequent checks return instantly |
 | 15 | Replace Ingredient-Parser Sidecar — Ministral 3B Ollama sidecar replaced by Mistral AI public API called directly from backend; sidecar, 4 GB model volume, and 120s start period eliminated (ADR 0002) |
+| 16 | Replace OCR Sidecar — PaddleOCR sidecar replaced by Mistral OCR API with a shared post-OCR sanitization boundary before draft parsing/refinement (ADR 0003) |
 
 ---
 

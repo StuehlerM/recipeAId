@@ -73,7 +73,9 @@ Recipe document
 
 ## OCR integration
 
-`PythonOcrService` (in `Api/OcrServices/`) implements `IOcrService` — forwards images to the OCR sidecar via named `HttpClient` (30s timeout). Image uploads limited to 10 MB.
+`MistralOcrService` (in `Api/OcrServices/`) implements `IOcrService` — sends images to Mistral OCR (`/v1/ocr`) via named `HttpClient` ("MistralOcrApi", 60s timeout). API key from `MISTRAL_OCR_API_KEY` (falls back to `INGREDIENT_PARSER_API_KEY` if omitted). Image uploads remain limited to 10 MB.
+
+`OcrTextSanitizer` (in `Core/Services/`) provides a provider-agnostic post-OCR boundary. OCR text is sanitized exactly once immediately after OCR and before regex draft parsing + LLM refinement.
 
 `OcrParserService` (in `Core/Services/`) implements `IOcrParser` — pure string logic, fully unit-tested. Uses `[GeneratedRegex]` source generators. Three ingredient patterns tried in order: `amount unit name` ("2 cups flour"), `name amount unit` ("Flour 200 g"), `name amount` ("Eggs 2"). German section headers supported ("Zutaten", "Zubereitung"). Run-on lines split at quantity+unit boundaries. **Multi-line title merging**: if the second line before any section header qualifies as a title continuation (≤ 60 chars, no trailing `.`/`:`, not a section header, not starting with a quantity or bullet), it is joined to the first line with a space — works in both structured and unstructured paths.
 
@@ -90,7 +92,7 @@ When `refine=false` or no ingredients found → `SessionId = null`, no backgroun
 Key classes:
 - `OcrSessionStore` — singleton `ConcurrentDictionary<string, Session>` with `TaskCompletionSource`
 - `OcrSessionCleanupService` — `BackgroundService`, removes stale sessions every 60s (5-min max age)
-- `OcrSessionsController` — SSE endpoint, polls parser `/status` every 30s, 15-min hard timeout
+- `OcrSessionsController` — SSE endpoint with processing heartbeat + 15-min hard timeout; no parser sidecar `/status` polling
 
 ## Ingredient parser integration
 
