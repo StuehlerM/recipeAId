@@ -37,38 +37,37 @@ public sealed class MistralOcrService(
         };
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
 
-        HttpResponseMessage response;
         try
         {
-            response = await httpClient.SendAsync(request, ct);
+            using var response = await httpClient.SendAsync(request, ct);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var body = await response.Content.ReadAsStringAsync(ct);
+                logger.LogWarning("Mistral OCR returned {Status}: {Body}", (int)response.StatusCode, body);
+                return new OcrResult(string.Empty, false, $"OCR provider error ({(int)response.StatusCode})");
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<MistralOcrResponse>(ct);
+            var rawText = string.Join(
+                "\n\n",
+                result?.Pages?.Select(p => p.Markdown?.Trim())
+                    .Where(m => !string.IsNullOrWhiteSpace(m))!
+                    ?? []);
+            rawText = rawText.Replace("\\n", "\n");
+
+            if (string.IsNullOrWhiteSpace(rawText))
+            {
+                return new OcrResult(string.Empty, false, "OCR provider returned no text");
+            }
+
+            return new OcrResult(rawText, true, null);
         }
         catch (HttpRequestException ex)
         {
             logger.LogWarning(ex, "Mistral OCR provider unreachable");
             return new OcrResult(string.Empty, false, "OCR provider unreachable");
         }
-
-        if (!response.IsSuccessStatusCode)
-        {
-            var body = await response.Content.ReadAsStringAsync(ct);
-            logger.LogWarning("Mistral OCR returned {Status}: {Body}", (int)response.StatusCode, body);
-            return new OcrResult(string.Empty, false, $"OCR provider error ({(int)response.StatusCode})");
-        }
-
-        var result = await response.Content.ReadFromJsonAsync<MistralOcrResponse>(ct);
-        var rawText = string.Join(
-            "\n\n",
-            result?.Pages?.Select(p => p.Markdown?.Trim())
-                .Where(m => !string.IsNullOrWhiteSpace(m))!
-                ?? []);
-        rawText = rawText.Replace("\\n", "\n");
-
-        if (string.IsNullOrWhiteSpace(rawText))
-        {
-            return new OcrResult(string.Empty, false, "OCR provider returned no text");
-        }
-
-        return new OcrResult(rawText, true, null);
     }
 
     private sealed record MistralOcrRequest(
