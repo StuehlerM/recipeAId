@@ -31,11 +31,19 @@ const RESPONSE_BODY = JSON.stringify({
 
 const server = createServer((req, res) => {
   if (req.method === "POST" && req.url === "/v1/ocr") {
-    res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(OCR_RESPONSE_BODY);
+    // Drain the request body before responding to avoid buffering issues.
+    req.on("data", () => {});
+    req.on("end", () => {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(OCR_RESPONSE_BODY);
+    });
   } else if (req.method === "POST" && req.url === "/v1/chat/completions") {
-    res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(RESPONSE_BODY);
+    // Drain the request body before responding to avoid buffering issues.
+    req.on("data", () => {});
+    req.on("end", () => {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(RESPONSE_BODY);
+    });
   } else {
     res.writeHead(404);
     res.end();
