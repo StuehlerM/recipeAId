@@ -1,17 +1,30 @@
 import { Then, When } from "@cucumber/cucumber";
 import type { RecipeAIdWorld } from "../support/world";
 
+function escapeForRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 Then(
   "I should see the ingredient {string}",
   async function (this: RecipeAIdWorld, name: string) {
-    await this.page.getByText(name, { exact: true }).waitFor({ state: "visible" });
+    const ingredientPattern = new RegExp(`^${escapeForRegex(name)}$`, "i");
+    await this.page
+      .locator("section ul li span")
+      .filter({ hasText: ingredientPattern })
+      .first()
+      .waitFor({ state: "visible" });
   }
 );
 
 Then(
   "I should see the quantity {string}",
   async function (this: RecipeAIdWorld, quantity: string) {
-    await this.page.getByText(quantity, { exact: true }).waitFor({ state: "visible" });
+    await this.page
+      .locator("section ul li span")
+      .filter({ hasText: new RegExp(`^${escapeForRegex(quantity)}$`) })
+      .first()
+      .waitFor({ state: "visible" });
   }
 );
 

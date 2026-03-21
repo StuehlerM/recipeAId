@@ -5,6 +5,7 @@ import { getRecipes, getRecipe } from "../../api/client";
 import { usePlanner } from "./usePlanner";
 import { aggregateIngredients } from "./quantityAggregator";
 import type { RecipeDto } from "../../api/types";
+import { inputCls } from "../../styles/shared";
 
 export default function PlannerPage() {
   const [search, setSearch] = useState("");
@@ -28,9 +29,6 @@ export default function PlannerPage() {
     .filter((r): r is RecipeDto => r !== undefined);
 
   const shoppingList = aggregateIngredients(plannedRecipes);
-
-  const inputCls =
-    "w-full bg-card border border-edge rounded-lg px-3 py-3 text-ink text-base placeholder-ghost focus:outline-none focus:border-sage transition-colors";
 
   return (
     <div className="max-w-sm mx-auto px-4 pt-6 space-y-6">

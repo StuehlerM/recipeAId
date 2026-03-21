@@ -1,5 +1,6 @@
 import OcrCaptureButton from "../../components/OcrCaptureButton";
 import type { RecipeOcrDraftDto } from "../../api/types";
+import { inputCls } from "../../styles/shared";
 
 interface StepTitleProps {
   title: string;
@@ -7,10 +8,9 @@ interface StepTitleProps {
   onNext: () => void;
   touched: boolean;
   onScan: (draft: RecipeOcrDraftDto) => void;
-  inputCls: string;
 }
 
-export default function StepTitle({ title, onChange, onNext, touched, onScan, inputCls }: StepTitleProps) {
+export default function StepTitle({ title, onChange, onNext, touched, onScan }: StepTitleProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
