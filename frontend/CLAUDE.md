@@ -23,14 +23,14 @@ sonner (toast notifications), react-image-crop (crop modal), @tailwindcss/vite, 
 ```
 src/
 ├── api/               # client.ts, types.ts, mockData.ts
-├── components/        # Shared: NavBar, OcrCaptureButton, CropModal, CameraCapture
+├── components/        # Shared: NavBar, OcrCaptureButton, CropModal, CameraCapture, IngredientRowInput
 ├── hooks/             # Shared: useOcrCapture.ts
 ├── utils/             # imageAnalysis.ts (sharpness + shadow detection)
 └── features/          # Feature-based modules
     ├── recipes/       # RecipeListPage, RecipeDetailPage (+ CSS modules)
     ├── search/        # IngredientSearchPage (+ CSS module)
     ├── upload/        # UploadPage (+ CSS module)
-    ├── add-recipe/    # AddRecipePage wizard, StepIndicator, UnitCombobox
+    ├── add-recipe/    # AddRecipePage wizard, useAddRecipeWizard, StepIndicator, UnitCombobox
     │                  # Steps: StepTitle, StepIngredients, StepInstructions, StepBook
     │                  # types.ts — IngredientRow { name, amount, unit }
     ├── planner/       # PlannerPage, usePlanner.ts, quantityAggregator.ts
