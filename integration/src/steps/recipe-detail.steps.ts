@@ -8,9 +8,9 @@ function escapeForRegex(value: string): string {
 Then(
   "I should see the ingredient {string}",
   async function (this: RecipeAIdWorld, name: string) {
-    const ingredientPattern = new RegExp(`\\b${escapeForRegex(name)}\\b`, "i");
+    const ingredientPattern = new RegExp(`^${escapeForRegex(name)}$`, "i");
     await this.page
-      .locator("li")
+      .locator("section ul li span")
       .filter({ hasText: ingredientPattern })
       .first()
       .waitFor({ state: "visible" });
@@ -20,7 +20,11 @@ Then(
 Then(
   "I should see the quantity {string}",
   async function (this: RecipeAIdWorld, quantity: string) {
-    await this.page.getByText(new RegExp(`\\b${escapeForRegex(quantity)}\\b`)).waitFor({ state: "visible" });
+    await this.page
+      .locator("section ul li span")
+      .filter({ hasText: new RegExp(`^${escapeForRegex(quantity)}$`) })
+      .first()
+      .waitFor({ state: "visible" });
   }
 );
 
