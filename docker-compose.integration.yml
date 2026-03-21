@@ -12,20 +12,6 @@ services:
       retries: 5
       start_period: 5s
 
-  # ── OCR sidecar ───────────────────────────────────────────────────────────────
-  ocr-service:
-    build:
-      context: ./ocr-service
-      dockerfile: Dockerfile
-    volumes:
-      - ocr-models:/root/.paddlex
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
-      interval: 10s
-      timeout: 5s
-      retries: 30
-      start_period: 60s
-
   # ── Backend ──────────────────────────────────────────────────────────────────
   backend:
     build:
@@ -38,13 +24,11 @@ services:
       - ConnectionStrings__DefaultConnection=/data/recipeaid-test.db
       # Allow requests from the frontend container's origin
       - Cors__AllowedOrigins__0=http://frontend
-      - OcrService__BaseUrl=http://ocr-service:8001
       # Point at the mock instead of the real Mistral API; dummy key satisfies the non-empty check
       - MISTRAL_BASE_URL=http://mock-mistral:3000
       - INGREDIENT_PARSER_API_KEY=integration-test-key
+      - MISTRAL_OCR_API_KEY=integration-test-key
     depends_on:
-      ocr-service:
-        condition: service_healthy
       mock-mistral:
         condition: service_healthy
     volumes:
@@ -96,4 +80,3 @@ services:
 
 volumes:
   integration_db:
-  ocr-models:

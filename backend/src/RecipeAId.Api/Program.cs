@@ -32,21 +32,29 @@ builder.Services.AddScoped<IRecipeService, RecipeService>();
 builder.Services.AddScoped<IRecipeImageService, RecipeImageService>();
 builder.Services.AddScoped<IIngredientService, IngredientService>();
 builder.Services.AddScoped<IRecipeMatchingService, RecipeMatchingService>();
-// OCR
-var ocrBaseUrl = builder.Configuration["OcrService:BaseUrl"] ?? "http://localhost:8001";
-builder.Services.AddHttpClient("OcrService", c =>
+// OCR (Mistral API)
+var ocrApiKey = builder.Configuration["MISTRAL_OCR_API_KEY"]
+    ?? builder.Configuration["INGREDIENT_PARSER_API_KEY"]
+    ?? string.Empty;
+var mistralBaseUrl = builder.Configuration["MISTRAL_BASE_URL"] ?? "https://api.mistral.ai";
+builder.Services.AddHttpClient("MistralOcrApi", c =>
 {
-    c.BaseAddress = new Uri(ocrBaseUrl);
-    c.Timeout = TimeSpan.FromSeconds(30);
+    c.BaseAddress = new Uri(mistralBaseUrl);
+    c.Timeout = TimeSpan.FromSeconds(60);
 });
-builder.Services.AddScoped<IOcrService, PythonOcrService>();
+builder.Services.AddScoped<IOcrService>(sp =>
+{
+    var client = sp.GetRequiredService<IHttpClientFactory>().CreateClient("MistralOcrApi");
+    var logger = sp.GetRequiredService<ILogger<MistralOcrService>>();
+    return new MistralOcrService(client, ocrApiKey, logger);
+});
+builder.Services.AddScoped<IOcrTextSanitizer, OcrTextSanitizer>();
 builder.Services.AddScoped<IOcrParser, OcrParserService>();
 
 // Ingredient parser — Mistral AI public API
 // API key is read from INGREDIENT_PARSER_API_KEY at startup; empty = parsing unavailable.
 // Base URL is overridable via MISTRAL_BASE_URL for integration-test mocking.
 var ingredientParserApiKey = builder.Configuration["INGREDIENT_PARSER_API_KEY"] ?? string.Empty;
-var mistralBaseUrl = builder.Configuration["MISTRAL_BASE_URL"] ?? "https://api.mistral.ai";
 builder.Services.AddHttpClient("MistralApi", c =>
 {
     c.BaseAddress = new Uri(mistralBaseUrl);
