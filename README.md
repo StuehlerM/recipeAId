@@ -20,7 +20,7 @@ A recipe management app that reads physical recipe cards with your camera. Point
 
 Requires [Docker Desktop](https://www.docker.com/products/docker-desktop/).
 
-Requires a [Mistral AI API key](https://console.mistral.ai/) for ingredient parsing.
+Requires a [Mistral AI API key](https://console.mistral.ai/) for Mistral-backed features. Use the same key for both text (ingredient parsing) and OCR endpoints; this project configures it as `INGREDIENT_PARSER_API_KEY`.
 
 ```bash
 git clone https://github.com/StuehlerM/recipeAId.git
