@@ -1,49 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import { uploadRecipeImage, subscribeToOcrSession } from "../api/client";
 import type { RecipeOcrDraftDto } from "../api/types";
-
-/** Max dimension (px) for the longest side — keeps uploads fast for OCR. */
-const MAX_DIMENSION = 2048;
-
-/**
- * Convert any browser-readable image to JPEG via Canvas.
- * Handles HEIC (iPhone default), WebP, BMP, etc.
- * Also downscales large images so OCR uploads stay small.
- */
-function toJpeg(file: File): Promise<File> {
-  return new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      let { width, height } = img;
-      if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
-        const scale = MAX_DIMENSION / Math.max(width, height);
-        width = Math.round(width * scale);
-        height = Math.round(height * scale);
-      }
-      const canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) { reject(new Error("Canvas not supported")); return; }
-      ctx.drawImage(img, 0, 0, width, height);
-      canvas.toBlob(
-        (blob) => {
-          if (!blob) { reject(new Error("JPEG conversion failed")); return; }
-          resolve(new File([blob], "photo.jpg", { type: "image/jpeg" }));
-        },
-        "image/jpeg",
-        0.85,
-      );
-    };
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error("Could not load image"));
-    };
-    img.src = url;
-  });
-}
+import { toJpeg } from "../utils/imageConversion";
 
 export function useOcrCapture({ refine = true }: { refine?: boolean } = {}) {
   const [isLoading, setIsLoading] = useState(false);
@@ -122,7 +80,7 @@ export function useOcrCapture({ refine = true }: { refine?: boolean } = {}) {
     setLoadingStage("ocr");
     try {
       // toJpeg handles downscaling if the cropped region is still large
-      const jpeg = await toJpeg(croppedFile);
+      const jpeg = new File([await toJpeg(croppedFile)], "photo.jpg", { type: "image/jpeg" });
 
       // POST returns immediately with OCR + regex draft (+ sessionId when refine=true)
       const draft = await uploadRecipeImage(jpeg, refine);
