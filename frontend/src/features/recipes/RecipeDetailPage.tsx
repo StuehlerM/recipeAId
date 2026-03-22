@@ -42,18 +42,29 @@ export default function RecipeDetailPage() {
   const ingredientsSorted = [...recipe.ingredients].sort((a, b) => a.sortOrder - b.sortOrder);
   const displayedIngredients = scaleIngredients(ingredientsSorted, scale);
 
-  // When display servings differ from base, recompute per-serving nutrition from totals.
+  // When display servings differ from base, scale totals by the same ratio applied to ingredients,
+  // then derive per-serving from the scaled totals.
   const scaledNutrition =
     recipe.nutritionSummary && isScaled && displayServings && recipe.nutritionSummary !== null
-      ? {
-          ...recipe.nutritionSummary,
-          perServing: {
-            proteinGrams: recipe.nutritionSummary.proteinGrams / displayServings,
-            carbGrams: recipe.nutritionSummary.carbGrams / displayServings,
-            fatGrams: recipe.nutritionSummary.fatGrams / displayServings,
-            fiberGrams: recipe.nutritionSummary.fiberGrams / displayServings,
-          },
-        }
+      ? (() => {
+          const scaledProtein = recipe.nutritionSummary.proteinGrams * scale;
+          const scaledCarbs = recipe.nutritionSummary.carbGrams * scale;
+          const scaledFat = recipe.nutritionSummary.fatGrams * scale;
+          const scaledFiber = recipe.nutritionSummary.fiberGrams * scale;
+          return {
+            ...recipe.nutritionSummary,
+            proteinGrams: scaledProtein,
+            carbGrams: scaledCarbs,
+            fatGrams: scaledFat,
+            fiberGrams: scaledFiber,
+            perServing: {
+              proteinGrams: scaledProtein / displayServings,
+              carbGrams: scaledCarbs / displayServings,
+              fatGrams: scaledFat / displayServings,
+              fiberGrams: scaledFiber / displayServings,
+            },
+          };
+        })()
       : recipe.nutritionSummary;
 
   return (

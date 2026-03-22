@@ -37,6 +37,6 @@ Feature: Recipe detail view
       | salt   | a pinch |      |
     When I navigate to the detail page for "Pasta Bolognese"
     And I click the increase servings button 2 times
-    Then I should see the quantity "400"
+    Then I should see the quantity "400 g"
     And I should see the quantity "4"
     And I should see the quantity "a pinch"

@@ -63,7 +63,7 @@
   margin: 0;
 }
 
-.section h2 {
+.section > h2 {
   font-size: 1.1rem;
   color: var(--color-sage);
   text-transform: uppercase;

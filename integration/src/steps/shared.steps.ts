@@ -30,8 +30,8 @@ Given(
       .hashes()
       .map((row: Record<string, string>, idx: number) => ({
         name: row["name"],
-        amount: row["amount"] || null,
-        unit: row["unit"] || null,
+        amount: row["amount"] === "" ? null : row["amount"],
+        unit: row["unit"] === "" ? null : row["unit"],
         sortOrder: idx,
       }));
 
@@ -58,8 +58,8 @@ Given(
       .hashes()
       .map((row: Record<string, string>, idx: number) => ({
         name: row["name"],
-        amount: row["amount"] || null,
-        unit: row["unit"] || null,
+        amount: row["amount"] === "" ? null : row["amount"],
+        unit: row["unit"] === "" ? null : row["unit"],
         sortOrder: idx,
       }));
 
