@@ -82,6 +82,7 @@ public class OpenFoodFactsClient(
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
             logger.LogWarning(ex, "Open Food Facts request failed for ingredient '{Ingredient}'", ingredientName);
+            cache.Set(cacheKey, (NutrientInfo?)null, ErrorCacheOptions);
             throw;
         }
     }

@@ -53,4 +53,3 @@ public sealed class OcrTextSanitizer : IOcrTextSanitizer
         return cleaned.ToString().Trim();
     }
 }
-

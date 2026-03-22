@@ -123,12 +123,13 @@ export function useOcrCapture({ refine = true }: { refine?: boolean } = {}) {
     try {
       // toJpeg handles downscaling if the cropped region is still large
       const jpeg = await toJpeg(croppedFile);
-      console.info("[OCR] Uploading image:", jpeg.name, jpeg.size, "bytes", jpeg.type);
 
       // POST returns immediately with OCR + regex draft (+ sessionId when refine=true)
       const draft = await uploadRecipeImage(jpeg, refine);
-      console.info("[OCR] OCR done: title=%s ingredients=%d sessionId=%s",
-        draft.detectedTitle ?? "(none)", draft.detectedIngredients?.length ?? 0, draft.sessionId ?? "none");
+      if (import.meta.env.DEV) {
+        console.info("[OCR] OCR done: title=%s ingredients=%d sessionId=%s",
+          draft.detectedTitle ?? "(none)", draft.detectedIngredients?.length ?? 0, draft.sessionId ?? "none");
+      }
 
       if (draft.sessionId) {
         // LLM is running in the background — wait for SSE result before calling the callback
@@ -137,14 +138,18 @@ export function useOcrCapture({ refine = true }: { refine?: boolean } = {}) {
           draft.sessionId,
           (ingredients) => {
             // LLM succeeded — populate with refined ingredients
-            console.info("[OCR] LLM refinement done: %d ingredients", ingredients.length);
+            if (import.meta.env.DEV) {
+              console.info("[OCR] LLM refinement done: %d ingredients", ingredients.length);
+            }
             setIsLoading(false);
             setLoadingStage(null);
             callbackRef.current?.({ ...draft, detectedIngredients: ingredients });
           },
           () => {
             // LLM failed — silently use regex draft as fallback
-            console.info("[OCR] LLM refinement failed, using regex fallback");
+            if (import.meta.env.DEV) {
+              console.info("[OCR] LLM refinement failed, using regex fallback");
+            }
             setIsLoading(false);
             setLoadingStage(null);
             callbackRef.current?.(draft);

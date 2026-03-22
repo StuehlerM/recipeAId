@@ -163,7 +163,10 @@ public sealed class PublicLlmIngredientParserService(
     /// Callers are expected to pass a validated BCP-47 tag, but this provides defence-in-depth.
     /// </summary>
     private static string SanitizeLang(string lang)
-        => lang.ReplaceLineEndings(" ").Trim()[..Math.Min(lang.Length, 10)];
+    {
+        var cleaned = lang.ReplaceLineEndings(" ").Trim();
+        return cleaned[..Math.Min(cleaned.Length, 10)];
+    }
 
     // ── Prompt builder ───────────────────────────────────────────────────────
 

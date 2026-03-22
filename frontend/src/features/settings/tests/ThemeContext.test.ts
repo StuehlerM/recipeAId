@@ -1,20 +1,15 @@
 /**
- * Unit tests for ThemeContext (Issue #20 — dark theme toggle)
- *
- * These tests are intentionally FAILING — ThemeContext does not exist yet.
- * Implement src/features/settings/ThemeContext.tsx to make them pass.
+ * Unit tests for theme storage utilities (Issue #20 — dark theme toggle)
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
-// ThemeContext does not exist yet — this import will cause a compile/runtime error
-// until the implementation is written.
 import {
   THEME_STORAGE_KEY,
   getStoredTheme,
   setStoredTheme,
-} from "../ThemeContext";
+} from "../themeStorage";
 
-describe("ThemeContext — localStorage persistence", () => {
+describe("themeStorage — localStorage persistence", () => {
   beforeEach(() => {
     localStorage.clear();
     // Reset html class list between tests

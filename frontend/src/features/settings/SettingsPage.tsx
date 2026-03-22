@@ -1,5 +1,5 @@
 import { Settings } from "lucide-react";
-import { useTheme } from "./ThemeContext";
+import { useTheme } from "./useTheme";
 
 export default function SettingsPage() {
   const { theme, toggleTheme } = useTheme();
