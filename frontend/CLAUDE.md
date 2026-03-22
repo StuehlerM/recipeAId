@@ -25,7 +25,7 @@ src/
 ├── api/               # client.ts, types.ts, mockData.ts
 ├── components/        # Shared: NavBar, OcrCaptureButton, CropModal, CameraCapture, IngredientRowInput
 ├── hooks/             # Shared: useOcrCapture.ts
-├── utils/             # imageAnalysis.ts (sharpness + shadow detection)
+├── utils/             # imageConversion.ts (toJpeg — JPEG conversion + downscaling), imageAnalysis.ts (sharpness + shadow detection)
 └── features/          # Feature-based modules
     ├── recipes/       # RecipeListPage, RecipeDetailPage (+ CSS modules)
     ├── search/        # IngredientSearchPage (+ CSS module)
@@ -78,7 +78,7 @@ Custom `@theme` tokens defined in `src/index.css`. Supports **light and dark the
 
 **CropModal** (`src/components/CropModal.tsx`): Fullscreen crop overlay (`react-image-crop`, z-[60]). Passes cropped image directly to OCR — no client-side preprocessing (all preprocessing is server-side in the OCR sidecar).
 
-**useOcrCapture** (`src/hooks/useOcrCapture.ts`): Opens CameraCapture when `getUserMedia` available; falls back to hidden `<input type="file" capture="environment">`. Accepts `{ refine?: boolean }` (default true). Exposes `loadingStage: 'ocr' | 'llm' | null`. On crop confirm, image is converted to JPEG (0.92 quality) and downscaled to max 2048px.
+**useOcrCapture** (`src/hooks/useOcrCapture.ts`): Opens CameraCapture when `getUserMedia` available; falls back to hidden `<input type="file" capture="environment">`. Accepts `{ refine?: boolean }` (default true). Exposes `loadingStage: 'ocr' | 'llm' | null`. On crop confirm, delegates JPEG conversion and downscaling to `toJpeg` from `src/utils/imageConversion.ts`.
 
 **OcrCaptureButton** (`src/components/OcrCaptureButton.tsx`): Camera icon button with spinner. Accepts `refine?: boolean` prop. Stage-specific labels: "Reading image…" (ocr), "Translating…" (llm). StepTitle and StepInstructions pass `refine={false}`.
 
