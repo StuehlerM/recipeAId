@@ -32,11 +32,11 @@ backend/
 
 ## Architecture
 
-**Service layer:** All controllers depend on service interfaces, not repositories directly. `IIngredientService` / `IngredientService` handles ingredient queries; `IRecipeService` / `RecipeService` handles recipe CRUD. `RecipeService` uses a private `BuildIngredients` static helper to build embedded ingredient lists from `IngredientLineDto`. `RecipeMatchingService` uses Damerau-Levenshtein (OSA, distance ≤ 2) for fuzzy ingredient matching — exact matches score 1.0, fuzzy matches score 0.8; results ranked by total score then score/ingredient ratio.
+**Service layer:** All controllers depend on service interfaces, not repositories directly. `IIngredientService` / `IngredientService` handles ingredient queries; `IRecipeService` / `RecipeService` handles recipe CRUD. `IRecipeDetailService` / `RecipeDetailService` orchestrates recipe retrieval + nutrition enrichment for `GET /api/v1/recipes/{id}`. `RecipeService` uses a private `BuildIngredients` static helper to build embedded ingredient lists from `IngredientLineDto`. `RecipeMatchingService` uses Damerau-Levenshtein (OSA, distance ≤ 2) for fuzzy ingredient matching — exact matches score 1.0, fuzzy matches score 0.8; results ranked by total score then score/ingredient ratio.
 
 **DI lifetimes:** `ILiteDatabase` — `AddSingleton` (one file lock). Repositories and services — `AddScoped`. `ILiteDatabase` is resolved eagerly at startup (`app.Services.GetRequiredService<ILiteDatabase>()`) so a corrupt or missing database file crashes the container immediately rather than silently 500-ing on the first request.
 
-**DTO organization:** One record per file in `Core/DTOs/`. Key DTOs: `CreateRecipeRequest` (with `BookTitle`), `UpdateRecipeRequest`, `RecipeDto`, `RecipeIngredientDto` (Amount + Unit), `RecipeSummaryDto`, `RecipeOcrDraftDto` (with optional `SessionId`), `OcrResult`, `IngredientLineDto(Name, Amount, Unit)`, `IngredientParseRequest`, `IngredientParseResult`.
+**DTO organization:** One record per file in `Core/DTOs/`. Key DTOs: `CreateRecipeRequest` (with `BookTitle`), `UpdateRecipeRequest`, `RecipeDto` (includes optional `Servings` and `NutritionSummary`), `RecipeIngredientDto` (Amount + Unit), `RecipeSummaryDto`, `RecipeOcrDraftDto` (with optional `SessionId`), `OcrResult`, `IngredientLineDto(Name, Amount, Unit)`, `IngredientParseRequest`, `IngredientParseResult`, `NutritionSummaryDto`, `NutritionPerServingDto`, `NutrientInfo`.
 
 **`IRecipeRepository.UpdateAsync`:** Takes an explicit `newIngredients` list. The repository replaces `recipe.RecipeIngredients` and calls `Recipes.Update(recipe)` — no EF tracking concerns.
 
@@ -58,6 +58,7 @@ Recipe document
 ├── ImagePath   (string?)
 ├── RawOcrText  (string?)
 ├── BookTitle   (string?)
+├── Servings    (int?)
 ├── CreatedAt   (DateTime)
 ├── UpdatedAt   (DateTime)
 └── RecipeIngredients []
@@ -98,12 +99,20 @@ Key classes:
 
 `PublicLlmIngredientParserService` (in `Api/ParserServices/`) implements `IIngredientParserService`. Calls the **Mistral AI public API** (`https://api.mistral.ai/v1/chat/completions`, model `mistral-small-latest`) directly via `HttpClient` — no local sidecar. Named HttpClient "MistralApi" (60s timeout). API key from `INGREDIENT_PARSER_API_KEY` env var (never in config files). When key is absent or the API is unreachable, `ParseAsync` returns `Success=false, IsProviderUnavailable=true`; the controller maps this to `502 Bad Gateway`. Input sanitisation (truncation/10k chars, control-char strip, role-marker strip) and output validation (max 50 items, name ≤ 100 chars, amount 0–5000) are applied inside the service. Exposed standalone via `POST /api/v1/ingredients/parse`.
 
+## Nutrition estimation
+
+`RecipeDetailService` (in `Core/Services/`) implements `IRecipeDetailService`. Called by `RecipesController.GetById` — fetches the recipe via `IRecipeService`, then calls `INutritionEstimator.EstimateAsync` and returns `recipe with { NutritionSummary = nutrition }`. If the estimator returns `null`, `NutritionSummary` is `null` in the response (recipe still returned successfully).
+
+`NutritionEstimatorService` (in `Core/Services/`) implements `INutritionEstimator`. For each ingredient, calls `IOpenFoodFactsClient.GetNutrientsByNameAsync` in parallel (up to 4 concurrent via `SemaphoreSlim`). Scales per-100g nutrient values by the ingredient's amount in grams (`g`/`kg` units; fallback 100g for other units). Returns `null` when no ingredients matched or when any HTTP call throws. If `servings` is provided, adds `PerServing` division.
+
+`OpenFoodFactsClient` (in `Api/NutritionServices/`) implements `IOpenFoodFactsClient`. Named `HttpClient` ("OpenFoodFacts") with 5s timeout, `User-Agent: RecipeAId/1.0`, `BaseAddress: https://world.openfoodfacts.org`. Results cached in `IMemoryCache` (1h sliding / 24h absolute) keyed by normalised ingredient name. Open Food Facts requires attribution: the `NutritionPanel` frontend component links to `https://world.openfoodfacts.org`.
+
 ## API reference
 
 | Method | Route | Description |
 |--------|-------|-------------|
 | GET | `/api/v1/recipes` | List recipes, optional `?q=` title filter |
-| GET | `/api/v1/recipes/{id}` | Single recipe |
+| GET | `/api/v1/recipes/{id}` | Single recipe, enriched with estimated nutrition summary |
 | POST | `/api/v1/recipes` | Create recipe (JSON) |
 | PUT | `/api/v1/recipes/{id}` | Update recipe |
 | DELETE | `/api/v1/recipes/{id}` | Delete recipe |
@@ -119,5 +128,5 @@ Key classes:
 
 - Test project references `RecipeAId.Core` only — no `Data` or `Api` dependencies
 - Services under test live in `Core/Services/`; tests in `tests/RecipeAId.Tests/Services/`
-- Use xUnit + Moq. Mock `IRecipeRepository` for `RecipeService` tests; mock `IImageStorage` for `RecipeImageService` tests
-- 76 tests covering OcrParserService (incl. multi-line title merging), RecipeService, RecipeMatchingService (incl. fuzzy matching), RecipeImageService, PublicLlmIngredientParserService (Mistral API mocked via fake HttpMessageHandler)
+- Use xUnit + Moq. Mock `IRecipeRepository` for `RecipeService` tests; mock `IImageStorage` for `RecipeImageService` tests; mock `IOpenFoodFactsClient` for `NutritionEstimatorServiceTests`
+- 94 tests covering OcrParserService (incl. multi-line title merging), RecipeService, RecipeMatchingService (incl. fuzzy matching), RecipeImageService, PublicLlmIngredientParserService (Mistral API mocked via fake HttpMessageHandler), NutritionEstimatorService (full-match, partial-match, no-match, gram scaling, per-serving, resilience)

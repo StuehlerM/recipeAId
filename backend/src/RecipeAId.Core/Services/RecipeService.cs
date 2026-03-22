@@ -96,5 +96,6 @@ public class RecipeService(IRecipeRepository recipeRepo) : IRecipeService
                 ri.Amount,
                 ri.Unit,
                 ri.SortOrder))
-            .ToList());
+            .ToList(),
+        Servings: recipe.Servings);
 }

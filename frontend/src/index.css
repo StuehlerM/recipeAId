@@ -11,6 +11,7 @@
   --color-ghost:       #6b6560;
   --color-rose:        #b54f4f;
   --color-rose-dark:   #8b3a3a;
+  --color-amber:       #c9883a;
 
   --font-sans: system-ui, -apple-system, Helvetica, Arial, sans-serif;
 }
@@ -56,4 +57,5 @@ html.dark {
   --color-edge:   #3a3835;
   --color-ink:    #f0ede8;
   --color-ghost:  #9b9590;
+  --color-amber:  #d9a060;
 }

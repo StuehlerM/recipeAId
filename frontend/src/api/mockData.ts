@@ -10,6 +10,7 @@ export const MOCK_RECIPES: RecipeDto[] = [
     bookTitle: "The Italian Kitchen",
     createdAt: "2025-01-10T08:00:00Z",
     updatedAt: "2025-01-10T08:00:00Z",
+    servings: 4,
     ingredients: [
       { ingredientId: 1, ingredientName: "ground beef", amount: "500", unit: "g", sortOrder: 0 },
       { ingredientId: 2, ingredientName: "spaghetti", amount: "400", unit: "g", sortOrder: 1 },
@@ -19,6 +20,18 @@ export const MOCK_RECIPES: RecipeDto[] = [
       { ingredientId: 6, ingredientName: "tomato paste", amount: "2", unit: "tbsp", sortOrder: 5 },
       { ingredientId: 7, ingredientName: "parmesan", amount: null, unit: "to taste", sortOrder: 6 },
     ],
+    nutritionSummary: {
+      proteinGrams: 112,
+      carbGrams: 208,
+      fatGrams: 72,
+      fiberGrams: 16,
+      perServing: {
+        proteinGrams: 28,
+        carbGrams: 52,
+        fatGrams: 18,
+        fiberGrams: 4,
+      },
+    },
   },
   {
     id: 2,
@@ -37,6 +50,12 @@ export const MOCK_RECIPES: RecipeDto[] = [
       { ingredientId: 11, ingredientName: "salt", amount: null, unit: "to taste", sortOrder: 4 },
       { ingredientId: 12, ingredientName: "black pepper", amount: null, unit: "to taste", sortOrder: 5 },
     ],
+    nutritionSummary: {
+      proteinGrams: 185,
+      carbGrams: 8,
+      fatGrams: 94,
+      fiberGrams: 2,
+    },
   },
   {
     id: 3,
@@ -55,6 +74,7 @@ export const MOCK_RECIPES: RecipeDto[] = [
       { ingredientId: 16, ingredientName: "chili flakes", amount: null, unit: "pinch", sortOrder: 4 },
       { ingredientId: 11, ingredientName: "salt", amount: null, unit: "to taste", sortOrder: 5 },
     ],
+    nutritionSummary: null, // triggers "unavailable" state in UI
   },
   {
     id: 4,

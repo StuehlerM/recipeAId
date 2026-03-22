@@ -1,5 +1,17 @@
 services:
 
+  # ── Open Food Facts API mock ─────────────────────────────────────────────────
+  mock-off:
+    build:
+      context: ./integration/mock-off
+      dockerfile: Dockerfile
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/ 2>/dev/null; exit 0"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
   # ── Mistral API mock ──────────────────────────────────────────────────────────
   mock-mistral:
     build:
@@ -28,8 +40,12 @@ services:
       - MISTRAL_BASE_URL=http://mock-mistral:3000
       - INGREDIENT_PARSER_API_KEY=integration-test-key
       - MISTRAL_OCR_API_KEY=integration-test-key
+      # Point at the mock instead of the real Open Food Facts API
+      - OPEN_FOOD_FACTS_BASE_URL=http://mock-off:3000
     depends_on:
       mock-mistral:
+        condition: service_healthy
+      mock-off:
         condition: service_healthy
     volumes:
       - integration_db:/data

@@ -37,3 +37,23 @@ When(
     await this.page.waitForURL((url) => new URL(url).pathname === "/");
   }
 );
+
+Then(
+  "I should see the nutrition section heading {string}",
+  async function (this: RecipeAIdWorld, heading: string) {
+    await this.page
+      .getByRole("heading", { name: heading })
+      .waitFor({ state: "visible" });
+  }
+);
+
+Then(
+  "I should see the macro label {string}",
+  async function (this: RecipeAIdWorld, label: string) {
+    await this.page
+      .locator("dt")
+      .filter({ hasText: new RegExp(`^${escapeForRegex(label)}$`, "i") })
+      .first()
+      .waitFor({ state: "visible" });
+  }
+);
