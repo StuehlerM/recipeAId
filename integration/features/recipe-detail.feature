@@ -20,3 +20,11 @@ Feature: Recipe detail view
     And I click "Delete recipe" and confirm
     Then I should be on the recipe list page
     And I should not see "Lemon Garlic Chicken" in the recipe list
+
+  Scenario: Nutrition section is shown on recipe detail page
+    When I navigate to the detail page for "Lemon Garlic Chicken"
+    Then I should see the nutrition section heading "Nutrition"
+    And I should see the macro label "Protein"
+    And I should see the macro label "Carbs"
+    And I should see the macro label "Fat"
+    And I should see the macro label "Fiber"

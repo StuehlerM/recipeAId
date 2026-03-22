@@ -8,6 +8,7 @@ public class Recipe
     public string? ImagePath { get; set; }
     public string? RawOcrText { get; set; }
     public string? BookTitle { get; set; }
+    public int? Servings { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 

@@ -11,6 +11,18 @@ export interface RecipeIngredientDto {
   sortOrder: number;
 }
 
+export interface MacroSetDto {
+  proteinGrams: number;
+  carbGrams: number;
+  fatGrams: number;
+  fiberGrams: number;
+}
+
+export interface NutritionSummaryDto extends MacroSetDto {
+  /** Per-serving breakdown — only present when the backend could compute it */
+  perServing?: MacroSetDto;
+}
+
 export interface RecipeDto {
   id: number;
   title: string;
@@ -21,6 +33,13 @@ export interface RecipeDto {
   updatedAt: string;
   ingredients: RecipeIngredientDto[];
   ingredientCount?: number;
+  servings?: number | null;
+  /**
+   * undefined = backend did not include this field (nutrition unavailable / old record)
+   * null      = backend tried to estimate but could not produce a result
+   * object    = estimate available
+   */
+  nutritionSummary?: NutritionSummaryDto | null;
 }
 
 export interface RecipeOcrDraftDto {

@@ -36,7 +36,7 @@ Core has zero infrastructure dependencies. All interfaces live in Core.
 | Method | Route | Description |
 |--------|-------|-------------|
 | GET | `/api/v1/recipes` | List recipes, optional `?q=` title filter |
-| GET | `/api/v1/recipes/{id}` | Single recipe |
+| GET | `/api/v1/recipes/{id}` | Single recipe, enriched with estimated nutrition summary |
 | POST | `/api/v1/recipes` | Create recipe (JSON) |
 | PUT | `/api/v1/recipes/{id}` | Update recipe |
 | DELETE | `/api/v1/recipes/{id}` | Delete recipe |
@@ -62,6 +62,7 @@ Recipe document
 ├── ImagePath      (string?)
 ├── RawOcrText     (string?)
 ├── BookTitle      (string?)
+├── Servings       (int?)
 ├── CreatedAt      (DateTime, UTC)
 ├── UpdatedAt      (DateTime, UTC)
 └── RecipeIngredients []
@@ -76,6 +77,8 @@ Recipe document
 **Trade-off (accepted):** Ingredient search (`/search/by-ingredients`) requires a full collection scan because ingredients are embedded, not indexed separately. See ADR 0001 for full rationale.
 
 **Ingredient matching:** `RecipeMatchingService` uses Damerau-Levenshtein (OSA variant, distance ≤ 2) so common typos and transpositions still find recipes. Exact matches score 1.0 and fuzzy matches score 0.8; results are ranked by total score descending, then by score/ingredient-count ratio.
+
+**Nutrition estimation:** `GET /api/v1/recipes/{id}` enriches the response with a `nutritionSummary` object estimated by `RecipeDetailService` → `NutritionEstimatorService` → `IOpenFoodFactsClient`. The OFF API is called per ingredient (up to 4 concurrently, `SemaphoreSlim(4)`), with results cached in `IMemoryCache` (1 h sliding / 24 h absolute). If OFF is unreachable or no ingredients match, `nutritionSummary` is `null` and the recipe is still returned successfully. When `Recipe.Servings` is set, `NutritionSummaryDto.PerServing` is also populated. Attribution to Open Food Facts (ODbL) is displayed inline in the UI.
 
 **DB file:** `recipeaid.db` (path configurable via `ConnectionStrings:DefaultConnection`). No migrations — schema changes are applied in code. `ILiteDatabase` is resolved eagerly at startup so a corrupt file crashes the container at boot (visible in logs) rather than silently failing on the first request.
 
@@ -121,6 +124,7 @@ All phases are complete.
 | 14 | Health Check Caching — ingredient-parser `/health` caches `_model_loaded` flag after first successful Ollama check; subsequent checks return instantly |
 | 15 | Replace Ingredient-Parser Sidecar — Ministral 3B Ollama sidecar replaced by Mistral AI public API called directly from backend; sidecar, 4 GB model volume, and 120s start period eliminated (ADR 0002) |
 | 16 | Replace OCR Sidecar — PaddleOCR sidecar replaced by Mistral OCR API with a shared post-OCR sanitization boundary before draft parsing/refinement (ADR 0003) |
+| 17 | Nutrition Estimates — estimated protein, carbs, fat, and fiber added to recipe detail; sourced from Open Food Facts public API behind `IOpenFoodFactsClient`; enrichment orchestrated by `IRecipeDetailService`; in-memory cache (1 h sliding / 24 h absolute); graceful degradation when OFF is unavailable (ADR 0004) |
 
 ---
 
