@@ -38,9 +38,10 @@ builder.Services.AddScoped<IRecipeDetailService, RecipeDetailService>();
 
 // Nutrition — Open Food Facts (public API, no auth required)
 builder.Services.AddMemoryCache();
+var offBaseUrl = builder.Configuration["OPEN_FOOD_FACTS_BASE_URL"] ?? "https://world.openfoodfacts.org";
 builder.Services.AddHttpClient("OpenFoodFacts", c =>
 {
-    c.BaseAddress = new Uri("https://world.openfoodfacts.org");
+    c.BaseAddress = new Uri(offBaseUrl);
     c.Timeout = TimeSpan.FromSeconds(5);
     c.DefaultRequestHeaders.Add("User-Agent", "RecipeAId/1.0 (https://github.com/StuehlerM/recipeAId)");
 });

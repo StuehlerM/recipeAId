@@ -48,12 +48,12 @@ Then(
 );
 
 Then(
-  "I should see the nutrition disclaimer",
-  async function (this: RecipeAIdWorld) {
-    // The disclaimer is always rendered when the panel is shown, regardless of
-    // whether OFF returned real data or the unavailable state is active.
+  "I should see the macro label {string}",
+  async function (this: RecipeAIdWorld, label: string) {
     await this.page
-      .getByText(/estimated values/i)
+      .locator("dt")
+      .filter({ hasText: new RegExp(`^${escapeForRegex(label)}$`, "i") })
+      .first()
       .waitFor({ state: "visible" });
   }
 );

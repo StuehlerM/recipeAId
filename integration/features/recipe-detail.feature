@@ -24,4 +24,7 @@ Feature: Recipe detail view
   Scenario: Nutrition section is shown on recipe detail page
     When I navigate to the detail page for "Lemon Garlic Chicken"
     Then I should see the nutrition section heading "Nutrition"
-    And I should see the nutrition disclaimer
+    And I should see the macro label "Protein"
+    And I should see the macro label "Carbs"
+    And I should see the macro label "Fat"
+    And I should see the macro label "Fiber"
