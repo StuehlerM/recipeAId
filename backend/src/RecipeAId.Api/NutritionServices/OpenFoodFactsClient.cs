@@ -63,7 +63,7 @@ public class OpenFoodFactsClient(
         try
         {
             await using var stream = await response.Content.ReadAsStreamAsync(ct);
-            var doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct);
+            using var doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct);
 
             NutrientInfo? result = null;
             if (doc.RootElement.TryGetProperty("products", out var products) &&
