@@ -17,7 +17,7 @@ Living document describing the current system architecture. Updated alongside co
 | Ingredient parser | Mistral AI public API (`mistral-small-latest`), called directly from backend over HTTPS — no local sidecar |
 | Frontend | React 19, Vite 7, TypeScript, Tailwind CSS v4, TanStack Query v5, React Router v6 |
 | PWA | vite-plugin-pwa (installable, standalone) |
-| Testing | xUnit + Moq (backend), pytest (OCR sidecar legacy/reference), Cucumber.js + Playwright (BDD) |
+| Testing | xUnit + Moq (backend), Cucumber.js + Playwright (BDD) |
 | CI | GitHub Actions — BDD integration tests on every PR to main |
 | Container | Docker Compose (2 services) |
 
@@ -121,7 +121,7 @@ All phases are complete.
 | 11 | LiteDB Migration — replaced SQLite + EF Core with LiteDB; ingredients embedded in recipe documents |
 | 12 | Image Storage — recipe photos stored in LiteDB `FileStorage`; temp→commit flow; GET/PUT image endpoints; RecipeDetailPage displays stored title image |
 | 13 | Fuzzy Ingredient Matching — Damerau-Levenshtein (OSA, distance ≤ 2); exact hits score 1.0, fuzzy 0.8 |
-| 14 | Health Check Caching — ingredient-parser `/health` caches `_model_loaded` flag after first successful Ollama check; subsequent checks return instantly |
+| 14 | Health Check Caching — ingredient-parser `/health` caches `_model_loaded` flag after first successful Ollama check; subsequent checks return instantly *(removed — sidecar deleted in Phase 15)* |
 | 15 | Replace Ingredient-Parser Sidecar — Ministral 3B Ollama sidecar replaced by Mistral AI public API called directly from backend; sidecar, 4 GB model volume, and 120s start period eliminated (ADR 0002) |
 | 16 | Replace OCR Sidecar — PaddleOCR sidecar replaced by Mistral OCR API with a shared post-OCR sanitization boundary before draft parsing/refinement (ADR 0003) |
 | 17 | Nutrition Estimates — estimated protein, carbs, fat, and fiber added to recipe detail; sourced from Open Food Facts public API behind `IOpenFoodFactsClient`; enrichment orchestrated by `IRecipeDetailService`; in-memory cache (1 h sliding / 24 h absolute); graceful degradation when OFF is unavailable (ADR 0004) |

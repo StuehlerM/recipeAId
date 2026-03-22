@@ -85,12 +85,11 @@ Follow strict test-first development:
 
 1. **Unit tests first** for each changed business/service behavior.
    - Backend: `backend/tests/RecipeAId.Tests/`
-   - Sidecars: `ocr-service/tests/`, `ingredient-parser/tests/`
 2. **BDD scenarios second** for every user-facing behavior:
    - `integration/features/<feature>.feature`
    - matching step definitions in `integration/src/steps/`
 3. Ensure tests fail for expected behavior gaps (not syntax/import issues).
-4. Mock heavy dependencies (PaddleOCR, Ollama/public LLM API) in unit tests.
+4. Mock heavy dependencies (public LLM/Mistral API) in unit tests.
 5. Ensure failing tests reflect specialist guidance captured in `PLAN.md`.
 
 ### 4) Implement feature to green

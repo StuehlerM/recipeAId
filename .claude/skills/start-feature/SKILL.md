@@ -46,8 +46,6 @@ Then **immediately create `PLAN.md`** in the repo root as a scratchpad (it will 
 - [ ] Frontend deps installed (`npm install`) *(worktree only)*
 - [ ] Test scaffold committed
 - [ ] Backend implementation
-- [ ] OCR sidecar changes (if applicable)
-- [ ] Ingredient-parser changes (if applicable)
 - [ ] Frontend changes (if applicable)
 - [ ] All unit tests pass (`./scripts/run-unit-tests.sh`)
 - [ ] PR opened
@@ -106,8 +104,6 @@ Read the acceptance criteria from the issue. For each layer that will change, cr
 | If the feature touches… | Scaffold this |
 |------------------------|--------------|
 | Backend service/business logic | `backend/tests/RecipeAId.Tests/` — xUnit test class with `[Fact]` methods, one per acceptance criterion |
-| OCR sidecar | `ocr-service/tests/` — pytest file with one test function per criterion |
-| Ingredient-parser sidecar | `ingredient-parser/tests/` — pytest file with one test function per criterion |
 | Frontend logic/hooks | `frontend/src/` — note: frontend layer is validated via `npm run build`; add type stubs if needed |
 | User-facing end-to-end flow | `integration/features/FEATURE_NAME.feature` — Gherkin `.feature` file + step definitions stub in `integration/src/steps/` |
 
@@ -115,7 +111,7 @@ Read the acceptance criteria from the issue. For each layer that will change, cr
 
 - Each test must have a clear **Arrange / Act / Assert** structure with comments marking each section.
 - Each test must **fail** for the right reason (not because of a missing import or syntax error — because the implementation does not exist yet).
-- Heavy dependencies (PaddleOCR, Ollama) are **always mocked** — never exercised in unit tests.
+- Heavy dependencies (Mistral API) are **always mocked** — never exercised in unit tests.
 - Name test methods after the behaviour they assert, e.g. `BuildIngredients_WithEmptyName_ThrowsArgumentException`.
 - The BDD `.feature` file must cover the happy path and at least one error/edge case from the acceptance criteria.
 
@@ -128,10 +124,6 @@ Run the relevant test layer to confirm the tests fail (not error).
 ```bash
 # Backend
 dotnet test ../FEATURE_NAME/backend/ --no-build 2>&1 | tail -20
-
-# Python sidecars
-python -m pytest ../FEATURE_NAME/ocr-service/tests/ -v 2>&1 | tail -20
-python -m pytest ../FEATURE_NAME/ingredient-parser/tests/ -v 2>&1 | tail -20
 ```
 
 **If MODE = branch** (run from repo root):
@@ -139,10 +131,6 @@ python -m pytest ../FEATURE_NAME/ingredient-parser/tests/ -v 2>&1 | tail -20
 ```bash
 # Backend
 dotnet test backend/ --no-build 2>&1 | tail -20
-
-# Python sidecars
-python -m pytest ocr-service/tests/ -v 2>&1 | tail -20
-python -m pytest ingredient-parser/tests/ -v 2>&1 | tail -20
 ```
 
 ---
@@ -155,14 +143,14 @@ Tick off the completed checklist items in `PLAN.md` (worktree/branch created, de
 
 ```bash
 cd ../FEATURE_NAME
-git add backend/tests/ ocr-service/tests/ ingredient-parser/tests/ integration/features/ PLAN.md
+git add backend/tests/ integration/features/ PLAN.md
 git commit -m "test(#$ARGUMENTS): scaffold failing tests for FEATURE_NAME"
 ```
 
 **If MODE = branch** (already in repo root):
 
 ```bash
-git add backend/tests/ ocr-service/tests/ ingredient-parser/tests/ integration/features/ PLAN.md
+git add backend/tests/ integration/features/ PLAN.md
 git commit -m "test(#$ARGUMENTS): scaffold failing tests for FEATURE_NAME"
 ```
 
