@@ -34,6 +34,7 @@ export function useAddRecipeWizard() {
   const [ingredients, setIngredients] = useState<IngredientRow[]>([{ ...EMPTY_ROW }]);
   const [instructions, setInstructions] = useState("");
   const [bookTitle, setBookTitle] = useState("");
+  const [servings, setServings] = useState("");
   const [replaceConfirm, setReplaceConfirm] = useState(false);
   const [pendingDraft, setPendingDraft] = useState<RecipeOcrDraftDto | null>(null);
   const [imageKeys, setImageKeys] = useState<Record<string, string>>({});
@@ -51,11 +52,16 @@ export function useAddRecipeWizard() {
   ).sort();
 
   const saveMutation = useMutation({
-    mutationFn: () =>
-      createRecipe({
+    mutationFn: () => {
+      const parsedServings = servings.trim() ? Number(servings) : null;
+      if (parsedServings !== null && (parsedServings <= 0 || parsedServings > 999 || !Number.isInteger(parsedServings))) {
+        throw new Error("Servings must be a whole number between 1 and 999.");
+      }
+      return createRecipe({
         title,
         instructions: instructions.trim() || null,
         bookTitle: bookTitle.trim() || null,
+        servings: parsedServings,
         ingredients: ingredients
           .filter((i) => i.name.trim())
           .map((i, idx) => ({
@@ -65,14 +71,15 @@ export function useAddRecipeWizard() {
             sortOrder: idx,
           })),
         imageKeys: Object.keys(imageKeys).length > 0 ? imageKeys : undefined,
-      }),
+      });
+    },
     onSuccess: (recipe) => {
       qc.invalidateQueries({ queryKey: ["recipes"] });
       toast.success("Recipe saved!");
       navigate(`/recipes/${recipe.id}`);
     },
-    onError: () => {
-      toast.error("Failed to save recipe. Please try again.");
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Failed to save recipe. Please try again.");
     },
   });
 
@@ -154,6 +161,8 @@ export function useAddRecipeWizard() {
     setInstructions,
     bookTitle,
     setBookTitle,
+    servings,
+    setServings,
     replaceConfirm,
     bookSuggestions,
     saveMutation,

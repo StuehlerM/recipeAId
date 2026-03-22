@@ -4,5 +4,6 @@ public record UpdateRecipeRequest(
     string Title,
     string? Instructions,
     string? BookTitle,
-    List<IngredientLineDto> Ingredients
+    List<IngredientLineDto> Ingredients,
+    int? Servings = null
 );

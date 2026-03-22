@@ -32,6 +32,7 @@ public class RecipeService(IRecipeRepository recipeRepo) : IRecipeService
             ImagePath = request.ImagePath,
             RawOcrText = request.RawOcrText,
             BookTitle = request.BookTitle?.Trim(),
+            Servings = request.Servings,
             RecipeIngredients = BuildIngredients(request.Ingredients),
         };
 
@@ -47,6 +48,7 @@ public class RecipeService(IRecipeRepository recipeRepo) : IRecipeService
         recipe.Title = request.Title.Trim();
         recipe.Instructions = request.Instructions;
         recipe.BookTitle = request.BookTitle?.Trim();
+        recipe.Servings = request.Servings;
 
         var newIngredients = BuildIngredients(request.Ingredients);
 

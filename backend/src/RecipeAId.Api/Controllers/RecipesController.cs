@@ -118,6 +118,11 @@ public class RecipesController(
             return BadRequest(new ProblemDetails { Title = "Title is required." });
         }
 
+        if (request.Servings is <= 0 or > 999)
+        {
+            return BadRequest(new ProblemDetails { Title = "Servings must be between 1 and 999." });
+        }
+
         var created = await recipeService.CreateAsync(request, ct);
 
         if (request.ImageKeys is { Count: > 0 })
@@ -137,6 +142,11 @@ public class RecipesController(
         if (string.IsNullOrWhiteSpace(request.Title))
         {
             return BadRequest(new ProblemDetails { Title = "Title is required." });
+        }
+
+        if (request.Servings is <= 0 or > 999)
+        {
+            return BadRequest(new ProblemDetails { Title = "Servings must be between 1 and 999." });
         }
 
         var updated = await recipeService.UpdateAsync(id, request, ct);
