@@ -3,7 +3,7 @@
  *
  * Run: cd frontend && npm test -- src/utils/imageConversion.test.ts
  */
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { toJpeg } from "./imageConversion";
 
 // ---------------------------------------------------------------------------
@@ -25,6 +25,8 @@ function makeFakeFile(name = "photo.heic", type = "image/heic"): File {
   return new File(["fake-image-bytes"], name, { type });
 }
 
+let _restoreImage: () => void = () => {};
+
 function setupImageMock(width: number, height: number) {
   const img: Partial<HTMLImageElement> & { onload: (() => void) | null; onerror: (() => void) | null } = {
     onload: null,
@@ -34,12 +36,12 @@ function setupImageMock(width: number, height: number) {
     src: "",
   };
 
-  vi.spyOn(globalThis, "Image").mockImplementation(() => {
+  const OriginalImage = globalThis.Image;
+  globalThis.Image = vi.fn().mockImplementation(function() {
     setTimeout(() => img.onload?.(), 0);
-    return img as HTMLImageElement;
-  });
-
-  return img;
+    return img;
+  }) as unknown as typeof Image;
+  _restoreImage = () => { globalThis.Image = OriginalImage; };
 }
 
 function setupCanvasMock(opts: { failGetContext?: boolean; failToBlob?: boolean } = {}) {
@@ -82,7 +84,12 @@ describe("toJpeg", () => {
     mockRevokeObjectURL.mockReset();
   });
 
-  it("toJpeg_withSmallImage_returnsJpegBlob", async () => {
+  afterEach(() => {
+    _restoreImage();
+    _restoreImage = () => {};
+  });
+
+  it("toJpeg_withSmallImage_returnsJpegFile", async () => {
     // Arrange: image fits within MAX_DIMENSION
     setupImageMock(800, 600);
     setupCanvasMock();
@@ -91,13 +98,13 @@ describe("toJpeg", () => {
     // Act
     const result = await toJpeg(file);
 
-    // Assert: result is a Blob (or File) with JPEG mime type
-    expect(result).toBeInstanceOf(Blob);
-    expect((result as Blob).type).toBe("image/jpeg");
+    // Assert: result is a File with JPEG mime type
+    expect(result).toBeInstanceOf(File);
+    expect(result.type).toBe("image/jpeg");
   });
 
-  it("toJpeg_withSmallImage_preservesOriginalDimensions", async () => {
-    // Arrange: 800×600 is below 2048 limit
+  it("toJpeg_withSmallImage_callsDrawImage", async () => {
+    // Arrange: 800x600 is below 2048 limit
     setupImageMock(800, 600);
     const { mockGetContext } = setupCanvasMock();
     const file = makeFakeFile();
@@ -105,27 +112,26 @@ describe("toJpeg", () => {
     // Act
     await toJpeg(file);
 
-    // Assert: drawImage was called (canvas was used without rescaling)
+    // Assert: drawImage was called (canvas was used)
     const ctx = mockGetContext.mock.results[0].value as { drawImage: ReturnType<typeof vi.fn> };
     expect(ctx.drawImage).toHaveBeenCalled();
   });
 
   it("toJpeg_withImageLargerThanMaxDimension_downscalesToFit", async () => {
-    // Arrange: 4096×3072 is larger than the 2048 limit
+    // Arrange: 4096x3072 is larger than the 2048 limit
     setupImageMock(4096, 3072);
     let capturedWidth = 0;
     let capturedHeight = 0;
 
-    const mockToBlob = vi.fn((cb: BlobCallback) => cb(new Blob(["jpeg"], { type: "image/jpeg" })));
     vi.spyOn(document, "createElement").mockImplementation((tag: string) => {
       if (tag === "canvas") {
         const canvas = {
           get width() { return capturedWidth; },
-          set width(v) { capturedWidth = v; },
+          set width(v: number) { capturedWidth = v; },
           get height() { return capturedHeight; },
-          set height(v) { capturedHeight = v; },
+          set height(v: number) { capturedHeight = v; },
           getContext: vi.fn(() => ({ drawImage: vi.fn() })),
-          toBlob: mockToBlob,
+          toBlob: vi.fn((cb: BlobCallback) => cb(new Blob(["jpeg"], { type: "image/jpeg" }))),
         };
         return canvas as unknown as HTMLCanvasElement;
       }
@@ -137,9 +143,8 @@ describe("toJpeg", () => {
     // Act
     await toJpeg(file);
 
-    // Assert: longest side is at most 2048
+    // Assert: longest side at most 2048; aspect ratio preserved (4096x3072 -> 2048x1536)
     expect(Math.max(capturedWidth, capturedHeight)).toBeLessThanOrEqual(2048);
-    // Aspect ratio preserved: 4096×3072 at scale 0.5 → 2048×1536
     expect(capturedWidth).toBe(2048);
     expect(capturedHeight).toBe(1536);
   });
@@ -165,7 +170,7 @@ describe("toJpeg", () => {
   });
 
   it("toJpeg_withCustomMaxDimension_respectsOverride", async () => {
-    // Arrange: 1200×900 image with maxDimension=600
+    // Arrange: 1200x900 image with maxDimension=600
     setupImageMock(1200, 900);
     let capturedWidth = 0;
     let capturedHeight = 0;
@@ -174,9 +179,9 @@ describe("toJpeg", () => {
       if (tag === "canvas") {
         const canvas = {
           get width() { return capturedWidth; },
-          set width(v) { capturedWidth = v; },
+          set width(v: number) { capturedWidth = v; },
           get height() { return capturedHeight; },
-          set height(v) { capturedHeight = v; },
+          set height(v: number) { capturedHeight = v; },
           getContext: vi.fn(() => ({ drawImage: vi.fn() })),
           toBlob: vi.fn((cb: BlobCallback) => cb(new Blob(["jpeg"], { type: "image/jpeg" }))),
         };
@@ -190,7 +195,7 @@ describe("toJpeg", () => {
     // Act
     await toJpeg(file, 600);
 
-    // Assert: longest side scaled to 600
+    // Assert: longest side scaled to 600; aspect ratio preserved (1200x900 -> 600x450)
     expect(capturedWidth).toBe(600);
     expect(capturedHeight).toBe(450);
   });
@@ -208,3 +213,4 @@ describe("toJpeg", () => {
     expect(mockRevokeObjectURL).toHaveBeenCalledWith("blob:mock-url");
   });
 });
+
