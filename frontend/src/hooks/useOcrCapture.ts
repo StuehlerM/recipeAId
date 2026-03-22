@@ -80,7 +80,7 @@ export function useOcrCapture({ refine = true }: { refine?: boolean } = {}) {
     setLoadingStage("ocr");
     try {
       // toJpeg handles downscaling if the cropped region is still large
-      const jpeg = await toJpeg(croppedFile);
+      const jpeg = new File([await toJpeg(croppedFile)], "photo.jpg", { type: "image/jpeg" });
 
       // POST returns immediately with OCR + regex draft (+ sessionId when refine=true)
       const draft = await uploadRecipeImage(jpeg, refine);

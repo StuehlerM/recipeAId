@@ -6,7 +6,7 @@ const DEFAULT_MAX_DIMENSION = 2048;
  * Handles HEIC (iPhone default), WebP, BMP, etc.
  * Also downscales large images so the longest side does not exceed maxDimension.
  */
-export function toJpeg(file: File, maxDimension = DEFAULT_MAX_DIMENSION): Promise<File> {
+export function toJpeg(file: File, maxDimension = DEFAULT_MAX_DIMENSION): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
     const img = new Image();
@@ -27,7 +27,7 @@ export function toJpeg(file: File, maxDimension = DEFAULT_MAX_DIMENSION): Promis
       canvas.toBlob(
         (blob) => {
           if (!blob) { reject(new Error("JPEG conversion failed")); return; }
-          resolve(new File([blob], "photo.jpg", { type: "image/jpeg" }));
+          resolve(blob);
         },
         "image/jpeg",
         0.85,

@@ -3,7 +3,7 @@
  *
  * Run: cd frontend && npm test -- src/utils/imageConversion.test.ts
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach, afterAll } from "vitest";
 import { toJpeg } from "./imageConversion";
 
 // ---------------------------------------------------------------------------
@@ -13,12 +13,21 @@ import { toJpeg } from "./imageConversion";
 const mockRevokeObjectURL = vi.fn();
 const mockCreateObjectURL = vi.fn(() => "blob:mock-url");
 
+// Save original so we can restore it after all tests in this suite.
+const OriginalURL = globalThis.URL;
+
 Object.defineProperty(globalThis, "URL", {
   value: {
+    ...OriginalURL,
     createObjectURL: mockCreateObjectURL,
     revokeObjectURL: mockRevokeObjectURL,
   },
   writable: true,
+  configurable: true,
+});
+
+afterAll(() => {
+  globalThis.URL = OriginalURL;
 });
 
 function makeFakeFile(name = "photo.heic", type = "image/heic"): File {
@@ -58,6 +67,7 @@ function setupCanvasMock(opts: { failGetContext?: boolean; failToBlob?: boolean 
     return { drawImage: vi.fn() } as unknown as CanvasRenderingContext2D;
   });
 
+  const originalCreateElement = document.createElement.bind(document);
   vi.spyOn(document, "createElement").mockImplementation((tag: string) => {
     if (tag === "canvas") {
       return {
@@ -67,7 +77,7 @@ function setupCanvasMock(opts: { failGetContext?: boolean; failToBlob?: boolean 
         toBlob: mockToBlob,
       } as unknown as HTMLCanvasElement;
     }
-    return document.createElement(tag);
+    return originalCreateElement(tag);
   });
 
   return { mockToBlob, mockGetContext };
@@ -89,7 +99,7 @@ describe("toJpeg", () => {
     _restoreImage = () => {};
   });
 
-  it("toJpeg_withSmallImage_returnsJpegFile", async () => {
+  it("toJpeg_withSmallImage_returnsJpegBlob", async () => {
     // Arrange: image fits within MAX_DIMENSION
     setupImageMock(800, 600);
     setupCanvasMock();
@@ -98,8 +108,8 @@ describe("toJpeg", () => {
     // Act
     const result = await toJpeg(file);
 
-    // Assert: result is a File with JPEG mime type
-    expect(result).toBeInstanceOf(File);
+    // Assert: result is a Blob with JPEG mime type
+    expect(result).toBeInstanceOf(Blob);
     expect(result.type).toBe("image/jpeg");
   });
 
@@ -123,6 +133,7 @@ describe("toJpeg", () => {
     let capturedWidth = 0;
     let capturedHeight = 0;
 
+    const originalCreateElement = document.createElement.bind(document);
     vi.spyOn(document, "createElement").mockImplementation((tag: string) => {
       if (tag === "canvas") {
         const canvas = {
@@ -135,7 +146,7 @@ describe("toJpeg", () => {
         };
         return canvas as unknown as HTMLCanvasElement;
       }
-      return document.createElement(tag);
+      return originalCreateElement(tag);
     });
 
     const file = makeFakeFile();
@@ -175,6 +186,7 @@ describe("toJpeg", () => {
     let capturedWidth = 0;
     let capturedHeight = 0;
 
+    const originalCreateElement = document.createElement.bind(document);
     vi.spyOn(document, "createElement").mockImplementation((tag: string) => {
       if (tag === "canvas") {
         const canvas = {
@@ -187,7 +199,7 @@ describe("toJpeg", () => {
         };
         return canvas as unknown as HTMLCanvasElement;
       }
-      return document.createElement(tag);
+      return originalCreateElement(tag);
     });
 
     const file = makeFakeFile();
@@ -213,4 +225,3 @@ describe("toJpeg", () => {
     expect(mockRevokeObjectURL).toHaveBeenCalledWith("blob:mock-url");
   });
 });
-
