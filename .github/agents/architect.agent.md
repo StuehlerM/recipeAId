@@ -23,7 +23,7 @@ When invoked, you run an architecture pass that covers:
    - Missing anti-corruption boundaries between subsystems/sidecars
 
 2. **Separation quality checks**
-   - Boundaries are explicit between `frontend`, `backend`, `ocr-service`, `ingredient-parser`, and `integration`
+   - Boundaries are explicit between `frontend`, `backend`, and `integration`
    - Domain/business logic remains in service/core layers, not transport/UI layers
    - Contracts are explicit (DTOs/interfaces) and stable
    - Integration points are isolated and mockable in unit tests

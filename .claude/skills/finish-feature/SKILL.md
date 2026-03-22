@@ -53,7 +53,7 @@ gh issue view $ARGUMENTS[0]
 
 Then read the relevant files that are likely to need updating:
 - `docs/architecture.md` — if API routes, DB schema, or architectural patterns changed
-- The affected sub-project `CLAUDE.md` (backend, frontend, ocr-service, ingredient-parser, or integration)
+- The affected sub-project `CLAUDE.md` (backend, frontend, or integration)
 - `README.md` — if user-facing features, setup steps, or project structure changed
 
 **Make the updates** — do not skip this. Apply the minimum necessary changes:
@@ -66,7 +66,7 @@ Commit the documentation updates directly on `main` (doc-only changes are exempt
 
 ```bash
 cd d:/Coding/Projects/recipeaid
-git add docs/ backend/CLAUDE.md frontend/CLAUDE.md ocr-service/CLAUDE.md ingredient-parser/CLAUDE.md integration/CLAUDE.md README.md
+git add docs/ backend/CLAUDE.md frontend/CLAUDE.md integration/CLAUDE.md README.md
 git commit -m "docs(#$ARGUMENTS[0]): update architecture and CLAUDE.md after FEATURE_NAME merge"
 ```
 

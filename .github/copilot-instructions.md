@@ -28,13 +28,6 @@ Run from the repo root unless noted otherwise.
 
 Set `VITE_API_BASE_URL=http://localhost:<port>` in `frontend/.env.local` to talk to a real backend. If it is unset in local dev, `src/api/client.ts` falls back to mock data.
 
-### OCR sidecar (`ocr-service/`)
-
-- Install deps: `pip install paddlepaddle==3.2.0 -i https://www.paddlepaddle.org.cn/packages/stable/cpu/ && pip install -r requirements.txt`
-- Run service: `uvicorn main:app --port 8001`
-- Run all tests: `pip install -r requirements-test.txt && pytest tests/ -v`
-- Run a single test: `python -m pytest tests/test_endpoint.py::test_health_returns_ok -v`
-
 ### BDD integration tests (`integration/`)
 
 - Install deps: `npm install`
@@ -46,11 +39,11 @@ Set `VITE_API_BASE_URL=http://localhost:<port>` in `frontend/.env.local` to talk
 
 ## High-level architecture
 
-RecipeAId is a mobile-first recipe app with a React 19 frontend, an ASP.NET Core 9 backend, a Python OCR sidecar, and LiteDB as the embedded database. The backend follows `Api -> Core <- Data`: controllers depend on service interfaces in `Core`, and `Data` implements repositories against LiteDB.
+RecipeAId is a mobile-first recipe app with a React 19 frontend, an ASP.NET Core 9 backend, and LiteDB as the embedded database. The backend follows `Api -> Core <- Data`: controllers depend on service interfaces in `Core`, and `Data` implements repositories against LiteDB.
 
-The main photo-to-recipe flow spans multiple projects. The frontend captures or uploads an image, optionally crops it, and posts it to `POST /api/v1/recipes/from-image`. The backend forwards the image to the OCR sidecar, parses raw OCR text into a draft, and returns that draft immediately. If `refine=true` and ingredients were found, the backend starts a background ingredient-refinement task and returns a `sessionId`; the frontend then subscribes to `GET /api/v1/ocr-sessions/{sessionId}/events` over SSE for `processing`, `done`, or `failed` updates.
+The main photo-to-recipe flow spans multiple projects. The frontend captures or uploads an image, optionally crops it, and posts it to `POST /api/v1/recipes/from-image`. The backend calls the Mistral OCR API, parses raw OCR text into a draft, and returns that draft immediately. If `refine=true` and ingredients were found, the backend starts a background ingredient-refinement task and returns a `sessionId`; the frontend then subscribes to `GET /api/v1/ocr-sessions/{sessionId}/events` over SSE for `processing`, `done`, or `failed` updates.
 
-Ingredient parsing is no longer handled by a local sidecar in the active architecture. `PublicLlmIngredientParserService` calls the Mistral public API directly through a named `HttpClient`, using `INGREDIENT_PARSER_API_KEY` and optional `MISTRAL_BASE_URL` override for integration tests. The old `ingredient-parser/` project and `docker-compose.llm.yml` are legacy/reference material, not the default runtime path.
+Ingredient parsing is handled by `PublicLlmIngredientParserService`, which calls the Mistral public API directly through a named `HttpClient`, using `INGREDIENT_PARSER_API_KEY` and optional `MISTRAL_BASE_URL` override for integration tests.
 
 Recipes are stored as LiteDB documents with ingredients embedded directly in each recipe. Recipe images are also stored in the same LiteDB file via `FileStorage`: temporary OCR uploads use `temp/{guid}` keys, then move to permanent `recipe/{id}/{slot}` keys when the recipe is saved. Ingredient search is therefore a full recipe scan, with fuzzy matching implemented in `RecipeMatchingService` using Damerau-Levenshtein scoring.
 
@@ -66,6 +59,6 @@ The frontend is a PWA. In production it uses same-origin `/api/...` calls behind
 - LiteDB is the source of truth. Ingredients are embedded in recipe documents, so do not introduce assumptions about a separate ingredient table or ORM-style tracking.
 - Frontend organization is feature-based under `frontend/src/features/`. New UI work should use Tailwind utility classes; existing pages that already use CSS Modules should generally keep that approach.
 - `frontend/src/api/client.ts` intentionally supports offline/mock development. Be careful not to break the `VITE_API_BASE_URL` switch or assume a live backend is always present.
-- Heavy external dependencies are mocked in tests: PaddleOCR is mocked in `ocr-service/tests/conftest.py`, backend tests mock repository/http dependencies, and integration tests point the backend at a mock Mistral API.
+- Heavy external dependencies are mocked in tests: backend tests mock repository/http dependencies, and integration tests point the backend at a mock Mistral API.
 - Integration hooks delete all recipes before each scenario, so tests should rely on scenario-local setup rather than shared persisted state.
 - If a change affects architecture, API routes, or setup behavior, update `docs/architecture.md`, the relevant `CLAUDE.md`, and `README.md` as required by the repository guidance.

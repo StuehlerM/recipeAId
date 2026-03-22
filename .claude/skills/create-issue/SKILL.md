@@ -54,7 +54,7 @@ Add or remove criteria as needed — every user-facing change needs at least one
 
 ## Technical Notes
 
-[Optional. Only include if there is a non-obvious implementation constraint — e.g. "Must follow the existing `IImageStorage` pattern", "The ingredient-parser sidecar must be mocked in unit tests". Leave this section out if there is nothing worth noting.]
+[Optional. Only include if there is a non-obvious implementation constraint — e.g. "Must follow the existing `IImageStorage` pattern". Leave this section out if there is nothing worth noting.]
 ```
 
 ---

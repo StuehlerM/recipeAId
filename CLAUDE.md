@@ -13,13 +13,9 @@ recipeaid/
 │   └── architecture.md        # Living doc: current system architecture, API ref, DB schema
 ├── backend/                   # ASP.NET Core 9 Web API (see backend/CLAUDE.md)
 ├── frontend/                  # React 19 + Vite 7 + TypeScript (see frontend/CLAUDE.md)
-├── ocr-service/               # Python PaddleOCR sidecar (legacy/reference; not default runtime)
-├── ingredient-parser/         # Python Ministral 3B sidecar (see ingredient-parser/CLAUDE.md)
 ├── integration/               # BDD integration tests (see integration/CLAUDE.md)
-├── build-ocr.ps1              # PowerShell helper — builds legacy ocr-service image
-├── build-ingredient-parser.ps1 # PowerShell helper — builds ingredient-parser image
 └── scripts/
-    ├── run-unit-tests.sh      # Runs all four unit-test layers
+    ├── run-unit-tests.sh      # Runs all unit-test layers
     └── install-hooks.sh       # One-time: activates pre-push hook
 ```
 
@@ -123,9 +119,8 @@ Update these docs — no exceptions:
 | Layer | Command | What it covers |
 |-------|---------|---------------|
 | 1 | `dotnet test backend/` | OcrParserService, RecipeService, matching |
-| 2 | `pytest ocr-service/tests/` | OCR sidecar legacy tests (PaddleOCR mocked; no longer default runtime) |
-| 3a | `cd frontend && npm test` | Frontend unit tests via vitest (ThemeContext, etc.) |
-| 3b | `cd frontend && npm run build` | TypeScript compilation — catches type errors before CI |
+| 2 | `cd frontend && npm test` | Frontend unit tests via vitest (ThemeContext, etc.) |
+| 3 | `cd frontend && npm run build` | TypeScript compilation — catches type errors before CI |
 
 The pre-push git hook runs this script automatically after `./scripts/install-hooks.sh` is run once.
 
@@ -149,17 +144,8 @@ docker compose down -v        # Stop and wipe database
 Services after `docker compose up`:
 - Frontend: https://localhost (self-signed cert — accept browser warning once)
 - Backend API: http://localhost:8080
-- Ingredient-parser sidecar: internal only (no host port)
 
-**Rebuilding individual images (faster):**
-
-```powershell
-.\build-ocr.ps1                          # Legacy OCR image with BuildKit pip cache
-.\build-ingredient-parser.ps1            # Parser image with BuildKit pip cache
-# Both support -NoCache and -Pull flags
-```
-
-**Docker TLS:** nginx serves HTTPS on :443 with a self-signed cert generated at build time. The `VM_HOST` build arg adds the VM's IP as a SAN. The `/api/` proxy block sets `client_max_body_size 10m` and `proxy_read_timeout 210s`. A separate `/api/v1/ocr-sessions/` location block has `proxy_buffering off` and `proxy_read_timeout 220s` for the SSE stream.
+**Docker TLS:**nginx serves HTTPS on :443 with a self-signed cert generated at build time. The `VM_HOST` build arg adds the VM's IP as a SAN. The `/api/` proxy block sets `client_max_body_size 10m` and `proxy_read_timeout 210s`. A separate `/api/v1/ocr-sessions/` location block has `proxy_buffering off` and `proxy_read_timeout 220s` for the SSE stream.
 
 ## Integration tests (BDD)
 
@@ -181,4 +167,4 @@ GitHub Actions runs the full BDD Docker stack on every PR to `main` automaticall
 - New frontend UI → Tailwind; existing pages → leave CSS Modules alone
 - Unit tests required for all service/business logic — written **before** the implementation (TDD)
 - BDD scenarios required for every user-facing feature — written **before** wiring up the feature end-to-end
-- Heavy model dependencies (PaddleOCR, Ollama) are **never** exercised in unit tests — always mocked
+- Heavy external dependencies (Mistral API, etc.) are **never** exercised in unit tests — always mocked
