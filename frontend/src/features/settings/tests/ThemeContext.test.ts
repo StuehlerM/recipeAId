@@ -9,7 +9,7 @@ import {
   setStoredTheme,
 } from "../themeStorage";
 
-describe("ThemeContext — localStorage persistence", () => {
+describe("themeStorage — localStorage persistence", () => {
   beforeEach(() => {
     localStorage.clear();
     // Reset html class list between tests
