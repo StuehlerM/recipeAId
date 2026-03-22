@@ -30,9 +30,16 @@ public class NutritionEstimatorService(IOpenFoodFactsClient offClient) : INutrit
                 var info = await offClient.GetNutrientsByNameAsync(ingredient.Name, ct);
                 return (ingredient, info);
             }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                // If the caller requested cancellation, propagate it.
+                throw;
+            }
             catch (OperationCanceledException)
             {
-                throw; // propagate cancellation; don't treat it as an upstream failure
+                // Treat HttpClient timeouts or other non-token cancellations as upstream failure.
+                Interlocked.Exchange(ref upstreamFailed, 1);
+                return (ingredient, (NutrientInfo?)null);
             }
             catch
             {
