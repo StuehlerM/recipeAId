@@ -16,6 +16,9 @@ public class OcrSessionsController(
     ILogger<OcrSessionsController> logger)
     : ControllerBase
 {
+    // SSE hard timeout: prevent zombie connections if the client never disconnects.
+    private const int SseHardTimeoutSeconds = 900; // 15 minutes
+
     [HttpGet("{sessionId}/events")]
     public async Task StreamEvents(string sessionId, CancellationToken ct)
     {
@@ -53,7 +56,7 @@ public class OcrSessionsController(
 
         // Poll for completion with a hard timeout so clients receive a terminal event.
         using var hardTimeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        hardTimeoutCts.CancelAfter(TimeSpan.FromSeconds(900));
+        hardTimeoutCts.CancelAfter(TimeSpan.FromSeconds(SseHardTimeoutSeconds));
 
         try
         {

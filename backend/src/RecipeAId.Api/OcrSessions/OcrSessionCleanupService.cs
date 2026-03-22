@@ -9,12 +9,15 @@ public sealed class OcrSessionCleanupService(
     ILogger<OcrSessionCleanupService> logger)
     : BackgroundService
 {
+    private const int CleanupIntervalSeconds = 60;
+    private const int SessionMaxAgeMinutes = 5;
+
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
         while (!ct.IsCancellationRequested)
         {
-            await Task.Delay(TimeSpan.FromSeconds(60), ct);
-            store.CleanupStale(TimeSpan.FromMinutes(5));
+            await Task.Delay(TimeSpan.FromSeconds(CleanupIntervalSeconds), ct);
+            store.CleanupStale(TimeSpan.FromMinutes(SessionMaxAgeMinutes));
             logger.LogDebug("OCR session cleanup ran");
         }
     }
