@@ -10,6 +10,7 @@ namespace RecipeAId.Api.Controllers;
 [Route("api/v1/recipes")]
 public class RecipesController(
     IRecipeService recipeService,
+    IRecipeDetailService recipeDetailService,
     IRecipeMatchingService matchingService,
     IOcrService ocrService,
     IOcrTextSanitizer ocrTextSanitizer,
@@ -31,7 +32,7 @@ public class RecipesController(
     [HttpGet("{id:int}")]
     public async Task<ActionResult<RecipeDto>> GetById(int id, CancellationToken ct)
     {
-        var recipe = await recipeService.GetByIdAsync(id, ct);
+        var recipe = await recipeDetailService.GetEnrichedByIdAsync(id, ct);
         return recipe is null ? NotFound() : Ok(recipe);
     }
 

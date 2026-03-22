@@ -24,6 +24,17 @@ interface BackendIngredient {
   sortOrder: number;
 }
 
+interface BackendMacroSet {
+  proteinGrams: number;
+  carbGrams: number;
+  fatGrams: number;
+  fiberGrams: number;
+}
+
+interface BackendNutritionSummary extends BackendMacroSet {
+  perServing?: BackendMacroSet;
+}
+
 interface BackendRecipeSummary {
   id: number;
   title: string;
@@ -40,7 +51,9 @@ interface BackendRecipeDto {
   bookTitle: string | null;
   createdAt: string;
   updatedAt: string;
+  servings: number | null;
   ingredients: BackendIngredient[];
+  nutritionSummary: BackendNutritionSummary | null;
 }
 
 interface BackendSearchResult {
@@ -62,6 +75,7 @@ function toRecipeDto(r: BackendRecipeDto): RecipeDto {
     bookTitle: r.bookTitle,
     createdAt: r.createdAt,
     updatedAt: r.updatedAt,
+    servings: r.servings,
     ingredients: r.ingredients.map((i) => ({
       ingredientId: i.ingredientId,
       ingredientName: i.name,
@@ -70,6 +84,7 @@ function toRecipeDto(r: BackendRecipeDto): RecipeDto {
       sortOrder: i.sortOrder,
     })),
     ingredientCount: r.ingredients.length,
+    nutritionSummary: r.nutritionSummary,
   };
 }
 

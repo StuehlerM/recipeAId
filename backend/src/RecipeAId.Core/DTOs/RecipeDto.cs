@@ -8,5 +8,7 @@ public record RecipeDto(
     string? BookTitle,
     DateTime CreatedAt,
     DateTime UpdatedAt,
-    List<RecipeIngredientDto> Ingredients
+    List<RecipeIngredientDto> Ingredients,
+    int? Servings = null,
+    NutritionSummaryDto? NutritionSummary = null
 );

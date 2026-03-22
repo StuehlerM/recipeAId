@@ -1,5 +1,7 @@
 using LiteDB;
+using Microsoft.Extensions.Caching.Memory;
 using RecipeAId.Api.Middleware;
+using RecipeAId.Api.NutritionServices;
 using RecipeAId.Api.OcrServices;
 using RecipeAId.Api.OcrSessions;
 using RecipeAId.Api.ParserServices;
@@ -32,6 +34,24 @@ builder.Services.AddScoped<IRecipeService, RecipeService>();
 builder.Services.AddScoped<IRecipeImageService, RecipeImageService>();
 builder.Services.AddScoped<IIngredientService, IngredientService>();
 builder.Services.AddScoped<IRecipeMatchingService, RecipeMatchingService>();
+builder.Services.AddScoped<IRecipeDetailService, RecipeDetailService>();
+
+// Nutrition — Open Food Facts (public API, no auth required)
+builder.Services.AddMemoryCache();
+builder.Services.AddHttpClient("OpenFoodFacts", c =>
+{
+    c.BaseAddress = new Uri("https://world.openfoodfacts.org");
+    c.Timeout = TimeSpan.FromSeconds(5);
+    c.DefaultRequestHeaders.Add("User-Agent", "RecipeAId/1.0 (https://github.com/StuehlerM/recipeAId)");
+});
+builder.Services.AddScoped<IOpenFoodFactsClient>(sp =>
+{
+    var client  = sp.GetRequiredService<IHttpClientFactory>().CreateClient("OpenFoodFacts");
+    var cache   = sp.GetRequiredService<IMemoryCache>();
+    var logger  = sp.GetRequiredService<ILogger<OpenFoodFactsClient>>();
+    return new OpenFoodFactsClient(client, cache, logger);
+});
+builder.Services.AddScoped<INutritionEstimator, NutritionEstimatorService>();
 // OCR (Mistral API)
 var ocrApiKey = builder.Configuration["MISTRAL_OCR_API_KEY"]
     ?? builder.Configuration["INGREDIENT_PARSER_API_KEY"]

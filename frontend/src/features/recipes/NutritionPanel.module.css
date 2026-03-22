@@ -1,0 +1,132 @@
+.panel {
+  margin-bottom: 2rem;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--color-edge);
+  padding-bottom: 0.4rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Matches section h2 style in RecipeDetailPage.module.css */
+.heading {
+  font-size: 1.1rem;
+  color: var(--color-sage);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+/* ── Pill toggle ── */
+.toggle {
+  display: flex;
+  border: 1px solid var(--color-edge);
+  border-radius: 20px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.toggleBtn {
+  padding: 0.2rem 0.8rem;
+  font-size: 0.75rem;
+  border: none;
+  background: transparent;
+  color: var(--color-ghost);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  line-height: 1.4;
+}
+
+.toggleBtn:focus-visible {
+  outline: 2px solid var(--color-sage);
+  outline-offset: -2px;
+}
+
+.toggleActive {
+  background: var(--color-sage);
+  color: var(--color-card);
+}
+
+/* ── Disclaimer ── */
+.disclaimer {
+  font-size: 0.75rem;
+  color: var(--color-ghost);
+  font-style: italic;
+  margin: 0 0 0.9rem;
+}
+
+/* ── Unavailable state ── */
+.unavailable {
+  font-size: 0.875rem;
+  color: var(--color-ghost);
+  font-style: italic;
+  padding: 0.6rem 0.75rem;
+  background: var(--color-tint);
+  border-radius: 6px;
+  margin: 0 0 0.75rem;
+}
+
+/* ── Macro description list ── */
+.macros {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin: 0 0 0.75rem;
+}
+
+.macroRow {
+  display: grid;
+  grid-template-columns: 4rem 1fr 2.75rem;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.macroLabel {
+  font-size: 0.8rem;
+  color: var(--color-ghost);
+  text-align: right;
+  margin: 0;
+  font-weight: 400;
+}
+
+.macroTrack {
+  height: 7px;
+  background: var(--color-edge);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.macroFill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.macroValue {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-ink);
+  text-align: right;
+  margin: 0;
+}
+
+/* ── Attribution ── */
+.attribution {
+  font-size: 0.72rem;
+  color: var(--color-ghost);
+  margin: 0;
+}
+
+.attributionLink {
+  color: var(--color-ghost);
+  text-decoration: underline;
+  text-decoration-style: dotted;
+}
+
+.attributionLink:hover {
+  color: var(--color-ink);
+}

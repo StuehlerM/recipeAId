@@ -2,6 +2,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { getRecipe, deleteRecipe, getRecipeImageUrl } from "../../api/client";
+import NutritionPanel from "./NutritionPanel";
 import styles from "./RecipeDetailPage.module.css";
 
 export default function RecipeDetailPage() {
@@ -65,6 +66,10 @@ export default function RecipeDetailPage() {
           ))}
         </ul>
       </section>
+
+      {recipe.nutritionSummary !== undefined && (
+        <NutritionPanel nutrition={recipe.nutritionSummary} servings={recipe.servings} />
+      )}
 
       {recipe.instructions && (
         <section className={styles.section}>

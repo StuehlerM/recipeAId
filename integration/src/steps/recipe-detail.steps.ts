@@ -37,3 +37,21 @@ When(
     await this.page.waitForURL((url) => new URL(url).pathname === "/");
   }
 );
+
+Then(
+  "I should see the nutrition section heading {string}",
+  async function (this: RecipeAIdWorld, heading: string) {
+    await this.page
+      .getByRole("heading", { name: heading })
+      .waitFor({ state: "visible" });
+  }
+);
+
+Then(
+  "I should see a nutrition unavailable message",
+  async function (this: RecipeAIdWorld) {
+    await this.page
+      .getByText(/nutrition estimates unavailable/i)
+      .waitFor({ state: "visible" });
+  }
+);
