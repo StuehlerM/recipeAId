@@ -34,56 +34,55 @@ public class OpenFoodFactsClient(
         var encoded = Uri.EscapeDataString(normalised);
         var url = $"/api/v2/search?q={encoded}&fields=nutriments&page_size=1&json=1";
 
-        HttpResponseMessage response;
         try
         {
-            response = await httpClient.GetAsync(url, ct);
+            using var response = await httpClient.GetAsync(url, ct);
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                cache.Set(cacheKey, (NutrientInfo?)null, CacheOptions);
+                return null;
+            }
+
+            if (!response.IsSuccessStatusCode)
+            {
+                logger.LogWarning("Open Food Facts returned {StatusCode} for ingredient '{Ingredient}'",
+                    response.StatusCode, ingredientName);
+                // Cache null briefly to avoid hammering OFF on rate-limit (429) or server error (5xx).
+                cache.Set(cacheKey, (NutrientInfo?)null, ErrorCacheOptions);
+                return null;
+            }
+
+            try
+            {
+                await using var stream = await response.Content.ReadAsStreamAsync(ct);
+                var doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct);
+
+                NutrientInfo? result = null;
+                if (doc.RootElement.TryGetProperty("products", out var products) &&
+                    products.GetArrayLength() > 0 &&
+                    products[0].TryGetProperty("nutriments", out var nutriments))
+                {
+                    result = new NutrientInfo(
+                        ProteinPer100g: GetDouble(nutriments, "proteins_100g"),
+                        CarbsPer100g:   GetDouble(nutriments, "carbohydrates_100g"),
+                        FatPer100g:     GetDouble(nutriments, "fat_100g"),
+                        FiberPer100g:   GetDouble(nutriments, "fiber_100g"));
+                }
+
+                cache.Set(cacheKey, result, CacheOptions);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to parse Open Food Facts response for ingredient '{Ingredient}'", ingredientName);
+                return null;
+            }
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
             logger.LogWarning(ex, "Open Food Facts request failed for ingredient '{Ingredient}'", ingredientName);
             throw;
-        }
-
-        if (response.StatusCode == HttpStatusCode.NotFound)
-        {
-            cache.Set(cacheKey, (NutrientInfo?)null, CacheOptions);
-            return null;
-        }
-
-        if (!response.IsSuccessStatusCode)
-        {
-            logger.LogWarning("Open Food Facts returned {StatusCode} for ingredient '{Ingredient}'",
-                response.StatusCode, ingredientName);
-            // Cache null briefly to avoid hammering OFF on rate-limit (429) or server error (5xx).
-            cache.Set(cacheKey, (NutrientInfo?)null, ErrorCacheOptions);
-            return null;
-        }
-
-        try
-        {
-            await using var stream = await response.Content.ReadAsStreamAsync(ct);
-            using var doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct);
-
-            NutrientInfo? result = null;
-            if (doc.RootElement.TryGetProperty("products", out var products) &&
-                products.GetArrayLength() > 0 &&
-                products[0].TryGetProperty("nutriments", out var nutriments))
-            {
-                result = new NutrientInfo(
-                    ProteinPer100g: GetDouble(nutriments, "proteins_100g"),
-                    CarbsPer100g:   GetDouble(nutriments, "carbohydrates_100g"),
-                    FatPer100g:     GetDouble(nutriments, "fat_100g"),
-                    FiberPer100g:   GetDouble(nutriments, "fiber_100g"));
-            }
-
-            cache.Set(cacheKey, result, CacheOptions);
-            return result;
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(ex, "Failed to parse Open Food Facts response for ingredient '{Ingredient}'", ingredientName);
-            return null;
         }
     }
 
