@@ -1,6 +1,6 @@
 name: Integration tests
 
-# Runs the full Docker stack (backend + ocr-service + frontend) and executes
+# Runs the full Docker stack (backend + frontend + mock-mistral) and executes
 # all Cucumber/Playwright BDD scenarios before any PR can be merged to main.
 #
 # ── How to bypass ────────────────────────────────────────────────────────────
@@ -58,3 +58,4 @@ jobs:
           name: cucumber-report
           path: integration/reports/report.html
           retention-days: 14
+
