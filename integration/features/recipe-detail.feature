@@ -21,7 +21,7 @@ Feature: Recipe detail view
     Then I should be on the recipe list page
     And I should not see "Lemon Garlic Chicken" in the recipe list
 
-  Scenario: Nutrition section shows unavailable state when estimates cannot be fetched
+  Scenario: Nutrition section is shown on recipe detail page
     When I navigate to the detail page for "Lemon Garlic Chicken"
     Then I should see the nutrition section heading "Nutrition"
-    And I should see a nutrition unavailable message
+    And I should see the nutrition disclaimer

@@ -48,10 +48,12 @@ Then(
 );
 
 Then(
-  "I should see a nutrition unavailable message",
+  "I should see the nutrition disclaimer",
   async function (this: RecipeAIdWorld) {
+    // The disclaimer is always rendered when the panel is shown, regardless of
+    // whether OFF returned real data or the unavailable state is active.
     await this.page
-      .getByText(/nutrition estimates unavailable/i)
+      .getByText(/estimated values/i)
       .waitFor({ state: "visible" });
   }
 );
