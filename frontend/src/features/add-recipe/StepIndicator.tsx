@@ -1,4 +1,4 @@
-const STEP_LABELS = ["Title", "Ingredients", "Instructions", "Book"] as const;
+const STEP_LABELS = ["Title", "Ingredients", "Instructions", "Details"] as const;
 const STEPS: Step[] = [1, 2, 3, 4];
 const LAST_STEP_INDEX = STEPS.length - 1;
 

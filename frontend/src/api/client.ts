@@ -156,6 +156,7 @@ export async function createRecipe(data: CreateRecipeRequest): Promise<RecipeDto
       instructions: data.instructions,
       imagePath: null,
       bookTitle: data.bookTitle,
+      servings: data.servings ?? null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       ingredients: data.ingredients.map((ing, idx) => ({
@@ -180,6 +181,7 @@ export async function createRecipe(data: CreateRecipeRequest): Promise<RecipeDto
         imagePath: null,
         rawOcrText: null,
         bookTitle: data.bookTitle,
+        servings: data.servings ?? null,
         ingredients: data.ingredients.map((i) => ({ name: i.name, amount: i.amount, unit: i.unit })),
         imageKeys: data.imageKeys ?? null,
       }),

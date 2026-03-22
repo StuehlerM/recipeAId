@@ -31,7 +31,7 @@ flowchart LR
     subgraph External["External APIs [ext]"]
         MISTRAL_OCR["Mistral OCR API\nmistral-ocr-latest"]
         MISTRAL_AI["Mistral AI API\nmistral-small-latest"]
-        OFF["Open Food Facts API\nworld.openfoodfacts.org\n(planned — ADR 0004)"]
+        OFF["Open Food Facts API\nworld.openfoodfacts.org\n(ADR 0004)"]
     end
 
     FE -->|"HTTPS /api/*\nproxied"| NGINX
@@ -39,7 +39,7 @@ flowchart LR
 
     BE -->|"POST /v1/ocr\nimage → markdown text"| MISTRAL_OCR
     BE -->|"POST /v1/chat/completions\nraw text → structured JSON"| MISTRAL_AI
-    BE -.->|"GET /api/v2/search\ningredient name → macros\n(planned)"| OFF
+    BE -->|"GET /api/v2/search\ningredient name → macros"| OFF
 
     BE -->|reads/writes| DB[("LiteDB\nrecipeaid.db\ndocuments + FileStorage")]
 ```
@@ -60,7 +60,7 @@ Api  ──►  Core  ◄──  Data
 
 ---
 
-## Primary Request Flow — Recipe Detail with Nutrition (Planned)
+## Primary Request Flow — Recipe Detail with Nutrition (Current)
 
 ```mermaid
 sequenceDiagram
@@ -158,4 +158,4 @@ sequenceDiagram
 | [ADR 0001](adr/0001-switch-sqlite-to-litedb.md) | Replace SQLite + EF Core with LiteDB; ingredients embedded in recipe documents | Accepted |
 | [ADR 0002](adr/0002-replace-ingredient-parser-sidecar-with-public-llm-api.md) | Replace Ministral 3B Ollama sidecar with Mistral AI public API | Accepted |
 | [ADR 0003](adr/0003-replace-ocr-sidecar-with-mistral-ocr-and-add-post-ocr-sanitization-boundary.md) | Replace PaddleOCR sidecar with Mistral OCR; add post-OCR sanitization boundary | Accepted |
-| [ADR 0004](adr/0004-nutrition-estimation-via-open-food-facts.md) | Nutrition estimation via Open Food Facts public API; `INutritionEstimator` in Core, HTTP impl in Api | Proposed |
+| [ADR 0004](adr/0004-nutrition-estimation-via-open-food-facts.md) | Nutrition estimation via Open Food Facts public API; `INutritionEstimator` in Core, HTTP impl in Api | Accepted |

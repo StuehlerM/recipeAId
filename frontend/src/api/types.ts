@@ -62,6 +62,7 @@ export interface CreateRecipeRequest {
   title: string;
   instructions: string | null;
   bookTitle: string | null;
+  servings?: number | null;
   ingredients: { name: string; amount: string | null; unit: string | null; sortOrder: number }[];
   imageKeys?: Record<string, string>;
 }

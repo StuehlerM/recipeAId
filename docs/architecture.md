@@ -37,8 +37,8 @@ Core has zero infrastructure dependencies. All interfaces live in Core.
 |--------|-------|-------------|
 | GET | `/api/v1/recipes` | List recipes, optional `?q=` title filter |
 | GET | `/api/v1/recipes/{id}` | Single recipe, enriched with estimated nutrition summary |
-| POST | `/api/v1/recipes` | Create recipe (JSON) |
-| PUT | `/api/v1/recipes/{id}` | Update recipe |
+| POST | `/api/v1/recipes` | Create recipe (JSON) — body includes optional `servings` (int 1–999); rejected with 400 if outside this range |
+| PUT | `/api/v1/recipes/{id}` | Update recipe — same `servings` (1–999) validation applies; pass `null` to clear |
 | DELETE | `/api/v1/recipes/{id}` | Delete recipe |
 | POST | `/api/v1/recipes/from-image` | Upload image → OCR + LLM pipeline; response includes `imageKey` for later commit |
 | GET | `/api/v1/ocr-sessions/{sessionId}/events` | SSE stream for LLM refinement results |
@@ -125,6 +125,7 @@ All phases are complete.
 | 15 | Replace Ingredient-Parser Sidecar — Ministral 3B Ollama sidecar replaced by Mistral AI public API called directly from backend; sidecar, 4 GB model volume, and 120s start period eliminated (ADR 0002) |
 | 16 | Replace OCR Sidecar — PaddleOCR sidecar replaced by Mistral OCR API with a shared post-OCR sanitization boundary before draft parsing/refinement (ADR 0003) |
 | 17 | Nutrition Estimates — estimated protein, carbs, fat, and fiber added to recipe detail; sourced from Open Food Facts public API behind `IOpenFoodFactsClient`; enrichment orchestrated by `IRecipeDetailService`; in-memory cache (1 h sliding / 24 h absolute); graceful degradation when OFF is unavailable (ADR 0004) |
+| 18 | Servings Scaling — `Recipe.Servings` (already stored) is now exposed in `CreateRecipeRequest`, `UpdateRecipeRequest`, and `RecipeDto`. The add-recipe wizard captures base servings (Step 4). `RecipeDetailPage` shows a stepper that scales displayed ingredient quantities client-side using `scaleIngredients()` + `parseAmount()` utilities; unparseable amounts (e.g. "a pinch") remain unchanged. `NutritionPanel` receives the active display servings count. Servings must be between 1 and 999; values outside this range are rejected with a 400 ProblemDetails response. |
 
 ---
 

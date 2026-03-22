@@ -28,3 +28,15 @@ Feature: Recipe detail view
     And I should see the macro label "Carbs"
     And I should see the macro label "Fat"
     And I should see the macro label "Fiber"
+
+  Scenario: Scaling ingredient quantities by servings
+    Given a recipe exists with title "Pasta Bolognese" and 2 servings and ingredients:
+      | name   | amount  | unit |
+      | pasta  | 200     | g    |
+      | eggs   | 2       |      |
+      | salt   | a pinch |      |
+    When I navigate to the detail page for "Pasta Bolognese"
+    And I click the increase servings button 2 times
+    Then I should see the quantity "400 g"
+    And I should see the quantity "4"
+    And I should see the quantity "a pinch"

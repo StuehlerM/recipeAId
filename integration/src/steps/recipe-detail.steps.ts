@@ -1,4 +1,4 @@
-import { Then, When } from "@cucumber/cucumber";
+import { Given, Then, When } from "@cucumber/cucumber";
 import type { RecipeAIdWorld } from "../support/world";
 
 function escapeForRegex(value: string): string {
@@ -55,5 +55,14 @@ Then(
       .filter({ hasText: new RegExp(`^${escapeForRegex(label)}$`, "i") })
       .first()
       .waitFor({ state: "visible" });
+  }
+);
+
+When(
+  "I click the increase servings button {int} time(s)",
+  async function (this: RecipeAIdWorld, times: number) {
+    for (let i = 0; i < times; i++) {
+      await this.page.getByRole("button", { name: "Increase servings" }).click();
+    }
   }
 );

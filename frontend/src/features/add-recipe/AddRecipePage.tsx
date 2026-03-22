@@ -17,6 +17,8 @@ export default function AddRecipePage() {
     setInstructions,
     bookTitle,
     setBookTitle,
+    servings,
+    setServings,
     replaceConfirm,
     bookSuggestions,
     saveMutation,
@@ -58,7 +60,13 @@ export default function AddRecipePage() {
         <StepInstructions instructions={instructions} onChange={setInstructions} onScan={handleInstructionScan} />
       )}
       {step === 4 && (
-        <StepBook bookTitle={bookTitle} onChange={setBookTitle} bookSuggestions={bookSuggestions} />
+        <StepBook
+          bookTitle={bookTitle}
+          onChange={setBookTitle}
+          bookSuggestions={bookSuggestions}
+          servings={servings}
+          onServingsChange={setServings}
+        />
       )}
 
       {/* ── Navigation ── */}

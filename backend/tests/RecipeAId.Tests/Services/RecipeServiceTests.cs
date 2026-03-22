@@ -134,6 +134,38 @@ public class RecipeServiceTests
         Assert.Equal("French Classics", saved?.BookTitle);
     }
 
+    [Fact]
+    public async Task CreateAsync_StoresServings_WhenProvided()
+    {
+        var request = new CreateRecipeRequest("Pasta", null, null, null, null, [], Servings: 4);
+
+        Recipe? saved = null;
+        _recipeRepo
+            .Setup(r => r.AddAsync(It.IsAny<Recipe>(), default))
+            .ReturnsAsync((Recipe r, CancellationToken _) => { saved = r; return r; });
+
+        var result = await _sut.CreateAsync(request);
+
+        Assert.Equal(4, saved?.Servings);
+        Assert.Equal(4, result.Servings);
+    }
+
+    [Fact]
+    public async Task CreateAsync_ServingsIsNull_WhenNotProvided()
+    {
+        var request = new CreateRecipeRequest("Pasta", null, null, null, null, []);
+
+        Recipe? saved = null;
+        _recipeRepo
+            .Setup(r => r.AddAsync(It.IsAny<Recipe>(), default))
+            .ReturnsAsync((Recipe r, CancellationToken _) => { saved = r; return r; });
+
+        var result = await _sut.CreateAsync(request);
+
+        Assert.Null(saved?.Servings);
+        Assert.Null(result.Servings);
+    }
+
     // ── DeleteAsync ────────────────────────────────────────────────────────
 
     [Fact]
@@ -206,5 +238,39 @@ public class RecipeServiceTests
 
         Assert.NotNull(result);
         Assert.Equal("My Cookbook", result.BookTitle);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_UpdatesServings_WhenProvided()
+    {
+        var recipe = new Recipe { Id = 1, Title = "Old", Servings = null, RecipeIngredients = [] };
+        _recipeRepo.Setup(r => r.GetByIdAsync(1, default)).ReturnsAsync(recipe);
+        _recipeRepo
+            .Setup(r => r.UpdateAsync(It.IsAny<Recipe>(), It.IsAny<IEnumerable<RecipeIngredient>>(), default))
+            .Returns(Task.CompletedTask);
+
+        var request = new UpdateRecipeRequest("Old", null, null, [], Servings: 6);
+        var result = await _sut.UpdateAsync(1, request);
+
+        Assert.NotNull(result);
+        Assert.Equal(6, result.Servings);
+        Assert.Equal(6, recipe.Servings);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ClearsServings_WhenSetToNull()
+    {
+        var recipe = new Recipe { Id = 1, Title = "Old", Servings = 4, RecipeIngredients = [] };
+        _recipeRepo.Setup(r => r.GetByIdAsync(1, default)).ReturnsAsync(recipe);
+        _recipeRepo
+            .Setup(r => r.UpdateAsync(It.IsAny<Recipe>(), It.IsAny<IEnumerable<RecipeIngredient>>(), default))
+            .Returns(Task.CompletedTask);
+
+        var request = new UpdateRecipeRequest("Old", null, null, [], Servings: null);
+        var result = await _sut.UpdateAsync(1, request);
+
+        Assert.NotNull(result);
+        Assert.Null(result.Servings);
+        Assert.Null(recipe.Servings);
     }
 }
