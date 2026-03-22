@@ -28,13 +28,10 @@ cd recipeAId
 INGREDIENT_PARSER_API_KEY=<your-key> docker compose up --build
 ```
 
-> **First build takes a few minutes** — the OCR image downloads PaddlePaddle and PaddleOCR models on first startup. Subsequent builds are fast.
-
 | Service  | URL |
 |----------|-----|
 | Frontend | https://localhost |
 | Backend  | http://localhost:8080 |
-| OCR      | http://localhost:8001 (Swagger at `/docs`) |
 
 > **Self-signed cert:** Accept the browser warning once (Advanced → Proceed / Show Details → visit this website on iOS).
 
@@ -55,26 +52,18 @@ docker compose down -v   # stop and wipe database
 | Node.js  | 24+   |
 | Python   | 3.10+ |
 
-### 1. OCR sidecar
-
-```bash
-cd ocr-service
-pip install paddlepaddle==3.2.0 -i https://www.paddlepaddle.org.cn/packages/stable/cpu/
-pip install -r requirements.txt
-uvicorn main:app --port 8001
-```
-
-### 2. Backend API
+### 1. Backend API
 
 ```bash
 cd backend
 dotnet user-secrets set "INGREDIENT_PARSER_API_KEY" "<your-key>" --project src/RecipeAId.Api
+dotnet user-secrets set "MISTRAL_OCR_API_KEY" "<your-key>" --project src/RecipeAId.Api
 dotnet run --project src/RecipeAId.Api
 ```
 
 Interactive API explorer at `http://localhost:<port>/scalar/v1`.
 
-### 3. Frontend
+### 2. Frontend
 
 ```bash
 cd frontend
@@ -90,5 +79,5 @@ Open https://localhost:5173 (accept the self-signed cert once). Without `VITE_AP
 ## Further reading
 
 - **[Architecture, API reference, data model, Docker details](docs/architecture.md)**
-- **[Backend](backend/CLAUDE.md)** · **[Frontend](frontend/CLAUDE.md)** · **[OCR sidecar](ocr-service/CLAUDE.md)** · **[Integration tests](integration/CLAUDE.md)**
+- **[Backend](backend/CLAUDE.md)** · **[Frontend](frontend/CLAUDE.md)** · **[Integration tests](integration/CLAUDE.md)**
 - **[Architecture Decision Records](docs/adr/)**

@@ -1,22 +1,4 @@
 services:
-  ocr-service:
-    build:
-      context: ./ocr-service
-      dockerfile: Dockerfile
-    ports:
-      - "8001:8001"
-    volumes:
-      - ocr-models:/root/.paddlex
-    networks:
-      - internal
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
-      interval: 10s
-      timeout: 5s
-      retries: 30
-      start_period: 60s
-
   backend:
     build:
       context: ./backend
@@ -28,15 +10,12 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ConnectionStrings__DefaultConnection=/data/recipeaid.db
-      - OcrService__BaseUrl=http://ocr-service:8001
       - Cors__AllowedOrigins__0=https://localhost
       - Cors__AllowedOrigins__1=https://172.205.220.46
       - INGREDIENT_PARSER_API_KEY=${INGREDIENT_PARSER_API_KEY}
+      - MISTRAL_OCR_API_KEY=${MISTRAL_OCR_API_KEY:-${INGREDIENT_PARSER_API_KEY}}
     networks:
       - internal
-    depends_on:
-      ocr-service:
-        condition: service_healthy
     restart: unless-stopped
 
   frontend:
@@ -71,7 +50,6 @@ services:
     depends_on:
       - frontend
       - backend
-      - ocr-service
     restart: "no"
 
 networks:
@@ -80,4 +58,3 @@ networks:
 
 volumes:
   db-data:
-  ocr-models:     # PaddleX model files (~/.paddlex) — persists across image rebuilds

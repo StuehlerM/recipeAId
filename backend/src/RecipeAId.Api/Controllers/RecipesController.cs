@@ -12,6 +12,7 @@ public class RecipesController(
     IRecipeService recipeService,
     IRecipeMatchingService matchingService,
     IOcrService ocrService,
+    IOcrTextSanitizer ocrTextSanitizer,
     IOcrParser ocrParser,
     IRecipeImageService imageService,
     OcrSessionStore sessionStore,
@@ -196,7 +197,8 @@ public class RecipesController(
         var imageKey = await imageService.StoreTemporaryImageAsync(imageStream, image.ContentType, ct);
         logger.LogInformation("Image stored temporarily with key={ImageKey}", imageKey);
 
-        var draft = ocrParser.Parse(ocrResult.RawText);
+        var sanitizedOcrText = ocrTextSanitizer.Sanitize(ocrResult.RawText);
+        var draft = ocrParser.Parse(sanitizedOcrText);
         logger.LogInformation("Regex parse: title={Title} ingredients={Count}",
             draft.DetectedTitle ?? "(none)", draft.DetectedIngredients.Count);
 
@@ -208,13 +210,21 @@ public class RecipesController(
         // Fire LLM refinement in the background; return the regex draft immediately with a sessionId.
         // The frontend opens GET /api/v1/ocr-sessions/{sessionId}/events (SSE) and waits for the result.
         var sessionId = sessionStore.CreateSession();
-        var rawText = ocrResult.RawText;
+        var rawText = sanitizedOcrText;
         _ = Task.Run(async () =>
         {
             using var scope = scopeFactory.CreateScope();
             var parserService = scope.ServiceProvider.GetRequiredService<IIngredientParserService>();
-            var result = await parserService.ParseAsync(rawText, "en");
-            sessionStore.Complete(sessionId, result);
+            try
+            {
+                var result = await parserService.ParseAsync(rawText, "en");
+                sessionStore.Complete(sessionId, result);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Background ingredient refinement failed for session {SessionId}", sessionId);
+                sessionStore.Complete(sessionId, new IngredientParseResult([], false, "LLM refinement failed"));
+            }
         });
 
         logger.LogInformation("LLM refinement started in background — sessionId={SessionId}", sessionId);
