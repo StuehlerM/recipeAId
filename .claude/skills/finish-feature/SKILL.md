@@ -1,6 +1,6 @@
 ---
 name: finish-feature
-description: Clean up after a feature PR is merged — updates docs, pulls main, closes the GitHub Issue, removes the worktree and branch.
+description: Clean up after a feature PR is merged — updates docs, pulls main, closes the GitHub Issue, removes the worktree (if used) and branch.
 argument-hint: <issue-number> <feature-name>
 ---
 
@@ -11,6 +11,12 @@ Parse arguments:
 - `$ARGUMENTS[1]` — feature name / worktree directory name (e.g. `add-book-title-filter`)
 
 If either argument is missing, ask the user for it before continuing.
+
+Also determine whether the feature was developed in a **worktree** or a plain **branch**:
+```bash
+git worktree list
+```
+If `../$ARGUMENTS[1]` appears in the list, `MODE = worktree`. Otherwise `MODE = branch`.
 
 ---
 
@@ -76,7 +82,9 @@ gh issue close $ARGUMENTS[0] --comment "Implemented in the merged PR. Documentat
 
 ---
 
-## Step 5 — Remove the worktree
+## Step 5 — Remove the worktree *(worktree only — skip for branch)*
+
+If `MODE = worktree`:
 
 ```bash
 cd d:/Coding/Projects/recipeaid
@@ -99,7 +107,7 @@ git branch -d dev/$ARGUMENTS[1]
 
 ## Step 7 — Final summary
 
-Print a clean summary of everything that was done:
+**If MODE = worktree:**
 
 ```
 ✔ PR verified merged
@@ -114,6 +122,20 @@ You're back on main and ready for the next feature.
 Run: /create-issue <description>   to open a new issue
 ```
 
+**If MODE = branch:**
+
+```
+✔ PR verified merged
+✔ main pulled:       [latest commit hash]
+✔ Docs updated:      [list files that changed]
+✔ Docs committed:    [commit hash]
+✔ Issue #N closed
+✔ Branch deleted:    dev/FEATURE_NAME
+
+You're back on main and ready for the next feature.
+Run: /create-issue <description>   to open a new issue
+```
+
 ---
 
 ## Rules
@@ -121,4 +143,4 @@ Run: /create-issue <description>   to open a new issue
 - Never force-remove a worktree (`--force`) or force-delete a branch (`-D`) — always stop and ask the user if a safe operation fails.
 - Never skip the documentation step — it is required by the project's documentation rules for every merged feature.
 - Always verify the PR is merged before cleaning up.
-- If `$ARGUMENTS[1]` (feature name) is ambiguous, list current worktrees (`git worktree list`) and ask the user to confirm.
+- If `$ARGUMENTS[1]` (feature name) is ambiguous, list current worktrees (`git worktree list`) and branches (`git branch`) and ask the user to confirm.

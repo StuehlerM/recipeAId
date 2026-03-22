@@ -25,16 +25,16 @@ recipeaid/
 
 ## Implementation workflow
 
-When starting any implementation task, always use a git worktree and open a pull request — never merge directly to main.
+When starting any implementation task, always use a branch (or worktree) and open a pull request — never merge directly to main.
 
 **Skills automate this workflow** — use them instead of running the steps manually:
 
 | Step | Skill | What it does |
 |------|-------|--------------|
 | New feature idea | `/create-issue <description>` | Drafts user story + acceptance criteria, opens GitHub Issue |
-| Start work | `/start-feature <issue-number>` | Creates worktree, installs deps, scaffolds failing tests |
+| Start work | `/start-feature <issue-number>` | Creates a branch or worktree (your choice), installs deps, scaffolds failing tests |
 | Before PR | `/review` | Checks SOLID, DRY, readability across changed files |
-| After merge | `/finish-feature <issue> <feature>` | Updates docs, pulls main, closes issue, removes worktree |
+| After merge | `/finish-feature <issue> <feature>` | Updates docs, pulls main, closes issue, removes worktree (if used) and branch |
 
 Skills live in `.claude/skills/`. If a step fails or you need manual control, the equivalent shell commands are:
 
