@@ -39,10 +39,8 @@ public class RecipesController(
     [HttpGet("{id:int}/images/{slot}")]
     public async Task<IActionResult> GetImage(int id, string slot, CancellationToken ct)
     {
-        if (!imageService.IsValidSlot(slot))
-        {
-            return BadRequest(new ProblemDetails { Title = "Invalid slot. Must be one of: title, ingredients, instructions." });
-        }
+        var slotError = ValidateSlot(slot);
+        if (slotError is not null) return slotError;
 
         var image = await imageService.GetImageAsync(id, slot, ct);
         if (image is null)
@@ -57,10 +55,8 @@ public class RecipesController(
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> PutImage(int id, string slot, IFormFile image, CancellationToken ct)
     {
-        if (!imageService.IsValidSlot(slot))
-        {
-            return BadRequest(new ProblemDetails { Title = "Invalid slot. Must be one of: title, ingredients, instructions." });
-        }
+        var slotError = ValidateSlot(slot);
+        if (slotError is not null) return slotError;
 
         var recipe = await recipeService.GetByIdAsync(id, ct);
         if (recipe is null)
@@ -73,16 +69,8 @@ public class RecipesController(
             return BadRequest(new ProblemDetails { Title = "An image file is required." });
         }
 
-        if (!image.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
-        {
-            return BadRequest(new ProblemDetails { Title = "File must be an image." });
-        }
-
-        const long maxSizeBytes = 10 * 1024 * 1024;
-        if (image.Length > maxSizeBytes)
-        {
-            return BadRequest(new ProblemDetails { Title = "Image must be smaller than 10 MB." });
-        }
+        var imageError = ValidateImage(image);
+        if (imageError is not null) return imageError;
 
         await using var stream = image.OpenReadStream();
         await imageService.StoreDirectAsync(id, slot, stream, image.ContentType, ct);
@@ -178,16 +166,8 @@ public class RecipesController(
             return BadRequest(new ProblemDetails { Title = "An image file is required." });
         }
 
-        if (!image.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
-        {
-            return BadRequest(new ProblemDetails { Title = "File must be an image." });
-        }
-
-        const long maxSizeBytes = 10 * 1024 * 1024; // 10 MB
-        if (image.Length > maxSizeBytes)
-        {
-            return BadRequest(new ProblemDetails { Title = "Image must be smaller than 10 MB." });
-        }
+        var imageError = ValidateImage(image);
+        if (imageError is not null) return imageError;
 
         logger.LogInformation("OCR pipeline started: {FileName} {ContentType} {SizeBytes}B refine={Refine}",
             image.FileName, image.ContentType, image.Length, refine);
@@ -240,5 +220,25 @@ public class RecipesController(
 
         logger.LogInformation("LLM refinement started in background — sessionId={SessionId}", sessionId);
         return Ok(draft with { SessionId = sessionId, ImageKey = imageKey });
+    }
+
+    // ── Private helpers ───────────────────────────────────────────────────
+
+    private const long MaxImageSizeBytes = 10 * 1024 * 1024;
+
+    private ActionResult? ValidateSlot(string slot)
+    {
+        if (!imageService.IsValidSlot(slot))
+            return BadRequest(new ProblemDetails { Title = "Invalid slot. Must be one of: title, ingredients, instructions." });
+        return null;
+    }
+
+    private ActionResult? ValidateImage(IFormFile image)
+    {
+        if (!image.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+            return BadRequest(new ProblemDetails { Title = "File must be an image." });
+        if (image.Length > MaxImageSizeBytes)
+            return BadRequest(new ProblemDetails { Title = "Image must be smaller than 10 MB." });
+        return null;
     }
 }
