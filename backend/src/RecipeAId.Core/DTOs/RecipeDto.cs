@@ -15,10 +15,12 @@ public record RecipeDto(
     NutritionSummaryDto? NutritionSummary = null
 )
 {
-    private static readonly Regex ParagraphBreakPattern = new(@"\n\s*\n", RegexOptions.Compiled);
+    private static readonly Regex ParagraphBreakPattern = new(
+        @"\n\s*\n",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
     private static readonly Regex NumberedOrBulletedStepPattern = new(
-        @"^\s*(?:\d+[\).\:-]|[-*•])\s*(.+)$",
-        RegexOptions.Compiled);
+        @"^\s*(?:\d+[\).:-]|[-*•])\s*(.+)$",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
     public IReadOnlyList<string> InstructionSteps => SplitInstructionSteps(Instructions);
 
