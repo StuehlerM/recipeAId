@@ -82,6 +82,42 @@ public class RecipeServiceTests
         Assert.Equal("cups", result.Ingredients[0].Unit);
     }
 
+    [Fact]
+    public async Task GetByIdAsync_SplitsNumberedInstructionsIntoSteps()
+    {
+        var recipe = new Recipe
+        {
+            Id = 1,
+            Title = "Cake",
+            Instructions = "1. Mix ingredients\n2. Pour into pan\n3. Bake for 30 minutes",
+            RecipeIngredients = [],
+        };
+        _recipeRepo.Setup(r => r.GetByIdAsync(1, default)).ReturnsAsync(recipe);
+
+        var result = await _sut.GetByIdAsync(1);
+
+        Assert.NotNull(result);
+        Assert.Equal(["Mix ingredients", "Pour into pan", "Bake for 30 minutes"], result.InstructionSteps);
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_UsesSingleParagraphAsFallbackInstructionStep()
+    {
+        var recipe = new Recipe
+        {
+            Id = 1,
+            Title = "Cake",
+            Instructions = "Mix ingredients thoroughly and bake until golden brown.",
+            RecipeIngredients = [],
+        };
+        _recipeRepo.Setup(r => r.GetByIdAsync(1, default)).ReturnsAsync(recipe);
+
+        var result = await _sut.GetByIdAsync(1);
+
+        Assert.NotNull(result);
+        Assert.Equal(["Mix ingredients thoroughly and bake until golden brown."], result.InstructionSteps);
+    }
+
     // ── CreateAsync ────────────────────────────────────────────────────────
 
     [Fact]

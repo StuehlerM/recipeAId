@@ -47,6 +47,7 @@ interface BackendRecipeDto {
   id: number;
   title: string;
   instructions: string | null;
+  instructionSteps?: string[] | null;
   imagePath: string | null;
   bookTitle: string | null;
   createdAt: string;
@@ -71,6 +72,7 @@ function toRecipeDto(r: BackendRecipeDto): RecipeDto {
     id: r.id,
     title: r.title,
     instructions: r.instructions,
+    instructionSteps: r.instructionSteps ?? undefined,
     imagePath: r.imagePath,
     bookTitle: r.bookTitle,
     createdAt: r.createdAt,

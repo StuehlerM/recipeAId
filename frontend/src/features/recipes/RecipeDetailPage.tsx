@@ -83,6 +83,9 @@ export default function RecipeDetailPage() {
         Added {new Date(recipe.createdAt).toLocaleDateString()}
         {recipe.bookTitle && <> &middot; <span className={styles.bookBadge}>📖 {recipe.bookTitle}</span></>}
       </p>
+      <Link to={`/recipes/${recipeId}/cook`} className={styles.cookModeBtn}>
+        Start cooking
+      </Link>
 
       <section className={styles.section}>
         <div className={styles.sectionHeader}>

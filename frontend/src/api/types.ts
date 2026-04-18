@@ -27,6 +27,7 @@ export interface RecipeDto {
   id: number;
   title: string;
   instructions: string | null;
+  instructionSteps?: string[];
   imagePath: string | null;
   bookTitle: string | null;
   createdAt: string;
