@@ -52,6 +52,35 @@ Given(
 );
 
 Given(
+  "a recipe exists with title {string}, instructions {string}, and ingredients:",
+  async function (this: RecipeAIdWorld, title: string, instructions: string, dataTable: DataTable) {
+    const normalizedInstructions = instructions.replace(/\\n/g, "\n");
+    const ingredients = dataTable
+      .hashes()
+      .map((row: Record<string, string>, idx: number) => ({
+        name: row["name"],
+        amount: row["amount"] === "" ? null : row["amount"],
+        unit: row["unit"] === "" ? null : row["unit"],
+        sortOrder: idx,
+      }));
+
+    const res = await fetch(`${this.backendUrl}/api/v1/recipes`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title,
+        instructions: normalizedInstructions,
+        bookTitle: null,
+        ingredients,
+      }),
+    });
+    if (!res.ok) throw new Error(`Failed to create recipe "${title}": ${res.status}`);
+    const recipe = await res.json();
+    this.lastCreatedRecipeId = recipe.id;
+  }
+);
+
+Given(
   "a recipe exists with title {string} and {int} servings and ingredients:",
   async function (this: RecipeAIdWorld, title: string, servings: number, dataTable: DataTable) {
     const ingredients = dataTable

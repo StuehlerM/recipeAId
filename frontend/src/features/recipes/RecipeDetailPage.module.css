@@ -29,6 +29,20 @@
   margin-bottom: 2rem;
 }
 
+.cookModeBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  text-decoration: none;
+  background: var(--color-sage);
+  color: var(--color-card);
+  font-weight: 600;
+}
+
 .bookBadge {
   color: var(--color-sage);
 }
